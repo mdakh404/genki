@@ -1,0 +1,24 @@
+.login-page {
+    -fx-background-color: #F4F7FF;
+}
+
+.login-card {
+    -fx-background-color: white;
+    -fx-background-radius: 16px;
+    -fx-border-color: #ccc;
+    -fx-border-radius: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10,0,0,2);
+}
+
+.login-field {
+    -fx-background-color: white;
+    -fx-border-color: #9CA3AF;
+    -fx-border-radius: 8;
+    -fx-border-width: 2px;
+}
+
+.sign-in-button {
+    -fx-width: 75%;
+    -fx-background-radius: 20;
+    -fx-background-color: #374151;
+}
