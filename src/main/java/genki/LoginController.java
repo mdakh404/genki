@@ -1,4 +1,4 @@
-package com.ensiasd.genki;
+package genki;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;

@@ -3,6 +3,6 @@ module com.example.learningfx {
     requires javafx.fxml;
 
 
-    opens com.ensiasd.genki to javafx.fxml;
-    exports com.ensiasd.genki;
+    opens genki to javafx.fxml;
+    exports genki;
 }
