@@ -1,5 +1,7 @@
 package genki;
 
+import javafx.stage.Stage;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import java.io.IOException;
@@ -19,7 +21,15 @@ public class Launcher extends Application {
         Scene scene = new Scene(root, 1220, 657);
 
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Genki");
+        primaryStage.setTitle("Genki - Connexion");
         primaryStage.show();
+
+
+        Parent register = FXMLLoader.load(getClass().getResource("Register.fxml"));
+
+        Stage stage = new Stage();
+        stage.setTitle("Genki - Inscription");
+        stage.setScene(new Scene(register, 1220, 657));
+        stage.show();
     }
 }

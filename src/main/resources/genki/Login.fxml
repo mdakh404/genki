@@ -23,12 +23,12 @@
                         <Image url="@img/genki_logo.png" />
                     </image>
                 </ImageView>
-                <Text layoutX="100.0" layoutY="163.0" text="Connexion ou inscription">
+                <Text layoutX="150.0" layoutY="167.0" text="Connexion">
                     <font>
-                        <Font name="System Bold" size="24.0" />
+                        <Font name="System Bold" size="33.0" />
                     </font>
                 </Text>
-                <Text layoutX="120.0" layoutY="181.0" text="Veuillez vous connecter à votre compte" />
+                <Text layoutX="120.0" layoutY="187.0" text="Veuillez vous connecter à votre compte" />
                 <Label layoutX="34.0" layoutY="259.0" text="Nom d’utilisateur">
                     <font>
                         <Font name="System Bold" size="16.0" />
@@ -65,7 +65,7 @@
                         <Image url="@img/key.png" />
                     </image>
                 </ImageView>
-                <Button layoutX="34.0" layoutY="445.0" mnemonicParsing="false" prefWidth="384.0" styleClass="sign-in-button" stylesheets="@css/login.css" text="Se connecter" textAlignment="CENTER" textFill="WHITE">
+                <Button layoutX="34.0" layoutY="445.0" mnemonicParsing="false" prefWidth="384.0" styleClass="login-button" stylesheets="@css/login.css" text="Se connecter" textAlignment="CENTER" textFill="WHITE">
                     <padding>
                         <Insets bottom="11.0" top="7.0" />
                     </padding>
