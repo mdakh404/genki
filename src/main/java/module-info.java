@@ -1,4 +1,4 @@
-module com.example.learningfx {
+module genki {
     requires javafx.controls;
     requires javafx.fxml;
 
