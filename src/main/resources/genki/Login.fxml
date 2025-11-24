@@ -14,7 +14,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<GridPane alignment="CENTER" prefHeight="657.0" prefWidth="1220.0" styleClass="login-page" stylesheets="@css/login.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+<GridPane alignment="CENTER" prefHeight="657.0" prefWidth="1220.0" styleClass="login-page" stylesheets="@css/login.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.LoginController">
     <children>
         <Pane prefHeight="517.0" prefWidth="448.0" styleClass="login-card" stylesheets="@css/login.css">
             <children>
@@ -23,25 +23,21 @@
                         <Image url="@img/genki_logo.png" />
                     </image>
                 </ImageView>
-                <Text layoutX="87.0" layoutY="165.0" text="Connexion ou inscription">
+                <Text layoutX="100.0" layoutY="163.0" text="Connexion ou inscription">
                     <font>
-                        <Font name="Avenir Next Demi Bold" size="24.0" />
+                        <Font name="System Bold" size="24.0" />
                     </font>
                 </Text>
-                <Text layoutX="134.0" layoutY="184.0" text="Veuillez vous connecter à votre compte">
+                <Text layoutX="120.0" layoutY="181.0" text="Veuillez vous connecter à votre compte" />
+                <Label layoutX="34.0" layoutY="259.0" text="Nom d’utilisateur">
                     <font>
-                        <Font size="11.0" />
-                    </font>
-                </Text>
-                <Label layoutX="32.0" layoutY="248.0" text="Nom d’utilisateur">
-                    <font>
-                        <Font name="Grantha Sangam MN Regular" size="16.0" />
+                        <Font name="System Bold" size="16.0" />
                     </font>
                     <padding>
                         <Insets top="2.0" />
                     </padding>
                 </Label>
-                <TextField layoutX="32.0" layoutY="289.0" prefHeight="35.0" prefWidth="384.0" promptText="Entrez votre nom d’utilisateur" styleClass="login-field" stylesheets="@css/login.css">
+                <TextField fx:id="userName" layoutX="32.0" layoutY="289.0" prefHeight="35.0" prefWidth="384.0" promptText="Entrez votre nom d’utilisateur" styleClass="login-field" stylesheets="@css/login.css">
                     <padding>
                         <Insets bottom="11.0" left="42.0" right="24.0" top="11.0" />
                     </padding>
@@ -51,15 +47,15 @@
                         <Image url="@img/user.png" />
                     </image>
                 </ImageView>
-                <Label layoutX="32.0" layoutY="332.0" text="Mot de passe">
+                <Label layoutX="34.0" layoutY="340.0" text="Mot de passe">
                     <font>
-                        <Font name="Grantha Sangam MN Regular" size="16.0" />
+                        <Font name="System Bold" size="16.0" />
                     </font>
                     <padding>
                         <Insets top="2.0" />
                     </padding>
                 </Label>
-                <PasswordField layoutX="32.0" layoutY="373.0" prefHeight="35.0" prefWidth="384.0" promptText="Entrez votre mot de passe" styleClass="login-field" stylesheets="@css/login.css">
+                <PasswordField fx:id="password" layoutX="32.0" layoutY="373.0" prefHeight="35.0" prefWidth="384.0" promptText="Entrez votre mot de passe" styleClass="login-field" stylesheets="@css/login.css">
                     <padding>
                         <Insets bottom="11.0" left="42.0" right="24.0" top="11.0" />
                     </padding>
