@@ -22,3 +22,15 @@
     -fx-background-color: #374151;
     -fx-border-radius: 3px;
 }
+
+.register-redirect {
+    -fx-background-color: white;
+    -fx-border-color: white;
+    -fx-text-fill: #5C9AD7;
+    -fx-cursor: hand;
+}
+
+/*TODO add letter spacing between characters*/
+#username-field {
+    -fx-letter-spacing: 2px;
+}
