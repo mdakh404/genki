@@ -71,7 +71,7 @@
                         <Image url="@../img/key.png" />
                     </image>
                 </ImageView>
-                <Button layoutX="34.0" layoutY="455.0" mnemonicParsing="false" onAction="#onLogin" prefWidth="384.0" styleClass="login-button" stylesheets="@../css/login.css" text="Se connecter" textAlignment="CENTER" textFill="WHITE">
+                <Button fx:id="loginButton" layoutX="34.0" layoutY="455.0" mnemonicParsing="false" onAction="#onLogin" prefWidth="384.0" styleClass="login-button" stylesheets="@../css/login.css" text="Se connecter" textAlignment="CENTER" textFill="WHITE">
                     <padding>
                         <Insets bottom="11.0" top="7.0" />
                     </padding>

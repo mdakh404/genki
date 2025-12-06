@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Alert.AlertType;
 
 import java.net.URL;
@@ -31,6 +32,9 @@ public class LoginController implements Initializable {
      private TextField password;
 
      @FXML
+     private Button loginButton;
+
+     @FXML
      public void redirectToRegister() {
          logger.log(Level.INFO, "Redirecting user to register");
 
@@ -45,66 +49,96 @@ public class LoginController implements Initializable {
      @FXML
      public void onLogin() {
 
-            String user = userName.getText().trim();
-            String pass = password.getText().trim();
+         String user = userName.getText().trim();
+         String pass = password.getText().trim();
 
-             if (user.isEmpty()) {
-                    logger.log(Level.WARNING, "Username field is empty");
-                    userName.setStyle("-fx-border-color: #FF6347;");
+         if (user.isEmpty()) {
+             logger.log(Level.WARNING, "Username field is empty");
+             userName.setStyle("-fx-border-color: #FF6347;");
+         }
+
+         if (pass.isEmpty()) {
+             logger.log(Level.WARNING, "Password field is empty");
+             password.setStyle("-fx-border-color: #FF6347");
+         }
+
+         if (user.isEmpty() || pass.isEmpty()) {
+             Alert alertEmpty = new Alert(AlertType.WARNING);
+             alertEmpty.setTitle("Login error");
+             alertEmpty.setHeaderText("Empty fields");
+             alertEmpty.setContentText("Please enter username and password");
+             alertEmpty.showAndWait();
+             return;
+         }
+
+         loginButton.setDisable(true);
+
+         javafx.concurrent.Task<AuthResult> loginTask = new javafx.concurrent.Task<>() {
+             @Override
+             protected AuthResult call() throws Exception {
+                 return authModel.authLogin(user, pass);
              }
+         };
 
-             if (pass.isEmpty()) {
-                 logger.log(Level.WARNING, "Password field is empty");
-                 password.setStyle("-fx-border-color: #FF6347");
-              }
+         loginTask.setOnSucceeded(e -> {
+             AuthResult loginResult = loginTask.getValue();
 
-             if (user.isEmpty() || pass.isEmpty()) {
+             switch (loginResult.getStatus()) {
 
-                 Alert alertEmpty = new Alert(AlertType.WARNING);
-                 alertEmpty.setTitle("Login error");
-                 alertEmpty.setHeaderText("Empty fields");
-                 alertEmpty.setContentText("Please enter username and password");
-                 alertEmpty.showAndWait();
+                 case SUCCESS:
+                     try {
+                         logger.log(Level.INFO, "Login successful by " + user);
+                         Alert alertSuccess = new Alert(AlertType.INFORMATION);
+                         alertSuccess.setTitle("Login");
+                         alertSuccess.setHeaderText("Login successful");
+                         alertSuccess.setContentText("You have successfully logged in");
+                         alertSuccess.showAndWait();
+                         ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
+                     } catch (IOException ex) {
+                         logger.log(Level.SEVERE, "Error while loading Home.fxml", ex);
+                         loginButton.setDisable(false);
+                     }
+                     break;
+
+                 case WRONG_PASSWORD_USER:
+                     Alert alertCreds = new Alert(AlertType.ERROR);
+                     alertCreds.setTitle("Authentication Failed");
+                     alertCreds.setHeaderText("Invalid Credentials");
+                     alertCreds.setContentText("Wrong username or password");
+                     alertCreds.showAndWait();
+                     loginButton.setDisable(false);
+                     break;
+
+                 case DB_ERROR:
+                     Alert alertDB = new Alert(AlertType.ERROR);
+                     alertDB.setTitle("Network Error");
+                     alertDB.setHeaderText("Connection Error");
+                     alertDB.setContentText("Failed to connect to database, please try again in a few minutes");
+                     alertDB.showAndWait();
+                     loginButton.setDisable(false);
+                     break;
+
+                 default:
+                     Alert alertUnknown = new Alert(AlertType.ERROR);
+                     alertUnknown.setTitle("Unexpected Error");
+                     alertUnknown.setHeaderText("Something went wrong");
+                     alertUnknown.setContentText("An unexpected error occurred, please try again in a few minutes");
+                     alertUnknown.showAndWait();
+                     loginButton.setDisable(false);
              }
+         });
 
-             else {
-                 AuthResult loginResult = authModel.authLogin(user, pass);
+         loginTask.setOnFailed(e -> {
+             logger.log(Level.SEVERE, "Login task failed", loginTask.getException());
+             Alert alertError = new Alert(AlertType.ERROR);
+             alertError.setTitle("Error");
+             alertError.setHeaderText("Unexpected Error");
+             alertError.setContentText("An unexpected error occurred. Please try again.");
+             alertError.showAndWait();
+             loginButton.setDisable(false);
+         });
 
-                 switch (loginResult.getStatus()) {
-
-                     case SUCCESS:
-                         try {
-                             logger.log(Level.INFO, "Login successful by " + user);
-                             ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
-                         } catch (IOException e) {
-                             logger.log(Level.SEVERE, "Error while loading Home.fxml", e);
-                         }
-                         break;
-
-                     case WRONG_PASSWORD_USER:
-                          Alert alertCreds = new Alert(AlertType.ERROR);
-                          alertCreds.setTitle("Authentication Failed");
-                          alertCreds.setHeaderText("Invalid Credentials");
-                          alertCreds.setContentText("Wrong username or password");
-                          alertCreds.showAndWait();
-                          break;
-
-                     case DB_ERROR:
-                         Alert alertDB = new Alert(AlertType.ERROR);
-                         alertDB.setTitle("Network Error");
-                         alertDB.setHeaderText("Connection Error");
-                         alertDB.setContentText("Failed to connect to database, please try again in a few minutes");
-                         alertDB.showAndWait();
-                         break;
-                     default:
-                         Alert alertUnknown = new Alert(AlertType.ERROR);
-                         alertUnknown.setTitle("Unexpected Error");
-                         alertUnknown.setHeaderText("Something went wrong");
-                         alertUnknown.setContentText("An unexpected error occurred, please ty again in a few minutes");
-                         alertUnknown.showAndWait();
-                 }
-
-             }
+         new Thread(loginTask).start();
      }
 
 

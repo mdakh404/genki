@@ -80,6 +80,12 @@ public class RegisterController implements Initializable{
 
                      case SUCCESS:
                          try {
+
+                             Alert alertSuccess = new Alert(AlertType.INFORMATION);
+                             alertSuccess.setTitle("Registration");
+                             alertSuccess.setHeaderText("Registration successful");
+                             alertSuccess.setContentText("You have successfully registered");
+                             alertSuccess.showAndWait();
                              // Switch Scene to Home after successful registration
                              ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                          } catch (IOException event) {
