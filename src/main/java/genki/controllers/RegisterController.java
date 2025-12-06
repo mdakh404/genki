@@ -1,30 +1,29 @@
 package genki.controllers;
 
-import genki.utils.CredsValidator;
-import genki.utils.DBConnection;
-import genki.utils.PasswordHasher;
-
-
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import org.bson.Document;
-
+import genki.utils.RegisterResult;
+import genki.utils.RegistrationTask;
+import genki.models.RegisterModel;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Button;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.io.IOException;
 
 public class RegisterController implements Initializable{
 
     public static final Logger logger = Logger.getLogger(RegisterController.class.getName());
+    private static final RegisterModel registerModel = new RegisterModel();
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @FXML
     private TextField regUserName;
@@ -35,85 +34,111 @@ public class RegisterController implements Initializable{
     @FXML
     private TextField bioField;
 
-    public void setRegistrationInfo(String username, String password) {
-        regUserName.setText(username);
-        regPassword.setText(password);
-    }
-
-    public int validateRegistration(String username, String password) {
-
-        if (username.isEmpty()) {
-            return -1;
-        }
-        else if (password.isEmpty()) {
-            return -2;
-        }
-
-        else {
-            if (!CredsValidator.validateUser(username)) return -3;
-            else if (!CredsValidator.validatePass(password)) return -4;
-            else return 0;
-        }
-    }
+    @FXML
+    private Button registerButton;
 
     @FXML
-    public boolean authRegister() {
+    public void onRegister() {
 
-           String userName = regUserName.getText();
-           String password = regPassword.getText();
-           String bio = bioField.getText();
+          String username = regUserName.getText();
+          String password = regPassword.getText();
+          String bio = bioField.getText();
 
-           switch (validateRegistration(userName, password)) {
-               case -1:
-                   logger.log(Level.WARNING, "username field is empty");
-                   break;
-               case -2:
-                   logger.log(Level.WARNING, "password field is empty");
-               case -3:
-                   logger.log(Level.WARNING, "username field is not valid");
-                   break;
-               case -4:
-                   logger.log(Level.WARNING, "password field is not valid");
-           }
+          if (username.isEmpty()) {
+                logger.log(Level.WARNING, "Username field is empty");
+                regUserName.setStyle("-fx-border-color: #FF6347");
+          }
 
-           try (MongoClient mongoClient = DBConnection.initConnection("mongodb+srv://mdakh404:moaditatchi2020@genki.vu4rdeo.mongodb.net/?appName=Genki")) {
+          if (password.isEmpty()) {
+               logger.log(Level.WARNING, "Password field is empty");
+               regPassword.setStyle("-fx-border-color: #FF6347");
+          }
 
-               logger.log(Level.WARNING, "Registration attempt by " + userName);
+          if (username.isEmpty() || password.isEmpty()) {
 
-               MongoDatabase db = mongoClient.getDatabase("genki_testing");
-               logger.log(Level.INFO, "Connected to the database");
+              Alert alertEmpty = new Alert(AlertType.WARNING);
+              alertEmpty.setTitle("Registration error");
+              alertEmpty.setHeaderText("Empty fields");
+              alertEmpty.setContentText("Please enter username and password");
+              alertEmpty.showAndWait();
+          }
 
-               MongoCollection<Document> usersCollection = db.getCollection("users");
-               logger.log(Level.INFO, "Accessing users collection");
+         else {
 
-               Document userDoc = usersCollection.find(Filters.eq("username", userName)).first();
+             RegistrationTask task =  new RegistrationTask(
+                     registerModel,
+                     username,
+                     password,
+                     bio
+             );
 
-               if (userDoc != null) {
-                   logger.log(Level.SEVERE, "Error: " + userName + " is already registered");
-                   return false;
-               }
+             task.setOnSucceeded(e -> {
 
-               else {
+                 RegisterResult result = task.getValue();
 
-                   Document newUser = new Document()
-                           .append("username", userName)
-                           .append("password", PasswordHasher.hashPassword(password))
-                           .append("bio",  (bio == null || bio.isEmpty()) ? "" : bio)
-                           .append("role", "user")
-                           .append("photo_url", "")
-                           .append("created_at", new Date());
+                 switch (result.getStatus()) {
 
-                   usersCollection.insertOne(newUser);
-                   logger.log(Level.INFO, userName + " account has been created");
-                   return true;
-               }
+                     case SUCCESS:
+                         try {
+                             // Switch Scene to Home after successful registration
+                             ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
+                         } catch (IOException event) {
+                             logger.log(Level.SEVERE, "Error while loading Home.fxml", event);
+                         }
+                         break;
+                     case USERNAME_INVALID:
+                         Alert alertUserInvalid = new Alert(AlertType.ERROR);
+                         alertUserInvalid.setTitle("Sign Up error");
+                         alertUserInvalid.setHeaderText("Invalid username");
+                         alertUserInvalid.setContentText("Your username must be 5–15 characters long and can only include letters, numbers, and underscores.");
+                         alertUserInvalid.showAndWait();
+                         break;
 
+                     case PASSWORD_INVALID:
+                         Alert alertPassInvalid = new Alert(AlertType.ERROR);
+                         alertPassInvalid.setTitle("Sign Up error");
+                         alertPassInvalid.setHeaderText("Invalid password");
+                         alertPassInvalid.setContentText("Your password needs at least 8 characters, with at least one uppercase letter and one symbol.");
+                         alertPassInvalid.showAndWait();
+                         break;
 
-           } catch (RuntimeException e) {
-               logger.log(Level.SEVERE, "Failed to connect to database", e);
-           }
+                     case USER_EXISTS:
+                         Alert alertUserExists = new Alert(AlertType.ERROR);
+                         alertUserExists.setTitle("Sign Up error");
+                         alertUserExists.setHeaderText("User already exists");
+                         alertUserExists.setContentText(username + " already exists, please sign up using a new username");
+                         alertUserExists.showAndWait();
+                         break;
 
-           return true;
+                     default:
+                         Alert alertUnknown = new Alert(AlertType.ERROR);
+                         alertUnknown.setTitle("Unexpected Error");
+                         alertUnknown.setHeaderText("Something went wrong");
+                         alertUnknown.setContentText("An unexpected error occurred, please ty again in a few minutes");
+                         alertUnknown.showAndWait();
+
+                 }
+
+                 registerButton.setDisable(false);
+
+             });
+
+             task.setOnFailed(e -> {
+
+                 Alert alertDB = new Alert(AlertType.ERROR);
+                 alertDB.setTitle("Network Error");
+                 alertDB.setHeaderText("Connection Error");
+                 alertDB.setContentText("Failed to connect to database, please try again in a few minutes");
+                 alertDB.showAndWait();
+
+                 registerButton.setDisable(false);
+             });
+
+             executor.execute(task);
+             registerButton.setDisable(true);
+
+          }
+
     }
 
     @Override

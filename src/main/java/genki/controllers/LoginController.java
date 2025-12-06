@@ -1,12 +1,11 @@
 package genki.controllers;
 
-import genki.models.UserModel;
+import genki.models.AuthModel;
 import genki.utils.AuthResult;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Button;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 
@@ -24,15 +23,12 @@ public class LoginController implements Initializable {
 
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
 
-     private static final UserModel userModel = new UserModel();
+     private static final AuthModel authModel = new AuthModel();
 
      @FXML
      private TextField userName;
      @FXML
      private TextField password;
-
-     @FXML
-     private Button registerRedirect;
 
      @FXML
      public void redirectToRegister() {
@@ -53,31 +49,32 @@ public class LoginController implements Initializable {
             String pass = password.getText().trim();
 
              if (user.isEmpty()) {
-                    logger.log(Level.WARNING, "username or password field are empty");
+                    logger.log(Level.WARNING, "Username field is empty");
                     userName.setStyle("-fx-border-color: #FF6347;");
              }
 
              if (pass.isEmpty()) {
-                 logger.log(Level.WARNING, "username or password field are empty");
+                 logger.log(Level.WARNING, "Password field is empty");
                  password.setStyle("-fx-border-color: #FF6347");
               }
 
              if (user.isEmpty() || pass.isEmpty()) {
 
                  Alert alertEmpty = new Alert(AlertType.WARNING);
-                 alertEmpty.setTitle("Login Error");
+                 alertEmpty.setTitle("Login error");
                  alertEmpty.setHeaderText("Empty fields");
                  alertEmpty.setContentText("Please enter username and password");
                  alertEmpty.showAndWait();
              }
 
              else {
-                 AuthResult loginResult = userModel.authLogin(user, pass);
+                 AuthResult loginResult = authModel.authLogin(user, pass);
 
                  switch (loginResult.getStatus()) {
 
                      case SUCCESS:
                          try {
+                             logger.log(Level.INFO, "Login successful by " + user);
                              ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                          } catch (IOException e) {
                              logger.log(Level.SEVERE, "Error while loading Home.fxml", e);

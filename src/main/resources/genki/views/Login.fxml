@@ -79,7 +79,7 @@
                         <Font size="18.0" />
                     </font>
                 </Button>
-            <Button layoutX="20.0" layoutY="404.0" fx:id="registerRedirect" mnemonicParsing="false" styleClass="register-redirect" stylesheets="@../css/login.css" text="Register" onAction="#redirectToRegister">
+            <Button layoutX="20.0" layoutY="404.0" fx:id="redirectToRegister" mnemonicParsing="false" styleClass="register-redirect" stylesheets="@../css/login.css" text="Sign Up" onAction="#redirectToRegister">
                <font>
                   <Font size="16.0" />
                </font>

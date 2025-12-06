@@ -65,7 +65,7 @@
                         <Image url="@../img/key.png" />
                     </image>
                 </ImageView>
-                <Button layoutX="32.0" layoutY="558.0" mnemonicParsing="false" prefWidth="384.0" styleClass="register-button" stylesheets="@../css/register.css" text="S'abonner" textAlignment="CENTER" textFill="WHITE" onAction="#authRegister">
+                <Button fx:id="registerButton" layoutX="32.0" layoutY="558.0" mnemonicParsing="false" prefWidth="384.0" styleClass="register-button" stylesheets="@../css/register.css" text="Sign Up" textAlignment="CENTER" textFill="WHITE" onAction="#onRegister">
                     <padding>
                         <Insets bottom="11.0" top="7.0" />
                     </padding>
