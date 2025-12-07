@@ -13,9 +13,9 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.MongoException;
 import org.bson.Document;
 
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.time.LocalDate;
 
 public class RegisterModel {
 
@@ -40,9 +40,9 @@ public class RegisterModel {
      * @param password is the supplied password during registration
      * @param bio is the supplied bio during registration
      * @return RegisterStatus USERNAME_INVALID when supplied username contain symbols (_ doesn't count), less than 5 chars or greater than 15 chars
-     * @return RegisterStatus PASSWORD_INVALID when supplied password doesn't match Genki password policy (See genki.utils.CredsValidator.validatePass())
-     * @return RegisterStatus DB_ERROR when the connection to the database fails
-     * * @return RegisterStatus SUCCESS when account is successfully created and registered on the database
+     *                        PASSWORD_INVALID when supplied password doesn't match Genki password policy (See genki.utils.CredsValidator.validatePass())
+     *                        DB_ERROR when the connection to the database fails
+     *                        SUCCESS when account is successfully created and registered on the database
      * */
     public RegisterResult Register(String username, String password, String bio) {
 
@@ -81,7 +81,7 @@ public class RegisterModel {
                         .append("bio",  (bio == null || bio.isEmpty()) ? "" : bio)
                         .append("role", "user")
                         .append("photo_url", "")
-                        .append("created_at", new Date());
+                        .append("created_at", LocalDate.now());
 
                 usersCollection.insertOne(newUser);
                 logger.log(Level.INFO, username + " account has been created");
