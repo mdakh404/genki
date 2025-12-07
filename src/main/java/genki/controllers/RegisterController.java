@@ -2,6 +2,7 @@ package genki.controllers;
 
 import genki.utils.RegisterResult;
 import genki.utils.RegistrationTask;
+import genki.utils.AlertConstruct;
 import genki.models.RegisterModel;
 
 import javafx.fxml.FXML;
@@ -9,7 +10,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -56,11 +56,12 @@ public class RegisterController implements Initializable{
 
           if (username.isEmpty() || password.isEmpty()) {
 
-              Alert alertEmpty = new Alert(AlertType.WARNING);
-              alertEmpty.setTitle("Registration error");
-              alertEmpty.setHeaderText("Empty fields");
-              alertEmpty.setContentText("Please enter username and password");
-              alertEmpty.showAndWait();
+              AlertConstruct.alertConstructor(
+                      "Registration error",
+                      "Empty fields",
+                      "Please enter username and password.",
+                      Alert.AlertType.WARNING
+              );
           }
 
          else {
@@ -81,11 +82,13 @@ public class RegisterController implements Initializable{
                      case SUCCESS:
                          try {
 
-                             Alert alertSuccess = new Alert(AlertType.INFORMATION);
-                             alertSuccess.setTitle("Registration");
-                             alertSuccess.setHeaderText("Registration successful");
-                             alertSuccess.setContentText("You have successfully registered");
-                             alertSuccess.showAndWait();
+                             AlertConstruct.alertConstructor(
+                                     "Registration",
+                                     "Registration successful",
+                                     "You have successfully registered.",
+                                     Alert.AlertType.INFORMATION
+                             );
+
                              // Switch Scene to Home after successful registration
                              ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                          } catch (IOException event) {
@@ -93,35 +96,45 @@ public class RegisterController implements Initializable{
                          }
                          break;
                      case USERNAME_INVALID:
-                         Alert alertUserInvalid = new Alert(AlertType.ERROR);
-                         alertUserInvalid.setTitle("Sign Up error");
-                         alertUserInvalid.setHeaderText("Invalid username");
-                         alertUserInvalid.setContentText("Your username must be 5–15 characters long and can only include letters, numbers, and underscores.");
-                         alertUserInvalid.showAndWait();
+
+                         AlertConstruct.alertConstructor(
+                                "Sign Up error",
+                                "Invalid username",
+                                "Your username must be 5–15 characters long and can only include letters, numbers, and underscores.",
+                                Alert.AlertType.ERROR
+                         );
                          break;
 
                      case PASSWORD_INVALID:
-                         Alert alertPassInvalid = new Alert(AlertType.ERROR);
-                         alertPassInvalid.setTitle("Sign Up error");
-                         alertPassInvalid.setHeaderText("Invalid password");
-                         alertPassInvalid.setContentText("Your password needs at least 8 characters, with at least one uppercase letter and one symbol.");
-                         alertPassInvalid.showAndWait();
+
+                         AlertConstruct.alertConstructor(
+                                 "Sign Up error",
+                                 "Invalid password",
+                                 "Your password needs at least 8 characters, with at least one uppercase letter and one symbol.",
+                                 Alert.AlertType.ERROR
+                         );
+
                          break;
 
                      case USER_EXISTS:
-                         Alert alertUserExists = new Alert(AlertType.ERROR);
-                         alertUserExists.setTitle("Sign Up error");
-                         alertUserExists.setHeaderText("User already exists");
-                         alertUserExists.setContentText(username + " already exists, please sign up using a new username");
-                         alertUserExists.showAndWait();
+
+                         AlertConstruct.alertConstructor(
+                                 "Sign Up error",
+                                 "User already exists",
+                                 username + " already exists, please sign up using a new username.",
+                                 Alert.AlertType.ERROR
+                         );
+
                          break;
 
                      default:
-                         Alert alertUnknown = new Alert(AlertType.ERROR);
-                         alertUnknown.setTitle("Unexpected Error");
-                         alertUnknown.setHeaderText("Something went wrong");
-                         alertUnknown.setContentText("An unexpected error occurred, please ty again in a few minutes");
-                         alertUnknown.showAndWait();
+
+                         AlertConstruct.alertConstructor(
+                                 "Unexpected Error",
+                                 "Something went wrong",
+                                 "An unexpected error occurred, please ty again in a few minutes.",
+                                 Alert.AlertType.ERROR
+                         );
 
                  }
 
@@ -131,11 +144,13 @@ public class RegisterController implements Initializable{
 
              task.setOnFailed(e -> {
 
-                 Alert alertDB = new Alert(AlertType.ERROR);
-                 alertDB.setTitle("Network Error");
-                 alertDB.setHeaderText("Connection Error");
-                 alertDB.setContentText("Failed to connect to database, please try again in a few minutes");
-                 alertDB.showAndWait();
+                 AlertConstruct.alertConstructor(
+                         "Network Error",
+                         "Database Connection Error",
+                         "Failed to connect to database, please try again in a few minutes.",
+                         Alert.AlertType.ERROR
+                 );
+
 
                  registerButton.setDisable(false);
              });
@@ -146,6 +161,7 @@ public class RegisterController implements Initializable{
           }
 
     }
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

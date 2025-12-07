@@ -2,13 +2,13 @@ package genki.controllers;
 
 import genki.models.AuthModel;
 import genki.utils.AuthResult;
+import genki.utils.AlertConstruct;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.Alert.AlertType;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -63,11 +63,13 @@ public class LoginController implements Initializable {
          }
 
          if (user.isEmpty() || pass.isEmpty()) {
-             Alert alertEmpty = new Alert(AlertType.WARNING);
-             alertEmpty.setTitle("Login error");
-             alertEmpty.setHeaderText("Empty fields");
-             alertEmpty.setContentText("Please enter username and password");
-             alertEmpty.showAndWait();
+
+             AlertConstruct.alertConstructor(
+                   "Login Error",
+                   "Empty Fields",
+                   "Please enter username and password.",
+                   Alert.AlertType.WARNING
+             );
              return;
          }
 
@@ -88,11 +90,13 @@ public class LoginController implements Initializable {
                  case SUCCESS:
                      try {
                          logger.log(Level.INFO, "Login successful by " + user);
-                         Alert alertSuccess = new Alert(AlertType.INFORMATION);
-                         alertSuccess.setTitle("Login");
-                         alertSuccess.setHeaderText("Login successful");
-                         alertSuccess.setContentText("You have successfully logged in");
-                         alertSuccess.showAndWait();
+                         AlertConstruct.alertConstructor(
+                           "Login",
+                           "Login Successful",
+                           "You have successfully logged in.",
+                           Alert.AlertType.INFORMATION
+                         );
+
                          ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {
                          logger.log(Level.SEVERE, "Error while loading Home.fxml", ex);
@@ -101,40 +105,44 @@ public class LoginController implements Initializable {
                      break;
 
                  case WRONG_PASSWORD_USER:
-                     Alert alertCreds = new Alert(AlertType.ERROR);
-                     alertCreds.setTitle("Authentication Failed");
-                     alertCreds.setHeaderText("Invalid Credentials");
-                     alertCreds.setContentText("Wrong username or password");
-                     alertCreds.showAndWait();
+                     AlertConstruct.alertConstructor(
+                             "Authentication Failed",
+                             "Invalid Credentials",
+                             "Wrong username or password.",
+                             Alert.AlertType.ERROR
+                     );
                      loginButton.setDisable(false);
                      break;
 
                  case DB_ERROR:
-                     Alert alertDB = new Alert(AlertType.ERROR);
-                     alertDB.setTitle("Network Error");
-                     alertDB.setHeaderText("Connection Error");
-                     alertDB.setContentText("Failed to connect to database, please try again in a few minutes");
-                     alertDB.showAndWait();
+                     AlertConstruct.alertConstructor(
+                       "Network Error",
+                       "Database Connection Error",
+                       "Failed to connect to database, please try again in a few minutes.",
+                       Alert.AlertType.ERROR
+                     );
                      loginButton.setDisable(false);
                      break;
 
                  default:
-                     Alert alertUnknown = new Alert(AlertType.ERROR);
-                     alertUnknown.setTitle("Unexpected Error");
-                     alertUnknown.setHeaderText("Something went wrong");
-                     alertUnknown.setContentText("An unexpected error occurred, please try again in a few minutes");
-                     alertUnknown.showAndWait();
+                     AlertConstruct.alertConstructor(
+                       "Unexpected Error",
+                       "Something went wrong",
+                       "An unexpected error occurred, please try again in a few minutes.",
+                       Alert.AlertType.ERROR
+                     );
                      loginButton.setDisable(false);
              }
          });
 
          loginTask.setOnFailed(e -> {
              logger.log(Level.SEVERE, "Login task failed", loginTask.getException());
-             Alert alertError = new Alert(AlertType.ERROR);
-             alertError.setTitle("Error");
-             alertError.setHeaderText("Unexpected Error");
-             alertError.setContentText("An unexpected error occurred. Please try again.");
-             alertError.showAndWait();
+             AlertConstruct.alertConstructor(
+               "Error",
+               "Unexpected Error",
+               "An unexpected error occurred. Please try again.",
+               Alert.AlertType.ERROR
+             );
              loginButton.setDisable(false);
          });
 
