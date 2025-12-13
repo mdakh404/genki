@@ -20,6 +20,7 @@ import java.time.LocalDate;
 public class RegisterModel {
 
     private static final Logger logger = Logger.getLogger(RegisterModel.class.getName());
+    private final DBConnection RegisterConnection = new DBConnection("genki_testing");
 
 
     public RegisterStatus validateRegistration(String username, String password) {
@@ -56,7 +57,8 @@ public class RegisterModel {
         }
 
         //TODO update the code to get credentials from ENV_VARS or config files
-        try (MongoClient mongoClient = DBConnection.initConnection("mongodb+srv://mdakh404:moaditatchi2020@genki.vu4rdeo.mongodb.net/?appName=Genki")) {
+        try {
+
 
             logger.log(Level.INFO, "Registration attempt");
 
