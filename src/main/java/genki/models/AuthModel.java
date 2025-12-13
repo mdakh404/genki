@@ -5,7 +5,6 @@ import genki.utils.PasswordHasher;
 import genki.utils.AuthResult;
 import genki.utils.AuthStatus;
 
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -18,6 +17,7 @@ import java.util.logging.Level;
 public class AuthModel {
 
     private static final Logger logger = Logger.getLogger(AuthModel.class.getName());
+    private final DBConnection AuthConnection = new DBConnection("genki_testing");
 
     /**
      * authLogin()
@@ -33,11 +33,10 @@ public class AuthModel {
      * */
     public AuthResult authLogin(String username, String password) {
 
+        try {
 
-        try (MongoClient mongoClient = DBConnection.initConnection("mongodb+srv://mdakh404:moaditatchi2020@genki.vu4rdeo.mongodb.net/?appName=Genki")) {
+                MongoDatabase database = AuthConnection.getDatabase();
                 logger.log(Level.INFO, "Login attempt by " + username);
-
-                MongoDatabase database = mongoClient.getDatabase("genki_testing");
                 logger.log(Level.INFO, "Connected to database");
 
                 MongoCollection<Document> users = database.getCollection("users");

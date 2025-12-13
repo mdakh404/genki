@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefWidth="780" prefHeight="620"
+            style="-fx-background-color: #F9FAFB;"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="genki.controllers.SettingsController">
+
+    <VBox alignment="TOP_CENTER" spacing="25"
+          AnchorPane.topAnchor="20"
+          AnchorPane.leftAnchor="20"
+          AnchorPane.rightAnchor="20"
+          AnchorPane.bottomAnchor="20">
+
+        <Label text="User Settings" textFill="#1F2937">
+            <font><Font size="26"/></font>
+        </Label>
+
+        <VBox alignment="CENTER" spacing="12">
+            <StackPane>
+                <ImageView fitWidth="110" fitHeight="110" preserveRatio="true"
+                           style="-fx-background-color: #E5E7EB; -fx-background-radius: 90;">
+                    <image>
+                        <Image url="@../img/user-default.png"/>
+                    </image>
+                </ImageView>
+            </StackPane>
+
+            <Button text="Upload Photo"
+                    style="-fx-background-color: #4B5563; -fx-text-fill: #F9FAFB;-fx-background-radius: 6;-fx-padding: 8 20;"/>
+        </VBox>
+
+        <VBox spacing="6" maxWidth="420">
+            <Label text="Username" textFill="#374151"/>
+            <TextField promptText="Enter new username"
+                       style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
+        </VBox>
+
+        <VBox spacing="6" maxWidth="420">
+            <Label text="Password" textFill="#374151"/>
+            <PasswordField promptText="Current Password"
+                           style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
+            <PasswordField promptText="New Password"
+                           style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
+        </VBox>
+
+        <VBox spacing="6" maxWidth="420">
+            <Label text="Bio" textFill="#374151"/>
+            <TextArea prefHeight="110" promptText="Tell us about yourself..."
+                      style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 10;"/>
+        </VBox>
+
+        <HBox spacing="20" alignment="CENTER" style="-fx-padding: 20 0 0 0;">
+            <Button text="Save Settings" prefWidth="150" prefHeight="40"
+                    style="-fx-background-color: #374151; -fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
+
+            <Button text="Delete Account" prefWidth="150" prefHeight="40"
+                    style="-fx-background-color: #DC2626;-fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
+        </HBox>
+
+    </VBox>
+
+</AnchorPane>

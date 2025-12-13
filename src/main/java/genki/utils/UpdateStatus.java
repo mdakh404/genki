@@ -1,0 +1,13 @@
+package genki.utils;
+
+public enum UpdateStatus {
+
+    USERNAME_UPDATED,
+    INVALID_USERNAME,
+    INVALID_CURRENT_PASSWORD,
+    INVALID_NEW_PASSWORD,
+    INVALID_PHOTO,
+    PHOTO_MAXIMUM_PASSED,
+    BUCKET_ERROR,
+    DB_ERROR
+}
