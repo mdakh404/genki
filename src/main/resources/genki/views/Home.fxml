@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
 
-<StackPane prefHeight="800.0" prefWidth="1400.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"  xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
     <HBox style="-fx-background-color: #f3f4f6;">
 
         <VBox prefWidth="347.0" spacing="0" style="-fx-background-color: #1e2936;">
@@ -57,9 +60,41 @@
 
             </HBox>
 
-            <ScrollPane fitToHeight="true" fitToWidth="true" style="-fx-background-color: #f3f4f6; -fx-background: #f3f4f6;" VBox.vgrow="ALWAYS">
-                <VBox fx:id="messagesContainer" spacing="16.0" style="-fx-background-color: #f3f4f6; -fx-padding: 20;" />
-            </ScrollPane>
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="scroll-pane" stylesheets="@../css/chat.css">
+    <VBox fx:id="messagesContainer" spacing="16">
+    <HBox spacing="10" styleClass="message-box, received-message">
+        <ImageView fitHeight="40" fx:id="messageProfil" fitWidth="40" preserveRatio="true" styleClass="avatar"/>
+        <VBox spacing="4">
+            <Label text="Aimane Aboufadle" styleClass="sender-name"/>
+            <Label text="Long message text goes here, demonstrating a message received from another user."
+                   wrapText="true"
+                   maxWidth="600"
+                   styleClass="message-text, received-bubble"/>
+        </VBox>
+    </HBox>
+    
+    <HBox spacing="10"
+          alignment="TOP_RIGHT"
+          styleClass="message-box, sent-message">
+
+        <VBox spacing="4" alignment="TOP_RIGHT">
+            <Label text="You" styleClass="sender-name, sent-name"/>
+            <Label text="This message is finally on the RIGHT side, demonstrating a message sent by the current user 🎯"
+                   wrapText="true"
+                   maxWidth="600"
+                   styleClass="message-text, sent-bubble"/>
+        </VBox>
+
+        <ImageView fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar">
+       
+    </ImageView>
+    </HBox>
+    
+</VBox>
+    
+</ScrollPane>
+
+
 
 
             <HBox alignment="CENTER" spacing="12.0" style="-fx-background-color: white; -fx-padding: 16; -fx-border-color: #e5e7eb; -fx-border-width: 1 0 0 0;">
@@ -80,7 +115,11 @@
         </VBox>
 
 
-        <VBox fx:id="rightSidePanel" prefWidth="320.0" style="-fx-background-color: white; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 0 1;">
+        <VBox fx:id="rightSidePanel"
+      prefWidth="320"
+      minWidth="320"
+      maxWidth="320"
+      style="-fx-background-color: white; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 0 1;">
 
 
             <VBox alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">

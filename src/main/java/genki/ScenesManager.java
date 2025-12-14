@@ -40,4 +40,8 @@ public class ScenesManager extends Application {
              logger.log(Level.SEVERE, "Failed to load Roboto.ttf", e);
          }
     }
+    
+    public static void main(String[] args) {
+    	launch(args);
+    }
 }

@@ -7,6 +7,8 @@ import javafx.stage.Modality;
 import javafx.scene.Scene;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
 
 import java.util.logging.Logger;
@@ -20,7 +22,7 @@ public class HomeController {
 
       @FXML
       private Button btnSettings;
-
+      
 
       @FXML
       private void handleSettingsBtnClick() {
@@ -31,7 +33,8 @@ public class HomeController {
                      FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Settings.fxml"));
                      Parent root = loader.load();
 
-
+ 
+                     
                      Stage settingsStage = new Stage();
                      settingsStage.setTitle("Settings");
                      settingsStage.setResizable(false);
