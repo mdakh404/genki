@@ -59,10 +59,8 @@ public class RegisterModel {
         //TODO update the code to get credentials from ENV_VARS or config files
         try {
 
-
+            MongoDatabase db = RegisterConnection.getDatabase();
             logger.log(Level.INFO, "Registration attempt");
-
-            MongoDatabase db = mongoClient.getDatabase("genki_testing");
             logger.log(Level.INFO, "Connected to the database");
 
             MongoCollection<Document> usersCollection = db.getCollection("users");

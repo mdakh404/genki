@@ -3,6 +3,8 @@ package genki.utils;
 public enum UpdateStatus {
 
     USERNAME_UPDATED,
+    BIO_UPDATED,
+    PASSWORD_UPDATED,
     INVALID_USERNAME,
     INVALID_CURRENT_PASSWORD,
     INVALID_NEW_PASSWORD,
