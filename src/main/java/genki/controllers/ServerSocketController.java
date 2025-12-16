@@ -110,7 +110,7 @@ public class ServerSocketController implements MessageListener{
 
 	@Override
     public void onMessageReceived(String message) {
-        // MUST use Platform.runLater because this method is called by the ClientHandler's background thread
+       
         System.out.println("Server dit : "+message);
         for(ClientHandler ServerThread : ConnectedUsers) {
         	ServerThread.sendMessage(message);

@@ -5,12 +5,13 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="583.0" prefWidth="1176.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
     <HBox style="-fx-background-color: #f3f4f6;">
 
         <VBox prefWidth="347.0" spacing="0" style="-fx-background-color: #1e2936;">
@@ -44,7 +45,7 @@
         </VBox>
 
 
-        <VBox style="-fx-background-color: #f3f4f6;" HBox.hgrow="ALWAYS">
+        <VBox style="-fx-background-color: #f3f4f6;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
 
             <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: white; -fx-padding:16; -fx-border-color:#e5e7eb; -fx-border-width:0 0 1 0; -fx-cursor:hand;">
                 <Circle fill="#4a9eff" radius="20.0" />
@@ -61,7 +62,11 @@
             <ScrollPane fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
     <VBox fx:id="messagesContainer" spacing="16">
     <HBox spacing="10" styleClass="message-box, received-message">
-        <ImageView fx:id="messageProfil" fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar" />
+        <ImageView fx:id="messageProfil" fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar" >
+        	<image>
+        		<Image url="@../img/user-default.png"/>
+        	</image>
+        </ImageView>
         <VBox spacing="4">
             <Label styleClass="sender-name" text="Aimane Aboufadle" />
             <Label maxWidth="600" styleClass="message-text, received-bubble" text="Long message text goes here, demonstrating a message received from another user." wrapText="true" />
@@ -76,8 +81,10 @@
         </VBox>
 
         <ImageView fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar">
-       
-    </ImageView>
+        	<image>
+        		<Image url="@../img/user-default.png"/>
+        	</image>
+    	</ImageView>
     </HBox>
     
 </VBox>
