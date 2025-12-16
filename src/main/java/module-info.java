@@ -6,6 +6,8 @@ module genki {
     requires java.logging;
     requires org.mongodb.bson;
     requires jbcrypt;
+	requires javafx.graphics;
+	requires java.base;
 
 
     exports genki;

@@ -1,0 +1,34 @@
+/* AddUser.css */
+
+.root {
+    -fx-background-color: white;
+}
+
+.text-field {
+    -fx-control-inner-background: white;
+    -fx-background-color: white, white;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 8;
+    -fx-border-color: #2DD4BF;
+    -fx-border-width: 2;
+    -fx-border-radius: 8;
+    -fx-padding: 8;
+    -fx-font-size: 14px;
+}
+
+.text-field .text {
+    -fx-fill: black;
+}
+
+.text-field .content {
+    -fx-background-color: white;
+}
+
+.text-field:focused {
+    -fx-border-color: #4A5CFF;
+    -fx-border-width: 2;
+}
+
+.text-field > .placeholder {
+    -fx-text-fill: #999999;
+}
