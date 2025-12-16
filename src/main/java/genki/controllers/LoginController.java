@@ -21,6 +21,8 @@ import java.io.IOException;
  * Implements Initializable interface to use the init method after fully loading the Login.fxml file components
  */
 public class LoginController implements Initializable {
+	
+	private clientSocketController client = new clientSocketController(); 
 
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
 
@@ -90,6 +92,9 @@ public class LoginController implements Initializable {
                  case SUCCESS:
                      try {
                          logger.log(Level.INFO, "Login successful by " + user);
+                         //Creating Client Socket
+                         client.initialiseClient();
+                         
                          AlertConstruct.alertConstructor(
                            "Login",
                            "Login Successful",
