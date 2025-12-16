@@ -2,7 +2,9 @@ package genki.controllers;
 
 import genki.models.AuthModel;
 import genki.utils.AuthResult;
+import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
+
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -89,7 +91,15 @@ public class LoginController implements Initializable {
 
                  case SUCCESS:
                      try {
+
                          logger.log(Level.INFO, "Login successful by " + user);
+
+                         UserSession.startSession(
+                               loginResult.getUsername(),
+                               loginResult.getUserId(),
+                               loginResult.getUserRole()
+                         );
+
                          AlertConstruct.alertConstructor(
                            "Login",
                            "Login Successful",

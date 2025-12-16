@@ -12,14 +12,27 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.MongoException;
 import org.bson.Document;
 
+import com.cloudinary.*;
+import com.cloudinary.utils.ObjectUtils;
+import io.github.cdimascio.dotenv.Dotenv;
+
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.io.File;
 
 public class SettingsModel {
 
+    private static final Dotenv env = Dotenv.load();
+    private static final Cloudinary cloudinary = new Cloudinary(env.get("CLOUDINARY_URL"));
     private static final Logger logger = Logger.getLogger(SettingsModel.class.getName());
     private static final DBConnection SettingsUpdateConnection = new DBConnection("genki_testing");
+    private String uploadedPhotoURL;
 
+    public String getUploadedPhotoURL() {
+        return uploadedPhotoURL;
+    }
 
     private boolean checkUsernameValidity(String username) {
 
@@ -30,18 +43,35 @@ public class SettingsModel {
         return CredsValidator.validatePass(password);
     }
 
-    private static MongoCollection<Document> getUsersCollection() throws MongoException {
+
+    public UpdateResult updatePhoto(String username, File imageFile)  {
+          logger.log(Level.INFO, "Uploading image to Cloudinary ...");
         try {
-            logger.log(Level.INFO, "Connected to database ...");
-            return SettingsUpdateConnection.getDatabase().getCollection("users");
-        } catch (MongoException mongoException) {
-            throw new MongoException(mongoException.getMessage());
+            Map<?, ?> result = SettingsModel.cloudinary.uploader().upload(
+                    imageFile,
+                    ObjectUtils.asMap(
+                            "folder", "genki_production/profile_images",
+                            "resource_type", "image"
+                    )
+            );
+
+            MongoCollection<Document> usersCollection = SettingsUpdateConnection.getUsersCollection();
+            logger.log(Level.INFO, "Updating photo_url field ...");
+
+            uploadedPhotoURL = result.get("secure_url").toString();
+
+            usersCollection.updateOne(
+                 Filters.eq("username", username),
+                 Updates.set("photo_url", uploadedPhotoURL)
+            );
+
+            logger.log(Level.INFO, "Updated photo_url field.");
+            return new UpdateResult(UpdateStatus.PHOTO_UPDATED);
+
+        } catch (Exception e) {
+             logger.log(Level.WARNING, "Error uploading image to Cloudinary.", e);
+             return new UpdateResult(UpdateStatus.IMG_UPLOAD_ERROR);
         }
-
-    }
-
-    public UpdateResult updatePhoto() {
-         return new UpdateResult(UpdateStatus.INVALID_PHOTO);
     }
 
     public UpdateResult updateUsername(String oldUsername, String newUsername) {
@@ -53,8 +83,7 @@ public class SettingsModel {
         else {
             try {
 
-                MongoCollection<Document> usersCollection = SettingsModel.getUsersCollection();
-                logger.log(Level.INFO, "Accessing users collection ...");
+                MongoCollection<Document> usersCollection = SettingsUpdateConnection.getUsersCollection();
 
                 usersCollection.updateOne(
                         Filters.eq("username", oldUsername),
@@ -75,8 +104,7 @@ public class SettingsModel {
 
         try {
 
-            MongoCollection<Document> usersCollection = SettingsModel.getUsersCollection();
-            logger.log(Level.INFO, "Accessing users collection ...");
+            MongoCollection<Document> usersCollection = SettingsUpdateConnection.getUsersCollection();
 
             usersCollection.updateOne(
                     Filters.eq("username", username),
@@ -103,7 +131,7 @@ public class SettingsModel {
         else {
             try {
 
-                MongoCollection<Document> usersCollection = SettingsModel.getUsersCollection();
+                MongoCollection<Document> usersCollection = SettingsUpdateConnection.getUsersCollection();
 
                 String hashedOldPassword = usersCollection.find(Filters.eq("username", username)).first().getString("password");
 
