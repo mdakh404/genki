@@ -25,7 +25,7 @@
 
         <VBox alignment="CENTER" spacing="12">
             <StackPane>
-                <ImageView fitWidth="110" fitHeight="110" preserveRatio="true"
+                <ImageView fx:id="imageProfileView" fitWidth="110" fitHeight="110" preserveRatio="true"
                            style="-fx-background-color: #E5E7EB; -fx-background-radius: 90;">
                     <image>
                         <Image url="@../img/user-default.png"/>
@@ -33,21 +33,21 @@
                 </ImageView>
             </StackPane>
 
-            <Button text="Upload Photo"
+            <Button fx:id="btnUploadPhoto" text="Upload Photo" onAction="#handleUploadPhoto"
                     style="-fx-background-color: #4B5563; -fx-text-fill: #F9FAFB;-fx-background-radius: 6;-fx-padding: 8 20;"/>
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
             <Label text="Username" textFill="#374151"/>
-            <TextField promptText="Enter new username"
+            <TextField fx:id="newUsername" promptText="Enter new username"
                        style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
             <Label text="Password" textFill="#374151"/>
-            <PasswordField promptText="Current Password"
+            <PasswordField fx:id="currentPassword" promptText="Current Password"
                            style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
-            <PasswordField promptText="New Password"
+            <PasswordField fx:id="newPassword" promptText="New Password"
                            style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
         </VBox>
 
@@ -58,10 +58,10 @@
         </VBox>
 
         <HBox spacing="20" alignment="CENTER" style="-fx-padding: 20 0 0 0;">
-            <Button text="Save Settings" prefWidth="150" prefHeight="40"
+            <Button fx:id="btnSaveSettings" text="Save Settings" prefWidth="150" prefHeight="40"
                     style="-fx-background-color: #374151; -fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
 
-            <Button text="Delete Account" prefWidth="150" prefHeight="40"
+            <Button fx:id="btnDeleteAccount" text="Delete Account" prefWidth="150" prefHeight="40"
                     style="-fx-background-color: #DC2626;-fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
         </HBox>
 

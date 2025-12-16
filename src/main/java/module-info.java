@@ -7,6 +7,8 @@ module genki {
     requires org.mongodb.bson;
     requires jbcrypt;
 	requires javafx.graphics;
+    requires cloudinary.core;
+    requires dotenv.java;
 
 
     exports genki;

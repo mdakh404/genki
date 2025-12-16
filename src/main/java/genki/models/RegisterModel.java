@@ -6,7 +6,6 @@ import genki.utils.PasswordHasher;
 import genki.utils.RegisterStatus;
 import genki.utils.RegisterResult;
 
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -50,10 +49,10 @@ public class RegisterModel {
         switch (validateRegistration(username, password)) {
             case USERNAME_INVALID:
                 logger.log(Level.WARNING, "username field is invalid");
-                return new RegisterResult(RegisterStatus.USERNAME_INVALID, "The supplied username is invalid");
+                return new RegisterResult(RegisterStatus.USERNAME_INVALID);
             case PASSWORD_INVALID:
                 logger.log(Level.WARNING, "password field is invalid");
-                return new RegisterResult(RegisterStatus.PASSWORD_INVALID, "The supplied password is invalid");
+                return new RegisterResult(RegisterStatus.PASSWORD_INVALID);
         }
 
         //TODO update the code to get credentials from ENV_VARS or config files
@@ -70,7 +69,7 @@ public class RegisterModel {
 
             if (userDoc != null) {
                 logger.log(Level.SEVERE, "Error: " + username + " is already registered");
-                return new RegisterResult(RegisterStatus.USER_EXISTS, username + " is already registered");
+                return new RegisterResult(RegisterStatus.USER_EXISTS);
             }
 
             else {
@@ -85,13 +84,18 @@ public class RegisterModel {
 
                 usersCollection.insertOne(newUser);
                 logger.log(Level.INFO, username + " account has been created");
-                return new RegisterResult(RegisterStatus.SUCCESS, "Your account has been created !");
+                return new RegisterResult(
+                        RegisterStatus.SUCCESS,
+                        newUser.getString("username"),
+                        newUser.getObjectId("_id").toHexString(),
+                        newUser.getString("role")
+                );
             }
 
 
         } catch (MongoException e) {
             logger.log(Level.SEVERE, "Failed to connect to database", e);
-            return new RegisterResult(RegisterStatus.DB_ERROR, "Connection failed");
+            return new RegisterResult(RegisterStatus.DB_ERROR);
         }
     }
 }
