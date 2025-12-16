@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
@@ -10,16 +9,15 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
-<?import javafx.scene.text.Font?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"  xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
     <HBox style="-fx-background-color: #f3f4f6;">
 
         <VBox prefWidth="347.0" spacing="0" style="-fx-background-color: #1e2936;">
 
             <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #1e2936; -fx-padding: 16;">
-                <Circle fill="#4a9eff" radius="20.0" />
-                <VBox spacing="2.0" HBox.hgrow="ALWAYS">
+                <Circle fx:id="profilTrigger" fill="#4a9eff" radius="20.0" />
+                <VBox fx:id="UserNameStatus" spacing="2.0" HBox.hgrow="ALWAYS">
                     <Label style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" text="Alex Johnson" />
                     <Label style="-fx-text-fill: #4ade80; -fx-font-size: 12px;" text="Online" />
                 </VBox>
@@ -60,29 +58,21 @@
 
             </HBox>
 
-            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="scroll-pane" stylesheets="@../css/chat.css">
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
     <VBox fx:id="messagesContainer" spacing="16">
     <HBox spacing="10" styleClass="message-box, received-message">
-        <ImageView fitHeight="40" fx:id="messageProfil" fitWidth="40" preserveRatio="true" styleClass="avatar"/>
+        <ImageView fx:id="messageProfil" fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar" />
         <VBox spacing="4">
-            <Label text="Aimane Aboufadle" styleClass="sender-name"/>
-            <Label text="Long message text goes here, demonstrating a message received from another user."
-                   wrapText="true"
-                   maxWidth="600"
-                   styleClass="message-text, received-bubble"/>
+            <Label styleClass="sender-name" text="Aimane Aboufadle" />
+            <Label maxWidth="600" styleClass="message-text, received-bubble" text="Long message text goes here, demonstrating a message received from another user." wrapText="true" />
         </VBox>
     </HBox>
     
-    <HBox spacing="10"
-          alignment="TOP_RIGHT"
-          styleClass="message-box, sent-message">
+    <HBox alignment="TOP_RIGHT" spacing="10" styleClass="message-box, sent-message">
 
-        <VBox spacing="4" alignment="TOP_RIGHT">
-            <Label text="You" styleClass="sender-name, sent-name"/>
-            <Label text="This message is finally on the RIGHT side, demonstrating a message sent by the current user 🎯"
-                   wrapText="true"
-                   maxWidth="600"
-                   styleClass="message-text, sent-bubble"/>
+        <VBox alignment="TOP_RIGHT" spacing="4">
+            <Label styleClass="sender-name, sent-name" text="You" />
+            <Label maxWidth="600" styleClass="message-text, sent-bubble" text="This message is finally on the RIGHT side, demonstrating a message sent by the current user 🎯" wrapText="true" />
         </VBox>
 
         <ImageView fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar">
@@ -115,14 +105,10 @@
         </VBox>
 
 
-        <VBox fx:id="rightSidePanel"
-      prefWidth="320"
-      minWidth="320"
-      maxWidth="320"
-      style="-fx-background-color: white; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 0 1;">
+        <VBox fx:id="rightSideContainer" maxWidth="320" minWidth="320" prefWidth="320" style="-fx-background-color: white; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 0 1;">
 
 
-            <VBox alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">
+            <VBox fx:id="rightSidePanel" alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">
 
                 <Circle fill="#4a9eff" radius="50.0" />
 

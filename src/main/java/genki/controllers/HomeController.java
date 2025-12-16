@@ -9,6 +9,8 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.scene.control.Alert;
 
 import java.util.logging.Logger;
@@ -20,9 +22,25 @@ public class HomeController {
 
       private static final Logger logger = Logger.getLogger(HomeController.class.getName());
 
-      @FXML
-      private Button btnSettings;
+      @FXML private Button btnSettings;
+      @FXML private VBox rightSideContainer;
+      @FXML private Circle profilTrigger;
+      @FXML private VBox UserNameStatus;
+      private Boolean rightSideVisibilite = true;
       
+      @FXML
+      public void initialize() {
+          profilTrigger.setOnMouseClicked(e -> {
+              toggleRightPanel();
+
+          });
+          UserNameStatus.setOnMouseClicked(e -> {
+        	  toggleRightPanel();
+          });
+          rightSideContainer.setVisible(rightSideVisibilite);
+          rightSideContainer.setManaged(rightSideVisibilite);
+      }
+
 
       @FXML
       private void handleSettingsBtnClick() {
@@ -33,7 +51,7 @@ public class HomeController {
                      FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Settings.fxml"));
                      Parent root = loader.load();
 
- 
+                     
                      
                      Stage settingsStage = new Stage();
                      settingsStage.setTitle("Settings");
@@ -52,6 +70,25 @@ public class HomeController {
                      failedLoadingAlert.showAndWait();
                  }
 
+      }
+      public void toggleRightPanel() {
+    	  this.rightSideVisibilite = !rightSideVisibilite;
+    	  
+          if (rightSideVisibilite) {
+        	  
+        	  rightSideContainer.setManaged(true);
+        	  rightSideContainer.setVisible(true);
+        	  rightSideContainer.setPrefWidth(320.0);
+        	  rightSideContainer.setMinWidth(320.0);
+        	  rightSideContainer.setMaxWidth(320.0);
+
+          } else {
+        	  rightSideContainer.setPrefWidth(0.0);
+        	  rightSideContainer.setMinWidth(0.0);
+        	  rightSideContainer.setMaxWidth(0.0);
+        	  rightSideContainer.setManaged(false);
+        	  rightSideContainer.setVisible(false);
+          }
       }
 
 

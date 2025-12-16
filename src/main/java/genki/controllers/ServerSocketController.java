@@ -137,6 +137,7 @@ public class ServerSocketController implements MessageListener{
     	FXMLLoader loader = new FXMLLoader(getClass().getResource("clientPage.fxml"));
         Parent root;
 		try {
+			
 			root = loader.load();
 			clientSocketController ctrl = loader.getController();
 		    Stage stage = new Stage();
