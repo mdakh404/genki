@@ -36,6 +36,19 @@ public class DBConnection {
           throw new MongoException("Mongo Exception", mongoEXCP);
        }
     }
+    
+//  private static Connection connection;
+//  
+//  public static Connection getConnection() throws SQLException {
+//      if (connection == null || connection.isClosed()) {
+//          String url = "jdbc:mysql://localhost:3306/votre_db";
+//          String user = "root";
+//          String password = "password";
+//          connection = DriverManager.getConnection(url, user, password);
+//      }
+//      return connection;
+//  }
+//}
 
     public MongoCollection<Document> getUsersCollection() throws MongoException {
         try {

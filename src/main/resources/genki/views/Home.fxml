@@ -22,7 +22,7 @@
                     <Label style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" text="Alex Johnson" />
                     <Label style="-fx-text-fill: #4ade80; -fx-font-size: 12px;" text="Online" />
                 </VBox>
-            <Button fx:id="btnAddFriend1" layoutX="302.0" layoutY="27.0" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 20px;" text="+" />
+            <Button fx:id="btnAdd" onAction="#AddUserOrGroup" layoutX="302.0" layoutY="27.0" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;-fx-font-size: 20px;" text="+" />
                 <Button fx:id="btnSettings" onAction="#handleSettingsBtnClick" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 22px; -fx-cursor: hand;" text="⚙" />
 
 

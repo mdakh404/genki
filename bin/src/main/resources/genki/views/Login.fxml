@@ -47,7 +47,7 @@
                 </TextField>
                 <ImageView fitHeight="23.0" fitWidth="24.0" layoutX="31.0" layoutY="278.0" pickOnBounds="true" preserveRatio="true">
                     <image>
-                        <Image url="@../img/user.jpg" />
+                        <Image url="@../img/user.png" />
                     </image>
                 </ImageView>
                 <Label layoutX="24.0" layoutY="325.0" text="Password">
@@ -68,7 +68,7 @@
                 </PasswordField>
                 <ImageView fitHeight="23.0" fitWidth="24.0" layoutX="31.0" layoutY="364.0" pickOnBounds="true" preserveRatio="true">
                     <image>
-                        <Image url="@../img/password.jpg" />
+                        <Image url="@../img/key.png" />
                     </image>
                 </ImageView>
                 <Button fx:id="loginButton" layoutX="34.0" layoutY="455.0" mnemonicParsing="false" onAction="#onLogin" prefWidth="384.0" styleClass="login-button" stylesheets="@../css/login.css" text="Se connecter" textAlignment="CENTER" textFill="WHITE">

@@ -4,6 +4,7 @@ import genki.controllers.ScenesController;
 import genki.controllers.ServerSocketController;
 import javafx.stage.Stage;
 import javafx.application.Application;
+import javafx.scene.image.Image;
 import javafx.scene.text.Font;
 
 import java.util.logging.Logger;
@@ -26,6 +27,13 @@ public class ScenesManager extends Application {
 
         ScenesController.setStage(primaryStage);
         
+        // Ajouter le logo de l'application
+        try {
+            Image logo = new Image(getClass().getResourceAsStream("/genki/img/logo.png"), 128, 128, true, true);
+            primaryStage.getIcons().add(logo);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to load application logo", e);
+        }
 //        primaryStage.setOnCloseRequest(e -> {
 //        	server.stopServer();
 //        });
@@ -56,4 +64,5 @@ public class ScenesManager extends Application {
     public static void main(String[] args) {
     	launch(args);
     }
+    
 }

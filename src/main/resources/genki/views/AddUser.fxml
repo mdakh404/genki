@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      xmlns="http://javafx.com/javafx"
+      spacing="15" alignment="TOP_CENTER"
+      prefWidth="450" prefHeight="550"
+      style="-fx-background-color: #f5f7fa; -fx-background-radius: 12;"
+      fx:controller="genki.controllers.AddUserController">
+
+    <padding>
+        <Insets top="25" right="30" bottom="25" left="30"/>
+    </padding>
+
+    <VBox spacing="18" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+        <padding>
+            <Insets top="25" right="25" bottom="25" left="25"/>
+        </padding>
+
+        <VBox spacing="8">
+            <Label text="Username *" style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #34495e;"/>
+            <TextField fx:id="txtUsername" 
+                       promptText="Enter username" 
+                       prefHeight="40"
+                       style="-fx-background-radius: 8; -fx-border-color: #dce1e8; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14; -fx-padding: 10;"/>
+        </VBox>
+
+    </VBox>
+
+    <Label text="* Required fields" 
+           style="-fx-font-size: 11; -fx-text-fill: #7f8c8d; -fx-font-style: italic;">
+        <VBox.margin>
+            <Insets top="5"/>
+        </VBox.margin>
+    </Label>
+
+    <HBox spacing="15" alignment="CENTER">
+        <VBox.margin>
+            <Insets top="10"/>
+        </VBox.margin>
+        
+        <Button fx:id="btnCancel" 
+                text="Cancel" 
+                prefWidth="120" 
+                prefHeight="45"
+                onAction="#handleCancel"
+                style="-fx-background-color: #ecf0f1; -fx-text-fill: #34495e; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 14; -fx-font-weight: bold;"/>
+        
+        <Button fx:id="btnAddUser" 
+                text="Add User" 
+                prefWidth="120" 
+                prefHeight="45"
+                onAction="#handleAddUser"
+                style="-fx-background-color: #4A5CFF; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 14; -fx-font-weight: bold;"/>
+    </HBox>
+
+</VBox>

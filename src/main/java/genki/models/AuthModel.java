@@ -50,6 +50,7 @@ public class AuthModel {
                     return new AuthResult(AuthStatus.WRONG_PASSWORD_USER);
                 }
                 else {
+
                 	// TODO: Update this code when final commit 
                     if (username.equals("root") || PasswordHasher.checkPassword(password, userDoc.getString("password"))) {
                         logger.log(Level.INFO, "Authentication succeed");

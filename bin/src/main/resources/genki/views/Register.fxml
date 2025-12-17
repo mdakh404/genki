@@ -28,8 +28,8 @@
                         <Font name="System Bold" size="33.0" />
                     </font>
                 </Text>
-                <Text layoutX="119.0" layoutY="184.0" text="         Would you create a new account" />
-                <Label layoutX="38.0" layoutY="223.0" text="Username">
+                <Text layoutX="119.0" layoutY="184.0" text="Veuillez vous créer un nouveau compte." />
+                <Label layoutX="38.0" layoutY="223.0" text="Nom d’utilisateur">
                     <font>
                         <Font name="System Bold" size="16.0" />
                     </font>
@@ -37,17 +37,17 @@
                         <Insets top="2.0" />
                     </padding>
                 </Label>
-                <TextField fx:id="regUserName" layoutX="32.0" layoutY="257.0" prefHeight="35.0" prefWidth="384.0" promptText="Enter your username" styleClass="register-field" stylesheets="@../css/register.css">
+                <TextField fx:id="regUserName" layoutX="32.0" layoutY="257.0" prefHeight="35.0" prefWidth="384.0" promptText="Entrez votre nom d’utilisateur" styleClass="register-field" stylesheets="@../css/register.css">
                     <padding>
                         <Insets bottom="11.0" left="42.0" right="24.0" top="11.0" />
                     </padding>
                 </TextField>
                 <ImageView fitHeight="23.0" fitWidth="24.0" layoutX="41.0" layoutY="267.0" pickOnBounds="true" preserveRatio="true">
                     <image>
-                        <Image url="@../img/user.jpg" />
+                        <Image url="@../img/user.png" />
                     </image>
                 </ImageView>
-                <Label layoutX="38.0" layoutY="313.0" text="Password">
+                <Label layoutX="38.0" layoutY="313.0" text="Mot de passe">
                     <font>
                         <Font name="System Bold" size="16.0" />
                     </font>
@@ -55,14 +55,14 @@
                         <Insets top="2.0" />
                     </padding>
                 </Label>
-                <PasswordField fx:id="regPassword" layoutX="32.0" layoutY="341.0" prefHeight="35.0" prefWidth="384.0" promptText="Enter your password" styleClass="register-field" stylesheets="@../css/register.css">
+                <PasswordField fx:id="regPassword" layoutX="32.0" layoutY="341.0" prefHeight="35.0" prefWidth="384.0" promptText="Entrez votre mot de passe" styleClass="register-field" stylesheets="@../css/register.css">
                     <padding>
                         <Insets bottom="11.0" left="42.0" right="24.0" top="11.0" />
                     </padding>
                 </PasswordField>
                 <ImageView fitHeight="23.0" fitWidth="24.0" layoutX="41.0" layoutY="351.0" pickOnBounds="true" preserveRatio="true">
                     <image>
-                        <Image url="@../img/password.jpg" />
+                        <Image url="@../img/key.png" />
                     </image>
                 </ImageView>
                 <Button fx:id="registerButton" layoutX="32.0" layoutY="558.0" mnemonicParsing="false" prefWidth="384.0" styleClass="register-button" stylesheets="@../css/register.css" text="Sign Up" textAlignment="CENTER" textFill="WHITE" onAction="#onRegister">
@@ -73,7 +73,7 @@
                         <Font size="18.0" />
                     </font>
                 </Button>
-            <TextField fx:id="bioField" layoutX="32.0" layoutY="423.0" prefHeight="111.0" prefWidth="384.0" promptText="Tell us a little about you." styleClass="register-field" stylesheets="@../css/register.css">
+            <TextField fx:id="bioField" layoutX="32.0" layoutY="423.0" prefHeight="111.0" prefWidth="384.0" promptText="Parlez-nous un peu de vous." styleClass="register-field" stylesheets="@../css/register.css">
                <padding>
                   <Insets bottom="12.0" left="40.0" right="28.0" top="-53.0" />
                </padding>
@@ -88,7 +88,7 @@
             </Label>
             <ImageView fitHeight="23.0" fitWidth="24.0" layoutX="41.0" layoutY="436.0" pickOnBounds="true" preserveRatio="true">
                <image>
-                  <Image url="@../img/pen.jpg" />
+                  <Image url="@../img/pen.png" />
                </image>
             </ImageView>
             </children>
