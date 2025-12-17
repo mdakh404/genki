@@ -47,10 +47,14 @@ public class DBConnection {
         }
     }
     
-    // AJOUTEZ CETTE MÉTHODE
-    public MongoCollection<Document> getCollection(String collectionName) {
-        logger.log(Level.INFO, "Accessing collection: " + collectionName);
-        return getDatabase().getCollection(collectionName);
+    // hamza add this
+    public MongoCollection<Document> getCollection(String collectionName) throws MongoException {
+        try {
+            logger.log(Level.INFO, "Accessing collection: " + collectionName);
+            return this.getDatabase().getCollection(collectionName);
+        } catch (MongoException mongoException) {
+            throw new MongoException("Failed to access collection: " + collectionName, mongoException);
+        }
     }
     
 }

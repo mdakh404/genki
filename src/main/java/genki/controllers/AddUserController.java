@@ -27,7 +27,6 @@ public class AddUserController implements Initializable {
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Listener pour txtUsername - changer bordure au focus
         txtUsername.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 txtUsername.setStyle("-fx-background-radius: 8; -fx-border-color: #4A5CFF; -fx-border-radius: 8; -fx-border-width: 2; -fx-font-size: 14; -fx-padding: 10;");
@@ -43,7 +42,6 @@ public class AddUserController implements Initializable {
     private void handleAddUser() {
         String username = txtUsername.getText().trim();
         
-        // Réinitialiser le style
         txtUsername.setStyle("-fx-background-radius: 8; -fx-border-color: #dce1e8; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14; -fx-padding: 10;");
         
         if (username.isEmpty()) {
@@ -58,7 +56,6 @@ public class AddUserController implements Initializable {
             return;
         }
         
-        // TODO: Logique pour sauvegarder l'utilisateur dans la base de données
         logger.log(Level.INFO, "Adding user: " + username);
         
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -72,7 +69,6 @@ public class AddUserController implements Initializable {
     
     @FXML
     private void handleCancel() {
-        // Demander confirmation si des données ont été saisies
         if (!txtUsername.getText().isEmpty()) {
             Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
             confirmAlert.setTitle("Confirm Cancel");
