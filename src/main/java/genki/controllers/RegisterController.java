@@ -86,7 +86,8 @@ public class RegisterController implements Initializable{
                              UserSession.startSession(
                                      result.getUsername(),
                                      result.getUserId(),
-                                     result.getUserRole()
+                                     result.getUserRole(),
+                                     result.getImageUrl()
                              );
 
                              AlertConstruct.alertConstructor(

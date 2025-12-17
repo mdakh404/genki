@@ -6,16 +6,18 @@ public class RegisterResult {
       private String username;
       private String userId;
       private String userRole;
+      private String ImageUrl;
 
       public RegisterResult(RegisterStatus status) {
           this.status = status;
       }
 
-      public RegisterResult(RegisterStatus status, String username, String userId, String userRole) {
+      public RegisterResult(RegisterStatus status, String username, String userId, String userRole, String ImageUrl) {
           this.status = status;
           this.username = username;
           this.userId = userId;
           this.userRole = userRole;
+          this.ImageUrl = ImageUrl;
       }
 
       public String getUsername() {
@@ -25,8 +27,17 @@ public class RegisterResult {
       public String getUserId() {
           return this.userId;
       }
+      
 
-      public String getUserRole() {
+      public String getImageUrl() {
+		return ImageUrl;
+	}
+
+	  public void setImageUrl(String imageUrl) {
+		  ImageUrl = imageUrl;
+	  }
+
+	  public String getUserRole() {
           return this.userRole;
       }
 

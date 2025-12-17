@@ -88,7 +88,8 @@ public class RegisterModel {
                         RegisterStatus.SUCCESS,
                         newUser.getString("username"),
                         newUser.getObjectId("_id").toHexString(),
-                        newUser.getString("role")
+                        newUser.getString("role"),
+                        newUser.getString("photo_url")
                 );
             }
 

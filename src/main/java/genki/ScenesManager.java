@@ -19,11 +19,11 @@ public class ScenesManager extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-//    	try {
-//    	server.startServer();}
-//    	catch(Exception e) {
-//    		System.out.println("There is already a Server Running...");
-//    	}
+   	try {
+   	server.startServer();}
+   	catch(Exception e) {
+   		System.out.println("There is already a Server Running...");
+   	}
 
         ScenesController.setStage(primaryStage);
         
