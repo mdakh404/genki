@@ -90,7 +90,7 @@ public class SettingsModel {
                         Updates.set("username", newUsername)
                 );
 
-                logger.log(Level.INFO, "Updated username ...");
+                logger.log(Level.INFO, "Updated username " + oldUsername + " to " + newUsername);
                 return new UpdateResult(UpdateStatus.USERNAME_UPDATED);
 
             } catch (MongoException mongoExc) {
@@ -115,14 +115,14 @@ public class SettingsModel {
             return new UpdateResult(UpdateStatus.BIO_UPDATED);
 
 
-        } catch (MongoException mongoExc) {
-            logger.log(Level.WARNING, "Error updating bio ", mongoExc);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error updating bio ", e);
             return new UpdateResult(UpdateStatus.DB_ERROR);
         }
 
     }
 
-    private UpdateResult updatePassword(String username, String oldPassword, String newPassword) {
+    public UpdateResult updatePassword(String username, String oldPassword, String newPassword) {
 
         if (!checkPasswordValidity(newPassword)) {
             return new UpdateResult(UpdateStatus.INVALID_NEW_PASSWORD);

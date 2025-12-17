@@ -9,10 +9,12 @@ import genki.utils.AlertConstruct;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
@@ -43,7 +45,7 @@ public class SettingsController implements Initializable{
        @FXML
        private TextField newPassword;
        @FXML
-       private TextField bioField;
+       private TextArea bioField;
 
        @FXML
        private Button btnSaveSettings;
@@ -101,14 +103,168 @@ public class SettingsController implements Initializable{
 
            logger.log(Level.INFO, "Saving settings");
 
-           String newUsernameText = newUsername.getText();
-           String currentPasswordText = currentPassword.getText();
-           String newPasswordText = newPassword.getText();
-           String bioText = bioField.getText();
+           String newUsernameText = newUsername.getText().trim();
+           String currentPasswordText = currentPassword.getText().trim();
+           String newPasswordText = newPassword.getText().trim();
+           String bioText = bioField.getText().trim();
 
-           if (uploadedPhoto) {
-
+           if (newUsernameText.isEmpty()) {
+               logger.log(Level.WARNING, "newUsername field is empty.");
+               newUsername.setStyle("-fx-border-color: #FF6347");
            }
+
+           else {
+               UpdateResult updateUsernameResult = settingsModel.updateUsername(UserSession.getUsername(), newUsernameText);
+
+               switch (updateUsernameResult.getStatus()) {
+                   case UpdateStatus.INVALID_USERNAME:
+                        logger.log(Level.WARNING, "Invalid username supplied " + newUsernameText);
+                        AlertConstruct.alertConstructor(
+                                "Settings error",
+                                "Invalid username",
+                                "Your username must be 5–15 characters long and can only include letters, numbers, and underscores.",
+                                Alert.AlertType.ERROR
+                        );
+                        break;
+
+                   case UpdateStatus.USERNAME_UPDATED:
+                       UserSession.setUsername(newUsernameText);
+                       break;
+
+                   case UpdateStatus.DB_ERROR:
+                       AlertConstruct.alertConstructor(
+                               "Network Error",
+                               "Database Connection Error",
+                               "Failed to connect to database, please try again in a few minutes.",
+                               Alert.AlertType.ERROR
+                       );
+                       break;
+
+                   default:
+                       AlertConstruct.alertConstructor(
+                               "Unexpected Error",
+                               "Something went wrong",
+                               "An unexpected error occurred, please ty again in a few minutes.",
+                               Alert.AlertType.ERROR
+                       );
+               }
+           }
+
+           if (currentPasswordText.isEmpty()) {
+               logger.log(Level.WARNING, "currentPassword field is empty.");
+               currentPassword.setStyle("-fx-border-color: #FF6347");
+           }
+
+           if (newPasswordText.isEmpty()) {
+               logger.log(Level.WARNING, "newPassword field is empty.");
+               newPassword.setStyle("-fx-border-color: #FF6347");
+           }
+
+           else {
+               if (currentPasswordText.isEmpty()) {
+                   AlertConstruct.alertConstructor(
+                           "Settings Error",
+                           "Saving Settings Failed",
+                           "Please enter your current password.",
+                           AlertType.ERROR
+                   );
+               }
+               else {
+                   UpdateResult updatePasswordResult = settingsModel.updatePassword(
+                                                             UserSession.getUsername(),
+                                                             currentPasswordText,
+                                                             newPasswordText);
+
+                   switch (updatePasswordResult.getStatus()) {
+
+                       case UpdateStatus.INVALID_CURRENT_PASSWORD:
+                           AlertConstruct.alertConstructor(
+                                   "Settings Error",
+                                   "Incorrect current password",
+                                   "The current password entered is incorrect.",
+                                   AlertType.ERROR
+                           );
+                            break;
+
+                       case UpdateStatus.INVALID_NEW_PASSWORD:
+                           AlertConstruct.alertConstructor(
+                                   "Settings Error",
+                                   "Invalid new password",
+                                   "Your new password needs at least 8 characters, with at least one uppercase letter and one symbol.",
+                                   AlertType.ERROR
+                           );
+                           break;
+
+                       case UpdateStatus.PASSWORD_UPDATED:
+                           AlertConstruct.alertConstructor(
+                                   "Saving Settings",
+                                   "Password Updated",
+                                   "Your password has been updated successfully.",
+                                   AlertType.INFORMATION
+                           );
+                           break;
+
+                       case UpdateStatus.DB_ERROR:
+                           AlertConstruct.alertConstructor(
+                                   "Network Error",
+                                   "Database Connection Error",
+                                   "Failed to connect to database, please try again in a few minutes.",
+                                   Alert.AlertType.ERROR
+                           );
+                           break;
+
+                       default:
+                           AlertConstruct.alertConstructor(
+                                   "Unexpected Error",
+                                   "Something went wrong",
+                                   "An unexpected error occurred, please ty again in a few minutes.",
+                                   Alert.AlertType.ERROR
+                           );
+
+                   }
+               }
+            }
+
+           if (bioText.isEmpty()) {
+               logger.log(Level.WARNING, "bioField field is empty.");
+               bioField.setStyle("-fx-border-color: #FF6347");
+           }
+
+           else {
+
+               UpdateResult updateBioResult = settingsModel.updateBio(UserSession.getUsername(), bioText);
+
+               if (updateBioResult.getStatus() == UpdateStatus.BIO_UPDATED) {
+                   AlertConstruct.alertConstructor(
+                           "Saving Settings",
+                           "Bio Updated",
+                           "Your bio has been updated successfully.",
+                           AlertType.INFORMATION
+                   );
+               }
+
+               else {
+                   AlertConstruct.alertConstructor(
+                           "Unexpected Error",
+                           "Something went wrong",
+                           "An unexpected error occurred updating your bio, please ty again in a few minutes.",
+                           Alert.AlertType.ERROR
+                   );
+               }
+           }
+
+           if (newUsernameText.isEmpty() &&
+              (newPasswordText.isEmpty() || currentPasswordText.isEmpty()) &&
+               bioText.isEmpty() && !uploadedPhoto
+              ) {
+                  AlertConstruct.alertConstructor(
+                          "Settings Error",
+                               "Saving Settings Failed",
+                          "Please fill the necessary fields to update your settings.",
+                          AlertType.ERROR
+                  );
+           }
+
 
 
 
