@@ -9,13 +9,16 @@ import genki.utils.AlertConstruct;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.stage.Stage;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextField;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 
@@ -28,22 +31,24 @@ import java.net.URL;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.ResourceBundle;
+import java.util.Optional;
 import java.io.File;
+import java.io.IOException;
+
 
 public class SettingsController implements Initializable{
 
-       private static Logger logger = Logger.getLogger(SettingsController.class.getName());
+       private static final Logger logger = Logger.getLogger(SettingsController.class.getName());
        private static final DBConnection SettingsControllerDBConnection = new DBConnection("genki_testing");
-       private static SettingsModel settingsModel = new SettingsModel();
+       private static final SettingsModel settingsModel = new SettingsModel();
        private boolean uploadedPhoto;
-       private String uploadedPhotoURL;
 
-       @FXML
+    @FXML
        private TextField newUsername;
        @FXML
-       private TextField currentPassword;
+       private PasswordField currentPassword;
        @FXML
-       private TextField newPassword;
+       private PasswordField newPassword;
        @FXML
        private TextArea bioField;
 
@@ -77,7 +82,8 @@ public class SettingsController implements Initializable{
 
                    if (photoUploadResult.getStatus() == UpdateStatus.PHOTO_UPDATED) {
                             uploadedPhoto = true;
-                            uploadedPhotoURL = settingsModel.getUploadedPhotoURL();
+
+                            String uploadedPhotoURL = settingsModel.getUploadedPhotoURL();
 
                             Image uploadedPhoto = new Image(uploadedPhotoURL, true);
                             imageProfileView.setImage(uploadedPhoto);
@@ -123,7 +129,7 @@ public class SettingsController implements Initializable{
                                 "Settings error",
                                 "Invalid username",
                                 "Your username must be 5–15 characters long and can only include letters, numbers, and underscores.",
-                                Alert.AlertType.ERROR
+                                AlertType.ERROR
                         );
                         break;
 
@@ -136,7 +142,7 @@ public class SettingsController implements Initializable{
                                "Network Error",
                                "Database Connection Error",
                                "Failed to connect to database, please try again in a few minutes.",
-                               Alert.AlertType.ERROR
+                               AlertType.ERROR
                        );
                        break;
 
@@ -145,7 +151,7 @@ public class SettingsController implements Initializable{
                                "Unexpected Error",
                                "Something went wrong",
                                "An unexpected error occurred, please ty again in a few minutes.",
-                               Alert.AlertType.ERROR
+                               AlertType.ERROR
                        );
                }
            }
@@ -209,7 +215,7 @@ public class SettingsController implements Initializable{
                                    "Network Error",
                                    "Database Connection Error",
                                    "Failed to connect to database, please try again in a few minutes.",
-                                   Alert.AlertType.ERROR
+                                   AlertType.ERROR
                            );
                            break;
 
@@ -218,7 +224,7 @@ public class SettingsController implements Initializable{
                                    "Unexpected Error",
                                    "Something went wrong",
                                    "An unexpected error occurred, please ty again in a few minutes.",
-                                   Alert.AlertType.ERROR
+                                   AlertType.ERROR
                            );
 
                    }
@@ -248,7 +254,7 @@ public class SettingsController implements Initializable{
                            "Unexpected Error",
                            "Something went wrong",
                            "An unexpected error occurred updating your bio, please ty again in a few minutes.",
-                           Alert.AlertType.ERROR
+                           AlertType.ERROR
                    );
                }
            }
@@ -267,19 +273,83 @@ public class SettingsController implements Initializable{
 
 
 
-
-
        }
+
+
+       @FXML
+       public void handleDeleteAccount() {
+
+           Alert deleteAccountAlert = new Alert(AlertType.CONFIRMATION);
+           deleteAccountAlert.setTitle("Confirmation");
+           deleteAccountAlert.setHeaderText("Delete account confirmation");
+           deleteAccountAlert.setContentText("Are you sure you want to delete your account ?");
+
+           Optional<ButtonType> deleteAccAlertResult = deleteAccountAlert.showAndWait();
+
+           if (deleteAccAlertResult.isPresent() && deleteAccAlertResult.get() == ButtonType.OK) {
+
+               UpdateResult deleteAccResult = settingsModel.deleteAccount(UserSession.getUsername());
+
+               switch (deleteAccResult.getStatus()) {
+
+                   case UpdateStatus.ACCOUNT_DELETED:
+                       UserSession.logout();
+                       try {
+                           Stage thisStage = (Stage) btnDeleteAccount.getScene().getWindow();
+                           thisStage.close();
+                           ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");
+                       } catch (IOException e) {
+                           logger.log(Level.WARNING, "Failed to switch to Genki - Sign in");
+                       }
+                       break;
+
+                   case UpdateStatus.ACCOUNT_DELETION_ERROR:
+                       AlertConstruct.alertConstructor(
+                               "Settings Error",
+                               "Account deletion error",
+                               "Failed to delete your account, please try again in a few minutes.",
+                               AlertType.ERROR
+                       );
+                       break;
+
+                   case UpdateStatus.DB_ERROR:
+                       AlertConstruct.alertConstructor(
+                               "Network Error",
+                               "Database Connection Error",
+                               "Failed to connect to database, please try again in a few minutes.",
+                               AlertType.ERROR
+                       );
+                       break;
+
+                   default:
+                       AlertConstruct.alertConstructor(
+                               "Unexpected Error",
+                               "Something went wrong",
+                               "An unexpected error occurred, please ty again in a few minutes.",
+                               AlertType.ERROR
+                       );
+
+
+               }
+           }
+       }
+
+
+
 
        @Override
        public void initialize(URL location, ResourceBundle resources) {
 
-             MongoCollection<Document> usersCollection = SettingsControllerDBConnection.getUsersCollection();
+             MongoCollection<Document> usersCollection = SettingsController.SettingsControllerDBConnection.getCollection("users");
              Document userDoc = usersCollection.find(Filters.eq("username", UserSession.getUsername())).first();
 
-             if (userDoc != null && userDoc.getString("photo_url") != null) {
-                   Image initPhotoURL = new Image(userDoc.getString("photo_url"), true);
-                   imageProfileView.setImage(initPhotoURL);
+             if (userDoc != null) {
+                   String photoUrl = userDoc.getString("photo_url");
+
+                   if (photoUrl != null && !photoUrl.isBlank()) {
+                       Image initPhotoURL = new Image(photoUrl, true);
+                       imageProfileView.setImage(initPhotoURL);
+                   }
              }
 
        }

@@ -95,26 +95,16 @@ public class LoginController implements Initializable {
                      try {
 
                          logger.log(Level.INFO, "Login successful by " + user);
-                         //Creating Client Socket
-                         client = new clientSocketController(loginResult.getUsername());
-                         
-                         
-                         
+
+
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
                                loginResult.getUserRole(),
                                loginResult.getImageUrl()
                          );
-                         
-                         
 
-                         AlertConstruct.alertConstructor(
-                           "Login",
-                           "Login Successful",
-                           "You have successfully logged in.",
-                           Alert.AlertType.INFORMATION
-                         );
+
 
                          ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {

@@ -9,6 +9,7 @@ import genki.utils.CredsValidator;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.MongoException;
 import org.bson.Document;
 
@@ -158,6 +159,29 @@ public class SettingsModel {
             }
         }
 
+   }
+
+   public UpdateResult deleteAccount(String username) throws MongoException {
+
+        try {
+
+              MongoCollection<Document> usersCollection = SettingsUpdateConnection.getCollection("users");
+
+              DeleteResult deleteResult = usersCollection.deleteOne(
+                     Filters.eq("username", username)
+              );
+
+              if (deleteResult.getDeletedCount() > 0) {
+                  return new UpdateResult(UpdateStatus.ACCOUNT_DELETED);
+              }
+              else {
+                  return new UpdateResult(UpdateStatus.ACCOUNT_DELETION_ERROR);
+              }
+
+        } catch (MongoException mongoExc) {
+            logger.log(Level.WARNING, "DB error while deleting account", mongoExc);
+            return new UpdateResult(UpdateStatus.DB_ERROR);
+        }
    }
 
 }
