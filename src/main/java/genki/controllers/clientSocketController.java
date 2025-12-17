@@ -20,7 +20,7 @@ public class clientSocketController implements MessageListener{
 	
 	
 	public clientSocketController(String username) {
-		ClientThread = new ClientsThreads("127.0.0.1", 5001, this);
+		ClientThread = new ClientsThreads("192.168.8.104", 5001, this);
 		this.username = username;
 		ClientThread.connect();
 		// Send the username as the first message so server can register this handler
