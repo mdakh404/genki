@@ -13,4 +13,11 @@ public interface MessageListener {
   * @param reason A description of the connection error.
   */
  void onConnectionClosed(String reason);
+
+ /**
+  * Called by a ClientHandler when the client has sent its identifying information (username)
+  * and the handler is ready to be registered by the server.
+  * @param handler the ClientHandler that just registered
+  */
+ void onClientConnected(ClientHandler handler);
 }

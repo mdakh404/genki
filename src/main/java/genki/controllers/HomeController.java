@@ -27,7 +27,7 @@ public class HomeController {
       @FXML private Circle profilTrigger;
       @FXML private VBox UserNameStatus;
       @FXML private ImageView messageProfil;
-      
+  
       private Boolean rightSideVisibilite = true;
       
       @FXML
@@ -41,8 +41,7 @@ public class HomeController {
           });
           rightSideContainer.setVisible(rightSideVisibilite);
           rightSideContainer.setManaged(rightSideVisibilite);
-//          Image image = new Image("@../../../resources/genki/img/user-default.png");
-//          messageProfil.setImage(image);
+
       }
 
 

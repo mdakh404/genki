@@ -9,6 +9,7 @@ import java.util.List;
 
 import genki.network.ClientHandler;
 import genki.network.MessageListener;
+import genki.utils.UserSession;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,7 +24,7 @@ public class ServerSocketController implements MessageListener{
 
 	private ServerSocket serverSocket;
 	private Thread serverAcceptThread;
-	private List<ClientHandler> ConnectedUsers = new ArrayList<>();
+	public static List<ClientHandler> ConnectedUsers = new ArrayList<>();
 	private final int port = 5001 ;
 	
 	
@@ -61,11 +62,11 @@ public class ServerSocketController implements MessageListener{
 		try {
 			while(!serverSocket.isClosed()) {
 				Socket client = serverSocket.accept();
-				System.out.println("New client has been connected... " );
-				ClientHandler handler = new ClientHandler(client, this);
-				ConnectedUsers.add(handler);
-				System.out.println(ConnectedUsers);
-				handler.start();
+				System.out.println("New client has been connected... ");
+				ClientHandler handler = new ClientHandler(client, UserSession.getUsername(), this);
+					// Do not add to ConnectedUsers yet: the ClientHandler will read the client's username
+					// and notify us via onClientConnected when ready. Start the handler now.
+					handler.start();
 			}
 			
 		}catch(Exception e) {
@@ -109,6 +110,16 @@ public class ServerSocketController implements MessageListener{
     }
 
 	@Override
+	public void onClientConnected(ClientHandler handler) {
+		// Called from ClientHandler background thread; update UI/state on FX thread
+		Platform.runLater(() -> {
+			ConnectedUsers.add(handler);
+			System.out.println("Registered user: " + handler.getNom());
+			printConnectedUsers();
+		});
+	}
+
+	@Override
     public void onMessageReceived(String message) {
        
         System.out.println("Server dit : "+message);
@@ -133,33 +144,52 @@ public class ServerSocketController implements MessageListener{
         stopServer();
     }
     
-    public void openClientWindows() {
-    	FXMLLoader loader = new FXMLLoader(getClass().getResource("clientPage.fxml"));
-        Parent root;
-		try {
-			
-			root = loader.load();
-			clientSocketController ctrl = loader.getController();
-		    Stage stage = new Stage();
-		    stage.setScene(new Scene(root));
-		    stage.show();
-		    ctrl.initialiseClient();
-		    stage.setOnCloseRequest(event ->{
-		    	Platform.runLater(() -> {
-//		    		server.appendText("\n" + "Client has been Disconnected.....");
-		    	});
-		    });
-		    
-			  
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        
-       
+    // Return list of connected usernames
+    public List<String> getConnectedUserNames() {
+        List<String> names = new ArrayList<>();
+        for (ClientHandler h : ConnectedUsers) {
+            names.add(h.getNom());
+        }
+        return names;
+    }
+
+    // Print connected users to console (useful for debugging)
+    public void printConnectedUsers() {
+        System.out.println("Connected users: " + getConnectedUserNames());
+    }
+
+    @FXML
+    private void handleShowConnectedUsers() {
+        printConnectedUsers();
+    }
+
+//    public void openClientWindows() {
+//    	FXMLLoader loader = new FXMLLoader(getClass().getResource("clientPage.fxml"));
+//        Parent root;
+//		try {
+//			
+//			root = loader.load();
+//			clientSocketController ctrl = loader.getController();
+//		    Stage stage = new Stage();
+//		    stage.setScene(new Scene(root));
+//		    stage.show();
+//		    ctrl.in
+//		    stage.setOnCloseRequest(event ->{
+//		    	Platform.runLater(() -> {
+////		    		server.appendText("\n" + "Client has been Disconnected.....");
+//		    	});
+//		    });
+//		    
+//			  
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//        
+//       
     }
     
     
 	
 	
-}
+

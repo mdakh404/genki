@@ -15,6 +15,7 @@ public class ClientsThreads {
     private Thread receiverThread; 
     private volatile boolean receiving = false; // Simple flag to control the loop
     private final CountDownLatch counterLatch = new CountDownLatch(1);
+    private final CountDownLatch senderReadyLatch = new CountDownLatch(1);
 
     public ClientsThreads(String host, int port, MessageListener listener) {
         this.host = host;
@@ -32,7 +33,8 @@ public class ClientsThreads {
                 this.socket = new Socket(host, port);
                 counterLatch.countDown();
                 sender = new PrintWriter(socket.getOutputStream(), true);
-                
+                senderReadyLatch.countDown(); // Signal that sender is ready
+                // Do not send a stray hello; client will send its username explicitly.
                 
                 startReceiverThread(); // Start the simplified listener thread
                 
@@ -46,9 +48,8 @@ public class ClientsThreads {
 
     public void sendMessage(String message) {
     	try {
-			counterLatch.await();
+			senderReadyLatch.await(); // Wait until sender is fully ready
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         if (sender != null) {

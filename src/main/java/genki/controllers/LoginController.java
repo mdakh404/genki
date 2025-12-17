@@ -24,7 +24,7 @@ import java.io.IOException;
  */
 public class LoginController implements Initializable {
 	
-	private clientSocketController client = new clientSocketController(); 
+	private clientSocketController client;
 
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
 
@@ -96,14 +96,17 @@ public class LoginController implements Initializable {
 
                          logger.log(Level.INFO, "Login successful by " + user);
                          //Creating Client Socket
-                         client.initialiseClient();
+                         client = new clientSocketController(loginResult.getUsername());
                          
-
+                         
+                         
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
                                loginResult.getUserRole()
                          );
+                         
+                         
 
                          AlertConstruct.alertConstructor(
                            "Login",

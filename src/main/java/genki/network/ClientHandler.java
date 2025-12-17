@@ -15,11 +15,15 @@ public class ClientHandler extends Thread {
  private BufferedReader in;
  private PrintWriter out;
  private volatile boolean isRunning = true; 
+ private String nom;
 
- public ClientHandler(Socket socket, MessageListener listener) {
+ public ClientHandler(Socket socket, String nom, MessageListener listener) {
      this.socket = socket;
      this.listener = listener;
+     this.nom = nom;
  }
+
+ 
 
  /**
   * Sets up the input/output streams for communication.
@@ -50,6 +54,15 @@ public class ClientHandler extends Thread {
      try {
          setupStreams(); 
          String line;
+         String Username = in.readLine();
+         this.nom = Username;
+            // Notify the server that this handler has received the client's username
+            try {
+                listener.onClientConnected(this);
+            } catch (Exception ex) {
+                // listener implementations should handle exceptions; log locally
+                System.out.println("Error notifying server of new client: " + ex.getMessage());
+            }
          
          // This line blocks until a message is received or the socket closes.
          while (isRunning && (line = in.readLine()) != null) {
@@ -66,6 +79,14 @@ public class ClientHandler extends Thread {
      }
  }
  
+ 
+     public String getNom() {
+		return nom;
+	}
+
+	 public void setNom(String name) {
+		this.nom = name;
+	 }
  /**
   * Closes all resources gracefully and stops the run loop.
   */
@@ -79,4 +100,14 @@ public class ClientHandler extends Thread {
          if (out != null) out.close();
      } catch (IOException ignored) {}
  }
+
+
+
+ @Override
+ public String toString() {
+	return nom;
+ }
 }
+
+
+
