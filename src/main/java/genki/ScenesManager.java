@@ -34,6 +34,7 @@ public class ScenesManager extends Application {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to load application logo", e);
         }
+        
 //        primaryStage.setOnCloseRequest(e -> {
 //        	server.stopServer();
 //        });

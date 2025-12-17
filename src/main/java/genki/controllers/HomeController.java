@@ -27,7 +27,9 @@ public class HomeController {
     @FXML private Button btnAdd;
     @FXML private VBox rightSideContainer;
     @FXML private ImageView profilTrigger;
-    @FXML private VBox UserNameStatus;
+    @FXML private ImageView UserProfil;
+    @FXML private VBox AmisNameStatus;
+   // @FXML private VBox UserNameStatus;
     @FXML private ImageView messageProfil;
     @FXML private Label CurrentUsername;
   
@@ -38,8 +40,8 @@ public class HomeController {
         if (profilTrigger != null) {
             profilTrigger.setOnMouseClicked(e -> toggleRightPanel());
         }
-        if (UserNameStatus != null) {
-            UserNameStatus.setOnMouseClicked(e -> toggleRightPanel());
+        if (AmisNameStatus != null) {
+        	AmisNameStatus.setOnMouseClicked(e -> toggleRightPanel());
         }
         if (rightSideContainer != null) {
             rightSideContainer.setVisible(rightSideVisibilite);
@@ -47,7 +49,7 @@ public class HomeController {
         }
         try {
         	Image image = new Image(UserSession.getImageUrl());
-            profilTrigger.setImage(image);
+        	UserProfil.setImage(image);
         }catch(Exception e) {
         	System.out.println(e.getMessage());
         }
