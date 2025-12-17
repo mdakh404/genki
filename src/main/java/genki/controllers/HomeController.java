@@ -90,9 +90,6 @@ public class HomeController {
             logger.log(Level.INFO, "Loading AddUserOrGroup.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddUserOrGroup.fxml"));
             Parent root = loader.load();
-  
-            AddUserOrGroupController controller = loader.getController();
-            controller.setHomeController(this);
             
             Stage dialogStage = new Stage();
             try {
@@ -113,58 +110,6 @@ public class HomeController {
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error loading AddUserOrGroup dialog", e);
             Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddUserOrGroup dialog.");
-            errorAlert.showAndWait();
-        }
-    }
-    
-    public void AddUser() {
-        try {
-            logger.log(Level.INFO, "Loading AddUser.fxml");
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddUser.fxml"));
-            Parent root = loader.load();
-            
-            Stage dialogStage = new Stage();
-            try {
-                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_user.jpg"), 128, 128, true, true);
-                dialogStage.getIcons().add(logo);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to load application logo", e);
-            }
-            dialogStage.setTitle("Add New User");
-            dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.setResizable(false);
-            dialogStage.setScene(new Scene(root, 400, 300));
-            dialogStage.centerOnScreen();
-            dialogStage.showAndWait();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error loading AddUser dialog", e);
-            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddUser dialog.");
-            errorAlert.showAndWait();
-        }
-    }
-    
-    public void AddGroup() {
-        try {
-            logger.log(Level.INFO, "Loading AddGroup.fxml");
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddGroup.fxml"));
-            Parent root = loader.load();
-            
-            Stage dialogStage = new Stage();
-            try {
-                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true, true);
-                dialogStage.getIcons().add(logo);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to load application logo", e);
-            }
-            dialogStage.setTitle("Add New Group");
-            dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.setResizable(false);
-            dialogStage.setScene(new Scene(root));
-            dialogStage.centerOnScreen();
-            dialogStage.showAndWait();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error loading AddGroup dialog", e);
-            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddGroup dialog.");
             errorAlert.showAndWait();
         }
     }

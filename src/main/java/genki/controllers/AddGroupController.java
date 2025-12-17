@@ -73,12 +73,15 @@ public class AddGroupController {
     @FXML
     private void initialize() {
     	
+    	
         if (cmbGroupType != null) {
             cmbGroupType.getItems().addAll("Project Team", "Department", "Social", "Study Group", "Committee");
+
         }
         
         if (cmbCategory != null) {
             cmbCategory.getItems().addAll("Work", "Education", "Entertainment", "Sports", "Technology");
+
         }
   
     }

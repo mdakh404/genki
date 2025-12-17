@@ -24,23 +24,23 @@
 
         <VBox spacing="4">
             <Label style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #34495e;" text="Group Name *" />
-            <TextField fx:id="txtGroupName" focusTraversable="false" prefHeight="40" promptText="Enter group name" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14; -fx-padding: 10;" />
+            <TextField fx:id="txtGroupName" prefHeight="40" promptText="Enter group name" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14; -fx-padding: 10;" />
         </VBox>
 
         <VBox spacing="6">
             <Label style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #34495e;" text="Description *" />
-            <TextArea fx:id="txtDescription" focusTraversable="false" prefHeight="80" promptText="Enter group description" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14; -fx-padding: 1;" wrapText="true" />
+            <TextArea fx:id="txtDescription" prefHeight="80" promptText="Enter group description" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14; -fx-padding: 1;" wrapText="true" />
         </VBox>
 
         <VBox spacing="6">
             <Label style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #34495e;" text="Group Type *" />
-            <ComboBox fx:id="cmbGroupType" focusTraversable="false" prefHeight="40" prefWidth="360" promptText="Select group type" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-font-size: 14;">
+            <ComboBox fx:id="cmbGroupType" prefHeight="40" prefWidth="360" promptText="Select group type" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-font-size: 14;">
             </ComboBox>
         </VBox>
         
         <VBox spacing="5">
             <Label style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #34495e;" text="Category" />
-            <ComboBox fx:id="cmbCategory" focusTraversable="false" prefHeight="40" prefWidth="360" promptText="Select category" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-font-size: 14;">
+            <ComboBox fx:id="cmbCategory" prefHeight="40" prefWidth="360" promptText="Select category" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-font-size: 14;">
             </ComboBox>
         </VBox>
 
