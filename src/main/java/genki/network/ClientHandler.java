@@ -8,6 +8,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import genki.utils.FindUsers;
+
 public class ClientHandler extends Thread {
  private final Socket socket;
  private final MessageListener listener; // The ServerController object
@@ -15,12 +17,17 @@ public class ClientHandler extends Thread {
  private BufferedReader in;
  private PrintWriter out;
  private volatile boolean isRunning = true; 
- private String nom;
+ private FindUsers user;
 
- public ClientHandler(Socket socket, String nom, MessageListener listener) {
+ public ClientHandler(Socket socket, MessageListener listener) {
      this.socket = socket;
      this.listener = listener;
-     this.nom = nom;
+     user = null;
+ }
+ public ClientHandler(Socket socket, FindUsers user  , MessageListener listener) {
+     this.socket = socket;
+     this.listener = listener;
+     this.user = user;
  }
 
  
@@ -55,7 +62,16 @@ public class ClientHandler extends Thread {
          setupStreams(); 
          String line;
          String Username = in.readLine();
-         this.nom = Username;
+         
+         // Create FindUsers object with the username to fetch all user info
+         try {
+             this.user = new FindUsers(Username);
+         } catch (Exception e) {
+             System.out.println("User not found or error fetching user: " + Username);
+             closeConnection();
+             return;
+         }
+         
             // Notify the server that this handler has received the client's username
             try {
                 listener.onClientConnected(this);
@@ -80,13 +96,13 @@ public class ClientHandler extends Thread {
  }
  
  
-     public String getNom() {
-		return nom;
-	}
-
-	 public void setNom(String name) {
-		this.nom = name;
-	 }
+//     public String getNom() {
+//		return nom;
+//	}
+//
+//	 public void setNom(String name) {
+//		this.nom = name;
+//	 }
  /**
   * Closes all resources gracefully and stops the run loop.
   */
@@ -101,11 +117,19 @@ public class ClientHandler extends Thread {
      } catch (IOException ignored) {}
  }
 
+ 
+ 
 
 
+ public FindUsers getUser() {
+	return user;
+}
+ public void setUser(FindUsers user) {
+	this.user = user;
+ }
  @Override
  public String toString() {
-	return nom;
+	return this.user.toString();
  }
 }
 

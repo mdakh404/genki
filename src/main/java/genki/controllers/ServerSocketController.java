@@ -63,7 +63,7 @@ public class ServerSocketController implements MessageListener{
 			while(!serverSocket.isClosed()) {
 				Socket client = serverSocket.accept();
 				System.out.println("New client has been connected... ");
-				ClientHandler handler = new ClientHandler(client, UserSession.getUsername(), this);
+				ClientHandler handler = new ClientHandler(client, this);
 					// Do not add to ConnectedUsers yet: the ClientHandler will read the client's username
 					// and notify us via onClientConnected when ready. Start the handler now.
 					handler.start();
@@ -114,7 +114,7 @@ public class ServerSocketController implements MessageListener{
 		// Called from ClientHandler background thread; update UI/state on FX thread
 		Platform.runLater(() -> {
 			ConnectedUsers.add(handler);
-			System.out.println("Registered user: " + handler.getNom());
+			System.out.println("Registered user: " + handler.getUser().getUsername());
 			printConnectedUsers();
 		});
 	}
@@ -148,7 +148,7 @@ public class ServerSocketController implements MessageListener{
     public List<String> getConnectedUserNames() {
         List<String> names = new ArrayList<>();
         for (ClientHandler h : ConnectedUsers) {
-            names.add(h.getNom());
+            names.add(h.getUser().toString());
         }
         return names;
     }

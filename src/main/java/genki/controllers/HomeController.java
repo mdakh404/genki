@@ -28,7 +28,7 @@ public class HomeController {
       @FXML private VBox UserNameStatus;
       @FXML private ImageView messageProfil;
   
-      private Boolean rightSideVisibilite = true;
+      private Boolean rightSideVisibilite = false;
       
       @FXML
       public void initialize() {
