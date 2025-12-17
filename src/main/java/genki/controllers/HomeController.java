@@ -50,6 +50,12 @@ public class HomeController {
             Parent root = loader.load();
             
             Stage settingsStage = new Stage();
+            try {
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/setting.png"), 50, 50, true, true);
+                settingsStage.getIcons().add(logo);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to load application logo", e);
+            }
             settingsStage.setTitle("Settings");
             settingsStage.setResizable(false);
             settingsStage.initModality(Modality.APPLICATION_MODAL);
