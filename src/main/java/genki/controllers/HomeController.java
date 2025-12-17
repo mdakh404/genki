@@ -7,6 +7,7 @@ import javafx.stage.Modality;
 import javafx.scene.Scene;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.control.Alert;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -49,12 +50,18 @@ public class HomeController {
             logger.log(Level.INFO, "Loading AddUserOrGroup.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddUserOrGroup.fxml"));
             Parent root = loader.load();
-            
-            // Récupérer le contrôleur pour passer la référence du HomeController
+  
             AddUserOrGroupController controller = loader.getController();
             controller.setHomeController(this);
             
             Stage dialogStage = new Stage();
+            // Ajouter le logo de l'application
+            try {
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/add_user_group.jpg"), 100, 100, true, true);
+                dialogStage.getIcons().add(logo);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to load application logo", e);
+            }
             dialogStage.setTitle("Add User Or Group");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.initOwner(btnAdd.getScene().getWindow());
@@ -76,7 +83,14 @@ public class HomeController {
             Parent root = loader.load();
             
             Stage dialogStage = new Stage();
-            dialogStage.setTitle("👤 Add New User");
+            // Ajouter le logo de l'application
+            try {
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_user.jpg"), 128, 128, true, true);
+                dialogStage.getIcons().add(logo);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to load application logo", e);
+            }
+            dialogStage.setTitle("Add New User");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.setResizable(false);
             dialogStage.setScene(new Scene(root,400,300));
@@ -96,7 +110,14 @@ public class HomeController {
             Parent root = loader.load();
             
             Stage dialogStage = new Stage();
-            dialogStage.setTitle("👥 Add New Group");
+            // Ajouter le logo de l'application
+            try {
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true, true);
+                dialogStage.getIcons().add(logo);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to load application logo", e);
+            }
+            dialogStage.setTitle("Add New Group");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.setResizable(false);
             dialogStage.setScene(new Scene(root));

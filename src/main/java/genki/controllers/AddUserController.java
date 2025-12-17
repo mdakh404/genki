@@ -1,11 +1,8 @@
 package genki.controllers;
 
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
@@ -22,46 +19,10 @@ public class AddUserController implements Initializable {
     
     @FXML
     private Button btnCancel;
-
-//    @FXML
-//    private TextField txtEmail;
-
-//    @FXML
-//    private TextField txtFullName;
-
-//    @FXML
-//    private ComboBox<String> cmbRole;
-
-//    @FXML
-//    private ComboBox<String> cmbDepartment; 
-
-//    @FXML
-//    private TextField txtPhone;
-
-//    @FXML
-//    private CheckBox chkActive;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
     	
-//        // Remplir les rôles
-//        if (cmbRole != null) {
-//            cmbRole.getItems().addAll("Admin", "User", "Guest");
-//        }
-        
-        // Remplir les départements
-//        if (cmbDepartment != null) {
-//            cmbDepartment.getItems().addAll("IT", "HR", "Sales", "Marketing", "Finance");
-//        }
-    	
-        // Forcer le focus sur le TextField
-        txtUsername.setEditable(true);
-        txtUsername.setDisable(false);
-        
-        // Demander le focus après un court délai
-        Platform.runLater(() -> {
-            txtUsername.requestFocus();
-        });
     }
     
     @FXML
