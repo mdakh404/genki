@@ -53,12 +53,12 @@
 
         <VBox spacing="6" maxWidth="420">
             <Label text="Bio" textFill="#374151"/>
-            <TextArea prefHeight="110" promptText="Tell us about yourself..."
+            <TextArea prefHeight="110" promptText="Tell us about yourself..." fx:id="bioField"
                       style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 10;"/>
         </VBox>
 
         <HBox spacing="20" alignment="CENTER" style="-fx-padding: 20 0 0 0;">
-            <Button fx:id="btnSaveSettings" text="Save Settings" prefWidth="150" prefHeight="40"
+            <Button fx:id="btnSaveSettings" text="Save Settings" prefWidth="150" prefHeight="40" onAction="#handleSaveSettings"
                     style="-fx-background-color: #374151; -fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
 
             <Button fx:id="btnDeleteAccount" text="Delete Account" prefWidth="150" prefHeight="40"

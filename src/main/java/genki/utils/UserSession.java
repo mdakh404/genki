@@ -36,17 +36,11 @@ public class UserSession {
         return UserSession.userRole;
     }
 
-    public void setUsername(String username) {
+    public static void setUsername(String username) {
         UserSession.username = username;
     }
 
-    public void setUserId(String userId) {
-        UserSession.userId = userId;
-    }
 
-    public void setUserRole(String userRole) {
-        UserSession.userRole = userRole;
-    }
 
     public static boolean isLoggedIn() {
         return UserSession.username != null;
