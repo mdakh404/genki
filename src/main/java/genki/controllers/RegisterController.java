@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
+import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
 
 import java.net.URL;
@@ -37,6 +38,11 @@ public class RegisterController implements Initializable{
 
     @FXML
     private Button registerButton;
+
+    @FXML
+    private ImageView backToLoginImage;
+
+
 
     @FXML
     public void onRegister() {
@@ -200,6 +206,14 @@ public class RegisterController implements Initializable{
                 bioField.setStyle("-fx-border-color: #F2F2F2");
             }
         } );
+
+        backToLoginImage.setOnMouseClicked(event -> {
+            try {
+                ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Failed to load Login.fxml", e);
+            }
+        });
     }
 
 }
