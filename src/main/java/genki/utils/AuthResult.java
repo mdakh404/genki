@@ -7,21 +7,31 @@ public class AuthResult {
     private String username;
     private String userId;
     private String userRole;
+    private String imageUrl;
 
 
     public AuthResult(AuthStatus status) {
         this.status = status;
     }
 
-    public AuthResult(AuthStatus status, String username, String userId, String userRole) {
+    public AuthResult(AuthStatus status, String username, String userId, String userRole, String imageUrl) {
         this.status = status;
         this.username = username;
         this.userId = userId;
         this.userRole = userRole;
+        this.imageUrl = imageUrl;
     }
 
 
-    public String getUsername() {
+    public String getImageUrl() {
+		return imageUrl;
+	}
+
+	public void setImageUrl(String imageUrl) {
+		this.imageUrl = imageUrl;
+	}
+
+	public String getUsername() {
         return this.username;
     }
 

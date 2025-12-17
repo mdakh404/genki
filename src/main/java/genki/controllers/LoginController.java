@@ -103,7 +103,8 @@ public class LoginController implements Initializable {
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
-                               loginResult.getUserRole()
+                               loginResult.getUserRole(),
+                               loginResult.getImageUrl()
                          );
                          
                          

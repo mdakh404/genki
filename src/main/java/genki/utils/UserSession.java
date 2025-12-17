@@ -4,17 +4,27 @@ public class UserSession {
     private static String username;
     private static String userId;
     private static String userRole;
+    private static String imageUrl;
 
     private UserSession() {}
 
-    public static void startSession(String username, String userId, String userRole) {
+    public static void startSession(String username, String userId, String userRole, String imageUrl) {
         UserSession.username = username;
         UserSession.userId= userId;
         UserSession.userRole = userRole;
+        UserSession.imageUrl = imageUrl;
     }
 
 
-    public static String getUsername() {
+    public static String getImageUrl() {
+		return imageUrl;
+	}
+
+	public static void setImageUrl(String imageUrl) {
+		UserSession.imageUrl = imageUrl;
+	}
+
+	public static String getUsername() {
         return UserSession.username;
     }
 

@@ -58,7 +58,8 @@ public class AuthModel {
                                 AuthStatus.SUCCESS,
                                 userDoc.getString("username"),
                                 userDoc.getObjectId("_id").toHexString(),
-                                userDoc.getString("role")
+                                userDoc.getString("role"),
+                                userDoc.getString("photo_url")
                         );
                     }
                     else {
