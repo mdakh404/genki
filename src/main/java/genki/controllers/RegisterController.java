@@ -3,6 +3,7 @@ package genki.controllers;
 import genki.utils.RegisterResult;
 import genki.utils.RegistrationTask;
 import genki.utils.AlertConstruct;
+import genki.utils.UserSession;
 import genki.models.RegisterModel;
 
 import javafx.fxml.FXML;
@@ -81,6 +82,12 @@ public class RegisterController implements Initializable{
 
                      case SUCCESS:
                          try {
+
+                             UserSession.startSession(
+                                     result.getUsername(),
+                                     result.getUserId(),
+                                     result.getUserRole()
+                             );
 
                              AlertConstruct.alertConstructor(
                                      "Registration",

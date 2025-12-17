@@ -2,8 +2,10 @@ package genki.utils;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.MongoException;
+import org.bson.Document;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -47,4 +49,15 @@ public class DBConnection {
 //      return connection;
 //  }
 //}
+
+    public MongoCollection<Document> getUsersCollection() throws MongoException {
+        try {
+            logger.log(Level.INFO, "Connected to database ...");
+            logger.log(Level.INFO, "Accessing users collection ...");
+            return this.getDatabase().getCollection("users");
+        } catch (MongoException mongoException) {
+            throw new MongoException(mongoException.getMessage());
+        }
+
+    }
 }

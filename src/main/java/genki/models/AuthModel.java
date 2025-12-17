@@ -19,6 +19,7 @@ public class AuthModel {
     private static final Logger logger = Logger.getLogger(AuthModel.class.getName());
     private final DBConnection AuthConnection = new DBConnection("genki_testing");
 
+
     /**
      * authLogin()
      * Handles the login functionality of the user to the application.
@@ -46,17 +47,23 @@ public class AuthModel {
 
                 if (userDoc == null) {
                     logger.log(Level.SEVERE, "Authentication failed, " + username + " was not found");
-                    return new AuthResult(AuthStatus.WRONG_PASSWORD_USER, "The username or password you entered is incorrect");
+                    return new AuthResult(AuthStatus.WRONG_PASSWORD_USER);
                 }
                 else {
 
+                	// TODO: Update this code when final commit 
                     if (username.equals("root") || PasswordHasher.checkPassword(password, userDoc.getString("password"))) {
                         logger.log(Level.INFO, "Authentication succeed");
-                        return new AuthResult(AuthStatus.SUCCESS, "Your are successfully logged in");
+                        return new AuthResult(
+                                AuthStatus.SUCCESS,
+                                userDoc.getString("username"),
+                                userDoc.getObjectId("_id").toHexString(),
+                                userDoc.getString("role")
+                        );
                     }
                     else {
                         logger.log(Level.SEVERE, "Authentication failed for " + username + ", password is not valid");
-                        return new AuthResult(AuthStatus.WRONG_PASSWORD_USER, "The username or password you entered is incorrect");
+                        return new AuthResult(AuthStatus.WRONG_PASSWORD_USER);
 
                     }
 
@@ -65,7 +72,7 @@ public class AuthModel {
 
             } catch (MongoException e) {
                 logger.log(Level.SEVERE, "Failed to connect to the database", e);
-                return new AuthResult(AuthStatus.DB_ERROR, "Connection failed");
+                return new AuthResult(AuthStatus.DB_ERROR);
             }
         }
 

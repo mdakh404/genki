@@ -1,7 +1,7 @@
 package genki;
 
 import genki.controllers.ScenesController;
-
+import genki.controllers.ServerSocketController;
 import javafx.stage.Stage;
 import javafx.application.Application;
 import javafx.scene.image.Image;
@@ -12,11 +12,18 @@ import java.util.logging.Level;
 import java.io.IOException;
 
 public class ScenesManager extends Application {
+	
+	private ServerSocketController server = new ServerSocketController();
 
     private static final Logger logger = Logger.getLogger(ScenesManager.class.getName());
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+    	try {
+    	server.startServer();}
+    	catch(Exception e) {
+    		System.out.println("There is already a Server Running...");
+    	}
 
         ScenesController.setStage(primaryStage);
         
@@ -27,6 +34,9 @@ public class ScenesManager extends Application {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to load application logo", e);
         }
+//        primaryStage.setOnCloseRequest(e -> {
+//        	server.stopServer();
+//        });
         
         primaryStage.show();
         try {

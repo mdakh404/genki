@@ -8,6 +8,9 @@ import javafx.scene.Scene;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.scene.control.Alert;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -16,12 +19,29 @@ import java.io.IOException;
 public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
     
+    @FXML private Button btnSettings;
+    @FXML private Button btnAdd;
+    @FXML private VBox rightSideContainer;
+    @FXML private Circle profilTrigger;
+    @FXML private VBox UserNameStatus;
+    @FXML private ImageView messageProfil;
+  
+    private Boolean rightSideVisibilite = false;
+      
     @FXML
-    private Button btnSettings;
-    
-    @FXML
-    private Button btnAdd;
-    
+    public void initialize() {
+        if (profilTrigger != null) {
+            profilTrigger.setOnMouseClicked(e -> toggleRightPanel());
+        }
+        if (UserNameStatus != null) {
+            UserNameStatus.setOnMouseClicked(e -> toggleRightPanel());
+        }
+        if (rightSideContainer != null) {
+            rightSideContainer.setVisible(rightSideVisibilite);
+            rightSideContainer.setManaged(rightSideVisibilite);
+        }
+    }
+
     @FXML
     private void handleSettingsBtnClick() {
         try {
@@ -33,7 +53,9 @@ public class HomeController {
             settingsStage.setTitle("Settings");
             settingsStage.setResizable(false);
             settingsStage.initModality(Modality.APPLICATION_MODAL);
-            settingsStage.initOwner(btnSettings.getScene().getWindow());
+            if (btnSettings != null && btnSettings.getScene() != null) {
+                settingsStage.initOwner(btnSettings.getScene().getWindow());
+            }
             settingsStage.setScene(new Scene(root));
             settingsStage.centerOnScreen();
             settingsStage.showAndWait();
@@ -55,7 +77,6 @@ public class HomeController {
             controller.setHomeController(this);
             
             Stage dialogStage = new Stage();
-            // Ajouter le logo de l'application
             try {
                 Image logo = new Image(getClass().getResourceAsStream("/genki/img/add_user_group.jpg"), 100, 100, true, true);
                 dialogStage.getIcons().add(logo);
@@ -64,7 +85,9 @@ public class HomeController {
             }
             dialogStage.setTitle("Add User Or Group");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.initOwner(btnAdd.getScene().getWindow());
+            if (btnAdd != null && btnAdd.getScene() != null) {
+                dialogStage.initOwner(btnAdd.getScene().getWindow());
+            }
             dialogStage.setResizable(false);
             dialogStage.setScene(new Scene(root));
             dialogStage.centerOnScreen();
@@ -83,7 +106,6 @@ public class HomeController {
             Parent root = loader.load();
             
             Stage dialogStage = new Stage();
-            // Ajouter le logo de l'application
             try {
                 Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_user.jpg"), 128, 128, true, true);
                 dialogStage.getIcons().add(logo);
@@ -93,7 +115,7 @@ public class HomeController {
             dialogStage.setTitle("Add New User");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.setResizable(false);
-            dialogStage.setScene(new Scene(root,400,300));
+            dialogStage.setScene(new Scene(root, 400, 300));
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
         } catch (Exception e) {
@@ -110,7 +132,6 @@ public class HomeController {
             Parent root = loader.load();
             
             Stage dialogStage = new Stage();
-            // Ajouter le logo de l'application
             try {
                 Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true, true);
                 dialogStage.getIcons().add(logo);
@@ -127,6 +148,26 @@ public class HomeController {
             logger.log(Level.SEVERE, "Error loading AddGroup dialog", e);
             Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddGroup dialog.");
             errorAlert.showAndWait();
+        }
+    }
+
+    public void toggleRightPanel() {
+        this.rightSideVisibilite = !rightSideVisibilite;
+        
+        if (rightSideContainer == null) return;
+        
+        if (rightSideVisibilite) {
+            rightSideContainer.setManaged(true);
+            rightSideContainer.setVisible(true);
+            rightSideContainer.setPrefWidth(320.0);
+            rightSideContainer.setMinWidth(320.0);
+            rightSideContainer.setMaxWidth(320.0);
+        } else {
+            rightSideContainer.setPrefWidth(0.0);
+            rightSideContainer.setMinWidth(0.0);
+            rightSideContainer.setMaxWidth(0.0);
+            rightSideContainer.setManaged(false);
+            rightSideContainer.setVisible(false);
         }
     }
 }

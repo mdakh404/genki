@@ -8,6 +8,8 @@ module genki {
     requires jbcrypt;
 	requires javafx.graphics;
 	requires java.base;
+    requires cloudinary.core;
+    requires dotenv.java;
 
 
     exports genki;
