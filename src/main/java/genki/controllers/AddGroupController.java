@@ -7,6 +7,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
@@ -25,29 +26,28 @@ public class AddGroupController {
     private TextArea txtDescription;
 
     @FXML
-    private ComboBox<String> cmbGroupType;
-
-    @FXML
-    private ComboBox<String> cmbCategory;
-
-    @FXML
     private RadioButton rbPublic;
 
     @FXML
     private RadioButton rbPrivate;
-
+    
+    // Ajoutez cette méthode initialize
     @FXML
-    private CheckBox chkCanPost;
-
-    @FXML
-    private CheckBox chkCanInvite;
-
-    @FXML
-    private CheckBox chkCanEdit;
+    public void initialize() {
+        // Créer un ToggleGroup pour les RadioButtons
+        ToggleGroup privacyGroup = new ToggleGroup();
+        rbPublic.setToggleGroup(privacyGroup);
+        rbPrivate.setToggleGroup(privacyGroup);
+        
+        // Sélectionner "Public" par défaut
+        rbPublic.setSelected(true);
+    }
     
     @FXML
     private void handleAddGroup() {
         String groupName = txtGroupName.getText().trim();
+
+        String privacy = rbPublic.isSelected() ? "Public" : "Private";
         
         if (groupName.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -68,22 +68,6 @@ public class AddGroupController {
         alert.showAndWait();
         
         closeWindow();
-    }
-    
-    @FXML
-    private void initialize() {
-    	
-    	
-        if (cmbGroupType != null) {
-            cmbGroupType.getItems().addAll("Project Team", "Department", "Social", "Study Group", "Committee");
-
-        }
-        
-        if (cmbCategory != null) {
-            cmbCategory.getItems().addAll("Work", "Education", "Entertainment", "Sports", "Technology");
-
-        }
-  
     }
     
     @FXML

@@ -37,6 +37,7 @@ public class LoginController implements Initializable {
 
      @FXML
      private Button loginButton;
+     
 
      @FXML
      public void redirectToRegister() {

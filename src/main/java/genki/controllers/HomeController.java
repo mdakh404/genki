@@ -11,12 +11,17 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Circle;
 import javafx.scene.control.Alert;
+import javafx.geometry.Bounds;
+import javafx.stage.Popup;
+import javafx.geometry.Insets;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Color;
+import javafx.scene.effect.DropShadow;
 import java.util.logging.Logger;
-
 import genki.utils.UserSession;
-
 import java.util.logging.Level;
 import java.io.IOException;
 
@@ -32,6 +37,7 @@ public class HomeController {
     @FXML private Label CurrentUsername;
   
     private Boolean rightSideVisibilite = false;
+    private Popup addMenuPopup;
       
     @FXML
     public void initialize() {
@@ -46,10 +52,10 @@ public class HomeController {
             rightSideContainer.setManaged(rightSideVisibilite);
         }
         try {
-        	Image image = new Image(UserSession.getImageUrl());
+            Image image = new Image(UserSession.getImageUrl());
             profilTrigger.setImage(image);
-        }catch(Exception e) {
-        	System.out.println(e.getMessage());
+        } catch(Exception e) {
+            System.out.println(e.getMessage());
         }
         CurrentUsername.setText(UserSession.getUsername());
     }
@@ -86,30 +92,138 @@ public class HomeController {
     
     @FXML
     public void AddUserOrGroup() {
+        // Si le popup est déjà affiché, le fermer
+        if (addMenuPopup != null && addMenuPopup.isShowing()) {
+            addMenuPopup.hide();
+            addMenuPopup = null;
+            return;
+        }
+        
+        // Créer le conteneur du menu
+        VBox menuContainer = new VBox(5);
+        menuContainer.setPadding(new Insets(10));
+        menuContainer.setMaxWidth(109);
+        menuContainer.setBackground(new Background(new BackgroundFill(
+            Color.rgb(51, 213, 214),
+            new CornerRadii(8), 
+            Insets.EMPTY
+        )));
+        
+        // Ajouter une ombre
+        DropShadow dropShadow = new DropShadow();
+        dropShadow.setColor(Color.rgb(0, 0, 0, 0.5));
+        dropShadow.setRadius(10);
+        dropShadow.setOffsetY(3);
+        menuContainer.setEffect(dropShadow);
+        
+        // Créer le bouton "Add User"
+        Button addUserBtn = new Button("Add User");
+        addUserBtn.setPrefWidth(150);
+        addUserBtn.setStyle(
+            "-fx-background-color: transparent; " +
+            "-fx-text-fill: black; " +
+            "-fx-cursor: hand; " +
+            "-fx-padding: 5; " +
+            "-fx-alignment: CENTER-LEFT; " +
+            "-fx-font-size: 14px;"
+        );
+        addUserBtn.setOnMouseEntered(e -> addUserBtn.setStyle(
+            addUserBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
+        ));
+        addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(
+            addUserBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
+        ));
+        addUserBtn.setOnAction(e -> {
+            addMenuPopup.hide();
+            addMenuPopup = null;
+            openAddUserDialog();
+        });
+        
+        // Créer le bouton "Add Group"
+        Button addGroupBtn = new Button("Add Group");
+        addGroupBtn.setPrefWidth(150);
+        addGroupBtn.setStyle(
+            "-fx-background-color: transparent; " +
+            "-fx-text-fill: black; " +
+            "-fx-cursor: hand; " +
+            "-fx-padding: 5; " +
+            "-fx-alignment: CENTER-LEFT; " +
+            "-fx-font-size: 14px;"
+        );
+        addGroupBtn.setOnMouseEntered(e -> addGroupBtn.setStyle(
+            addGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
+        ));
+        addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(
+            addGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
+        ));
+        addGroupBtn.setOnAction(e -> {
+            addMenuPopup.hide();
+            addMenuPopup = null;
+            openAddGroupDialog();
+        });
+        
+        // Ajouter les boutons au conteneur
+        menuContainer.getChildren().addAll(addUserBtn, addGroupBtn);
+        
+        // Créer le popup
+        addMenuPopup = new Popup();
+        addMenuPopup.setAutoHide(true);
+        addMenuPopup.getContent().add(menuContainer);
+        
+        // Calculer la position (sous le bouton btnAdd)
+        Bounds bounds = btnAdd.localToScreen(btnAdd.getBoundsInLocal());
+        addMenuPopup.show(btnAdd, bounds.getMinX(), bounds.getMaxY());
+    }
+    
+    private void openAddUserDialog() {
         try {
-            logger.log(Level.INFO, "Loading AddUserOrGroup.fxml");
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddUserOrGroup.fxml"));
+            logger.log(Level.INFO, "Loading AddUser.fxml");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddUser.fxml"));
             Parent root = loader.load();
-            
             Stage dialogStage = new Stage();
             try {
-                Image logo = new Image(getClass().getResourceAsStream("/genki/img/add_user_group.jpg"), 100, 100, true, true);
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_user.jpg"), 128, 128, true, true);
                 dialogStage.getIcons().add(logo);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to load application logo", e);
             }
-            dialogStage.setTitle("Add User Or Group");
+            dialogStage.setTitle("Add New User");
+            dialogStage.initOwner(btnAdd.getScene().getWindow());
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            if (btnAdd != null && btnAdd.getScene() != null) {
-                dialogStage.initOwner(btnAdd.getScene().getWindow());
+            dialogStage.setResizable(false);
+            dialogStage.setScene(new Scene(root, 360, 260));
+            dialogStage.centerOnScreen();
+            dialogStage.showAndWait();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error loading AddUser dialog", e);
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddUser dialog.");
+            errorAlert.showAndWait();
+        }
+    }
+    
+    private void openAddGroupDialog() {
+        try {
+            logger.log(Level.INFO, "Loading AddGroup.fxml");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddGroup.fxml"));
+            Parent root = loader.load();
+            
+            Stage dialogStage = new Stage();
+            try {
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true, true);
+                dialogStage.getIcons().add(logo);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to load application logo", e);
             }
+            dialogStage.setTitle("Add New Group");
+            dialogStage.initOwner(btnAdd.getScene().getWindow());
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.setResizable(false);
             dialogStage.setScene(new Scene(root));
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error loading AddUserOrGroup dialog", e);
-            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddUserOrGroup dialog.");
+            logger.log(Level.SEVERE, "Error loading AddGroup dialog", e);
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddGroup dialog.");
             errorAlert.showAndWait();
         }
     }
