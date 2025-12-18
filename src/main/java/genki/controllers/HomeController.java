@@ -10,12 +10,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.control.Alert;
 import java.util.logging.Logger;
 
 import genki.utils.UserSession;
+import genki.utils.ConversationItemBuilder;
 
 import java.util.logging.Level;
 import java.io.IOException;
@@ -29,6 +31,7 @@ public class HomeController {
     @FXML private ImageView profilTrigger;
     @FXML private ImageView UserProfil;
     @FXML private VBox AmisNameStatus;
+    @FXML private VBox conversationListContainer;
    // @FXML private VBox UserNameStatus;
     @FXML private ImageView messageProfil;
     @FXML private Label CurrentUsername;
@@ -54,6 +57,9 @@ public class HomeController {
         	System.out.println(e.getMessage());
         }
         CurrentUsername.setText(UserSession.getUsername());
+        
+        // Load conversations
+        loadConversations();
     }
 
     @FXML
@@ -182,6 +188,78 @@ public class HomeController {
             rightSideContainer.setMaxWidth(0.0);
             rightSideContainer.setManaged(false);
             rightSideContainer.setVisible(false);
+        }
+    }
+    
+    // Example: Add a conversation dynamically
+    public void addConversationExample() {
+        HBox conversationItem = ConversationItemBuilder.createConversationItem(
+            "url/to/image.png",           // profileImageUrl
+            "Sarah Wilson",               // contactName
+            "Sent a photo",              // lastMessage
+            "12:45 PM",                  // time
+            2,                           // unreadCount
+            true                         // isOnline
+        );
+
+        conversationListContainer.getChildren().add(conversationItem);
+    }
+    
+    /**
+     * Load conversations for the current user from the database
+     */
+    private void loadConversations() {
+        try {
+            // Example: Add sample conversations (replace with database queries later)
+            addConversation(
+                "genki/img/user-default.png",
+                "Sarah Wilson",
+                "Sent a photo",
+                "12:45 PM",
+                2,
+                true
+            );
+            
+            addConversation(
+                "genki/img/user-default.png",
+                "John Developer",
+                "Great project!",
+                "10:30 AM",
+                0,
+                true
+            );
+            
+            addConversation(
+                "@../../../resources/img/user-default.png",
+                "Emma Designer",
+                "Let's discuss the design",
+                "Yesterday",
+                3,
+                false
+            );
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error loading conversations", e);
+        }
+    }
+    
+    /**
+     * Helper method to add a conversation to the list
+     */
+    private void addConversation(String profileImageUrl, String contactName, String lastMessage, 
+                                  String time, int unreadCount, boolean isOnline) {
+        try {
+            HBox conversationItem = ConversationItemBuilder.createConversationItem(
+                profileImageUrl,
+                contactName,
+                lastMessage,
+                time,
+                unreadCount,
+                isOnline
+            );
+            
+            conversationListContainer.getChildren().add(conversationItem);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error adding conversation: " + contactName, e);
         }
     }
 }
