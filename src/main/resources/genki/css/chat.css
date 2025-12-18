@@ -13,7 +13,33 @@
     -fx-padding: 20;
 }
 
+/* Container for the individual conversation row */
+.conversation-item {
+    -fx-padding: 12 16;
+    -fx-cursor: hand;
+    -fx-background-color: transparent;
+    -fx-transition: background-color 0.2s;
+}
 
+.conversation-item:hover {
+    -fx-background-color: #2d3b4a; /* Lighter blue-gray on hover */
+}
+
+/* Style for when a conversation is actively selected */
+.conversation-item-selected {
+    -fx-background-color: #2d3b4a;
+    -fx-border-color: #4a5fff;
+    -fx-border-width: 0 0 0 4; /* Left blue accent border */
+}
+
+/* Remove the default scrollbar background to match the sidebar */
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
 /* ==================================== */
 /* 2. SHARED MESSAGE COMPONENTS STYLES  */
 /* ==================================== */

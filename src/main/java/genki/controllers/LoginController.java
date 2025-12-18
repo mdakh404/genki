@@ -90,11 +90,11 @@ public class LoginController implements Initializable {
              AuthResult loginResult = loginTask.getValue();
 
              switch (loginResult.getStatus()) {
-
                  case SUCCESS:
                      try {
 
                          logger.log(Level.INFO, "Login successful by " + user);
+                         
                          //Creating Client Socket
                          client = new clientSocketController(loginResult.getUsername());
                          

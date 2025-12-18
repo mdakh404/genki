@@ -61,6 +61,7 @@ public class AuthModel {
                                 userDoc.getString("role"),
                                 userDoc.getString("photo_url")
                         );
+                        
                     }
                     else {
                         logger.log(Level.SEVERE, "Authentication failed for " + username + ", password is not valid");

@@ -38,9 +38,90 @@
                 <Button fx:id="btnGroups" style="-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;" text="Groups" />
             </HBox>
 
-            <ScrollPane fitToWidth="true" style="-fx-background-color: #1e2936; -fx-background: #1e2936;" VBox.vgrow="ALWAYS">
-                <VBox fx:id="conversationListContainer" spacing="0" style="-fx-background-color: #1e2936;" />
-            </ScrollPane>
+  <ScrollPane fitToWidth="true" style="-fx-background-color: #1e2936; -fx-background: #1e2936; " VBox.vgrow="ALWAYS" stylesheets="@../css/chat.css">
+    <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #1e2936;">
+        
+        <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="conversation-item">
+            <StackPane>
+                <ImageView fitHeight="45.0" fitWidth="45.0" pickOnBounds="true" preserveRatio="true">
+                    <clip>
+                        <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+                    </clip>
+                    <image>
+                        <Image url="@../img/user-default.png" />
+                    </image>
+                </ImageView>
+                <Circle fill="#4ade80" radius="6.0" stroke="#1e2936" strokeType="INSIDE" strokeWidth="2.0" StackPane.alignment="BOTTOM_RIGHT" />
+            </StackPane>
+
+            <VBox spacing="4.0" HBox.hgrow="ALWAYS">
+                <Label style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;" text="Sarah Wilson" />
+                <Label style="-fx-text-fill: #9ca3af; -fx-font-size: 13px;" text="Sent a photo" textOverrun="ELLIPSIS" />
+            </VBox>
+
+            <VBox alignment="CENTER_RIGHT" spacing="6.0">
+                <Label style="-fx-text-fill: #6b7280; -fx-font-size: 11px;" text="12:45 PM" />
+                <StackPane style="-fx-background-color: #4a5fff; -fx-background-radius: 10; -fx-min-width: 20; -fx-min-height: 20;">
+                    <Label style="-fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold;" text="2" />
+                </StackPane>
+            </VBox>
+        </HBox>
+        
+        
+        <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="conversation-item">
+            <StackPane>
+                <ImageView fitHeight="45.0" fitWidth="45.0" pickOnBounds="true" preserveRatio="true">
+                    <clip>
+                        <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+                    </clip>
+                    <image>
+                        <Image url="@../img/user-default.png" />
+                    </image>
+                </ImageView>
+                <Circle fill="#4ade80" radius="6.0" stroke="#1e2936" strokeType="INSIDE" strokeWidth="2.0" StackPane.alignment="BOTTOM_RIGHT" />
+            </StackPane>
+
+            <VBox spacing="4.0" HBox.hgrow="ALWAYS">
+                <Label style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;" text="Sarah Wilson" />
+                <Label style="-fx-text-fill: #9ca3af; -fx-font-size: 13px;" text="Sent a photo" textOverrun="ELLIPSIS" />
+            </VBox>
+
+            <VBox alignment="CENTER_RIGHT" spacing="6.0">
+                <Label style="-fx-text-fill: #6b7280; -fx-font-size: 11px;" text="12:45 PM" />
+                <StackPane style="-fx-background-color: #4a5fff; -fx-background-radius: 10; -fx-min-width: 20; -fx-min-height: 20;">
+                    <Label style="-fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold;" text="2" />
+                </StackPane>
+            </VBox>
+        </HBox>
+        
+        <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="conversation-item">
+            <StackPane>
+                <ImageView fitHeight="45.0" fitWidth="45.0" pickOnBounds="true" preserveRatio="true">
+                    <clip>
+                        <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+                    </clip>
+                    <image>
+                        <Image url="@../img/user-default.png" />
+                    </image>
+                </ImageView>
+                <Circle fill="#4ade80" radius="6.0" stroke="#1e2936" strokeType="INSIDE" strokeWidth="2.0" StackPane.alignment="BOTTOM_RIGHT" />
+            </StackPane>
+
+            <VBox spacing="4.0" HBox.hgrow="ALWAYS">
+                <Label style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;" text="Sarah Wilson" />
+                <Label style="-fx-text-fill: #9ca3af; -fx-font-size: 13px;" text="Sent a photo" textOverrun="ELLIPSIS" />
+            </VBox>
+
+            <VBox alignment="CENTER_RIGHT" spacing="6.0">
+                <Label style="-fx-text-fill: #6b7280; -fx-font-size: 11px;" text="12:45 PM" />
+                <StackPane style="-fx-background-color: #4a5fff; -fx-background-radius: 10; -fx-min-width: 20; -fx-min-height: 20;">
+                    <Label style="-fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold;" text="2" />
+                </StackPane>
+            </VBox>
+        </HBox>
+        
+        </VBox>
+</ScrollPane>
 
         </VBox>
 
@@ -49,9 +130,12 @@
 
             <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: white; -fx-padding:16; -fx-border-color:#e5e7eb; -fx-border-width:0 0 1 0; -fx-cursor:hand;">
             <ImageView fx:id="profilTrigger" fitHeight="43.0" fitWidth="43.0" pickOnBounds="true" preserveRatio="true" >
-            <image>
-        		<Image url="@../img/user-default.png" />
-        	</image>
+            	<clip>
+                     <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+                </clip>
+                 <image>
+                     <Image url="@../img/user-default.png" />
+                 </image>
             </ImageView>
                 <VBox fx:id="AmisNameStatus" spacing="2.0" HBox.hgrow="ALWAYS">
                     <Label fx:id="chatContactName" style="-fx-text-fill: #111827; -fx-font-size: 16px; -fx-font-weight: bold;" text="Sarah Wilson" />
@@ -67,9 +151,12 @@
     <VBox fx:id="messagesContainer" prefHeight="400" prefWidth="700" spacing="16">
     <HBox spacing="10" styleClass="message-box, received-message">
         <ImageView fx:id="messageProfil" fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar">
-        	<image>
-        		<Image url="@../img/user-default.png" />
-        	</image>
+        	<clip>
+                     <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+                </clip>
+                 <image>
+                     <Image url="@../img/user-default.png" />
+                 </image>
         </ImageView>
         <VBox spacing="4">
             <Label styleClass="sender-name" text="Aimane Aboufadle" />
@@ -85,9 +172,12 @@
         </VBox>
 
         <ImageView fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar">
-        	<image>
-        		<Image url="@../img/user-default.png" />
-        	</image>
+        	<clip>
+                     <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+                </clip>
+                 <image>
+                     <Image url="@../img/user-default.png" />
+                 </image>
     	</ImageView>
     </HBox>
     
@@ -123,9 +213,12 @@
 
                 <ImageView fx:id="rightProfileImage" fitWidth="100.0" fitHeight="100.0" preserveRatio="true" pickOnBounds="true" styleClass="avatar">
                     
-                    <image>
-                        <Image url="@../img/user-default.png" />
-                    </image>
+                    <clip>
+                     <Circle centerX="42.5" centerY="42.5" radius="52.5" />
+                </clip>
+                 <image>
+                     <Image url="@../img/user-default.png" />
+                 </image>
                 </ImageView>
 
                 <Label fx:id="rightContactName" style="-fx-text-fill: #111827; -fx-font-size: 20px; -fx-font-weight: bold;" text="Sarah Wilson" />
