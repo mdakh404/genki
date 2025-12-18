@@ -102,7 +102,7 @@ public class HomeController {
         // Créer le conteneur du menu
         VBox menuContainer = new VBox(5);
         menuContainer.setPadding(new Insets(10));
-        menuContainer.setMaxWidth(109);
+        menuContainer.setMaxWidth(100);
         menuContainer.setBackground(new Background(new BackgroundFill(
             Color.rgb(51, 213, 214),
             new CornerRadii(8), 
@@ -162,8 +162,32 @@ public class HomeController {
             openAddGroupDialog();
         });
         
+        //ajouter ca 
+        // Créer le bouton "Join Group"
+        Button joinGroupBtn = new Button("Join Group");
+        joinGroupBtn.setPrefWidth(150);
+        joinGroupBtn.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: black; " +
+            "-fx-cursor: hand; " +
+            "-fx-padding: 5; " +
+            "-fx-alignment: CENTER-LEFT; " +
+            "-fx-font-size: 14px;"
+        );
+        joinGroupBtn.setOnMouseEntered(e -> joinGroupBtn.setStyle(
+        		joinGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
+        ));
+        joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(
+        		joinGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
+        ));
+        joinGroupBtn.setOnAction(e -> {
+            addMenuPopup.hide();
+            addMenuPopup = null;
+            openJoinGroupDialog();
+        });
+        
         // Ajouter les boutons au conteneur
-        menuContainer.getChildren().addAll(addUserBtn, addGroupBtn);
+        menuContainer.getChildren().addAll(addUserBtn, addGroupBtn , joinGroupBtn);
         
         // Créer le popup
         addMenuPopup = new Popup();
@@ -215,6 +239,33 @@ public class HomeController {
                 logger.log(Level.WARNING, "Failed to load application logo", e);
             }
             dialogStage.setTitle("Add New Group");
+            dialogStage.initOwner(btnAdd.getScene().getWindow());
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setResizable(false);
+            dialogStage.setScene(new Scene(root));
+            dialogStage.centerOnScreen();
+            dialogStage.showAndWait();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error loading AddGroup dialog", e);
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddGroup dialog.");
+            errorAlert.showAndWait();
+        }
+    }
+    // ajouter ca : 
+    private void openJoinGroupDialog() {
+        try {
+            logger.log(Level.INFO, "Loading AddGroup.fxml");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/JoinGroup.fxml"));
+            Parent root = loader.load();
+            
+            Stage dialogStage = new Stage();
+            try {
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true, true);
+                dialogStage.getIcons().add(logo);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to load application logo", e);
+            }
+            dialogStage.setTitle("Join New Group");
             dialogStage.initOwner(btnAdd.getScene().getWindow());
             dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.setResizable(false);
