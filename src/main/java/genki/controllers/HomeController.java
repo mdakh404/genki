@@ -35,6 +35,7 @@ public class HomeController {
     @FXML private VBox UserNameStatus;
     @FXML private ImageView messageProfil;
     @FXML private Label CurrentUsername;
+    @FXML private Button btnNotifications;
   
     private Boolean rightSideVisibilite = false;
     private Popup addMenuPopup;
@@ -275,6 +276,41 @@ public class HomeController {
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error loading AddGroup dialog", e);
             Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddGroup dialog.");
+            errorAlert.showAndWait();
+        }
+    }
+    
+    //ajouter ca :
+    @FXML
+    public void openNotifications() {
+        try {
+            logger.log(Level.INFO, "Loading Notifications.fxml");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Notifications.fxml"));
+            Parent root = loader.load();
+            
+            Stage notificationStage = new Stage();
+            try {
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/notifications.jpg"), 50, 50, true, true);
+                notificationStage.getIcons().add(logo);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to load notification icon", e);
+            }
+            
+            notificationStage.setTitle("Notifications");
+            notificationStage.setResizable(false);
+            notificationStage.initModality(Modality.APPLICATION_MODAL);
+            
+            if (btnNotifications != null && btnNotifications.getScene() != null) {
+                notificationStage.initOwner(btnNotifications.getScene().getWindow());
+            }
+            
+            notificationStage.setScene(new Scene(root));
+            notificationStage.centerOnScreen();
+            notificationStage.showAndWait();
+            
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error loading Notifications dialog", e);
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load Notifications dialog.");
             errorAlert.showAndWait();
         }
     }
