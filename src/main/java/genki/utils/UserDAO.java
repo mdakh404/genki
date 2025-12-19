@@ -57,24 +57,7 @@ public class UserDAO {
             
             if (userDoc == null) return friendsList;
             
-            Object friendsObj = userDoc.get("friends");
-            if (friendsObj == null) return friendsList;
-            
-            // Handle both List and String formats
-            List<?> friendIds = null;
-            
-            if (friendsObj instanceof List<?>) {
-                friendIds = (List<?>) friendsObj;
-            } else if (friendsObj instanceof String) {
-                // If friends is stored as a string (JSON array), try to parse it
-                String friendsStr = (String) friendsObj;
-                if (friendsStr.startsWith("[") && friendsStr.endsWith("]")) {
-                    // It's a JSON-like string, but MongoDB should handle it as a List
-                    System.err.println("Friends stored as String, not List: " + friendsStr);
-                    return friendsList;
-                }
-            }
-            
+            List<?> friendIds = userDoc.getList("friends", Object.class);
             if (friendIds == null || friendIds.isEmpty()) return friendsList;
             
             for (Object friendObj : friendIds) {

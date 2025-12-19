@@ -1,0 +1,82 @@
+package genki.utils;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
+import javafx.scene.paint.Color;
+
+/**
+ * Helper to build message UI nodes (received / sent)
+ */
+public class MessageItemBuilder {
+
+    public static HBox createReceivedMessage(String profileImageUrl, String senderName, String messageText) {
+        HBox container = new HBox(10);
+        container.getStyleClass().addAll("message-box", "received-message");
+        container.setAlignment(Pos.TOP_LEFT);
+
+        ImageView avatar = buildAvatar(profileImageUrl);
+
+        VBox content = new VBox(4);
+        Label name = new Label(senderName);
+        name.getStyleClass().addAll("sender-name");
+
+        Label msg = new Label(messageText);
+        msg.setWrapText(true);
+        msg.setMaxWidth(600);
+        msg.getStyleClass().addAll("message-text", "received-bubble");
+
+        content.getChildren().addAll(name, msg);
+
+        container.getChildren().addAll(avatar, content);
+        return container;
+    }
+
+    public static HBox createSentMessage(String profileImageUrl, String senderName, String messageText) {
+        HBox container = new HBox(10);
+        container.getStyleClass().addAll("message-box", "sent-message");
+        container.setAlignment(Pos.TOP_RIGHT);
+
+        ImageView avatar = buildAvatar(UserSession.getImageUrl());
+
+        VBox content = new VBox(4);
+        Label name = new Label("You");
+        name.getStyleClass().addAll("sender-name", "sent-name");
+
+        Label msg = new Label(messageText);
+        msg.setWrapText(true);
+        msg.setMaxWidth(600);
+        msg.getStyleClass().addAll("message-text", "sent-bubble");
+
+        content.setAlignment(Pos.TOP_RIGHT);
+        content.getChildren().addAll(name, msg);
+
+        // For sent messages, order is content then avatar
+        container.getChildren().addAll(content, avatar);
+        return container;
+    }
+
+    private static ImageView buildAvatar(String profileImageUrl) {
+        ImageView avatar = new ImageView();
+        avatar.setFitHeight(40);
+        avatar.setFitWidth(40);
+        avatar.setPreserveRatio(true);
+        try {
+            String imageUrl = profileImageUrl;
+            if (profileImageUrl != null && !profileImageUrl.startsWith("http") && !profileImageUrl.startsWith("file:")) {
+                var res = MessageItemBuilder.class.getResource("/" + profileImageUrl);
+                if (res != null) imageUrl = res.toExternalForm();
+            }
+            if (imageUrl != null) avatar.setImage(new Image(imageUrl));
+        } catch (Exception e) {
+            System.err.println("Error loading avatar image: " + e.getMessage());
+        }
+        Circle clip = new Circle(22.5, 22.5, 22.5);
+        avatar.setClip(clip);
+        return avatar;
+    }
+}

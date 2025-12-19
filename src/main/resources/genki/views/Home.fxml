@@ -38,7 +38,7 @@
                 <Button fx:id="btnGroups" style="-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;" text="Groups" />
             </HBox>
 
-  <ScrollPane fitToWidth="true" style="-fx-background-color: #1e2936; -fx-background: #1e2936; " VBox.vgrow="ALWAYS" stylesheets="@../css/chat.css">
+  <ScrollPane fitToWidth="true" style="-fx-background-color: #1e2936; -fx-background: #1e2936; " stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
     <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #1e2936;">
         
         
@@ -52,7 +52,7 @@
         <VBox style="-fx-background-color: #f3f4f6;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
 
             <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: white; -fx-padding:16; -fx-border-color:#e5e7eb; -fx-border-width:0 0 1 0; -fx-cursor:hand;">
-            <ImageView fx:id="profilTrigger" fitHeight="43.0" fitWidth="43.0" pickOnBounds="true" preserveRatio="true" >
+            <ImageView fx:id="profilTrigger" fitHeight="43.0" fitWidth="43.0" pickOnBounds="true" preserveRatio="true">
             	<clip>
                      <Circle centerX="22.5" centerY="22.5" radius="22.5" />
                 </clip>
@@ -72,39 +72,8 @@
 
             <ScrollPane fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
     <VBox fx:id="messagesContainer" prefHeight="400" prefWidth="700" spacing="16">
-    <HBox spacing="10" styleClass="message-box, received-message">
-        <ImageView fx:id="messageProfil" fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar">
-        	<clip>
-                     <Circle centerX="22.5" centerY="22.5" radius="22.5" />
-                </clip>
-                 <image>
-                     <Image url="@../img/user-default.png" />
-                 </image>
-        </ImageView>
-        <VBox spacing="4">
-            <Label styleClass="sender-name" text="Aimane Aboufadle" />
-            <Label maxWidth="600" styleClass="message-text, received-bubble" text="Long message text goes here, demonstrating a message received from another user." wrapText="true" />
-        </VBox>
-    </HBox>
-    
-    <HBox alignment="TOP_RIGHT" spacing="10" styleClass="message-box, sent-message">
-
-        <VBox alignment="TOP_RIGHT" spacing="4">
-            <Label styleClass="sender-name, sent-name" text="You" />
-            <Label maxWidth="600" styleClass="message-text, sent-bubble" text="This message is finally on the RIGHT side, demonstrating a message sent by the current user 🎯" wrapText="true" />
-        </VBox>
-
-        <ImageView fitHeight="40" fitWidth="40" preserveRatio="true" styleClass="avatar">
-        	<clip>
-                     <Circle centerX="22.5" centerY="22.5" radius="22.5" />
-                </clip>
-                 <image>
-                     <Image url="@../img/user-default.png" />
-                 </image>
-    	</ImageView>
-    </HBox>
-    
-</VBox>
+        <!-- Messages will be added dynamically from the controller -->
+    </VBox>
     
 </ScrollPane>
 
@@ -120,7 +89,7 @@
 
                 <Button fx:id="btnSend" style="-fx-background-color: #6366f1; -fx-text-fill: white; -fx-background-radius: 24; -fx-padding: 12; -fx-cursor: hand; -fx-pref-width: 48; -fx-pref-height: 48;">
                     <graphic>
-                        <Label style="-fx-text-fill: white; -fx-font-size: 18px;" text="➤" />
+                        <Label fx:id="sendMessageBtn" style="-fx-text-fill: white; -fx-font-size: 18px;" text="➤" />
                     </graphic>
                 </Button>
 
@@ -134,7 +103,7 @@
 
                 <VBox fx:id="rightSidePanel" alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">
 
-                <ImageView fx:id="rightProfileImage" fitWidth="100.0" fitHeight="100.0" preserveRatio="true" pickOnBounds="true" styleClass="avatar">
+                <ImageView fx:id="rightProfileImage" fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="avatar">
                     
                     <clip>
                      <Circle centerX="42.5" centerY="42.5" radius="52.5" />
@@ -148,7 +117,7 @@
 
                 <Label fx:id="rightContactTitle" style="-fx-text-fill: #6b7280; -fx-font-size: 14px;" text="Product Designer" />
 
-                <Label fx:id="rightContactBio" style="-fx-text-fill: #6b7280; -fx-font-size: 13px; -fx-wrap-text: true;" maxWidth="240" text="Short bio goes here. This will wrap if longer." />
+                <Label fx:id="rightContactBio" maxWidth="240" style="-fx-text-fill: #6b7280; -fx-font-size: 13px; -fx-wrap-text: true;" text="Short bio goes here. This will wrap if longer." />
 
                 <HBox alignment="CENTER" spacing="6.0">
                     <Circle fill="#4ade80" radius="4.0" />

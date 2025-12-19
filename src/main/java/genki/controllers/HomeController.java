@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -19,13 +20,21 @@ import java.util.logging.Logger;
 import genki.utils.UserSession;
 import genki.utils.ConversationItemBuilder;
 import genki.utils.UserDAO;
+import genki.utils.MessageItemBuilder;
 import org.bson.Document;
 
 import java.util.logging.Level;
 import java.io.IOException;
 import java.util.List;
 
+import genki.utils.MessageDAO;
+import genki.models.Message;
+import org.bson.types.ObjectId;
+import genki.utils.ConversationDAO;
+    
+
 public class HomeController {
+    
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
     
     @FXML private Button btnSettings;
@@ -35,11 +44,16 @@ public class HomeController {
     @FXML private ImageView UserProfil;
     @FXML private VBox AmisNameStatus;
     @FXML private VBox conversationListContainer;
-   // @FXML private VBox UserNameStatus;
+    @FXML private VBox messagesContainer;
+    @FXML private TextField messageInput;
     @FXML private ImageView messageProfil;
     @FXML private Label CurrentUsername;
+    @FXML private Button btnSend;
   
     private Boolean rightSideVisibilite = false;
+    // Track the currently open conversation
+    private ObjectId currentConversationId = null;
+    
       
     @FXML
     public void initialize() {
@@ -61,8 +75,90 @@ public class HomeController {
         }
         CurrentUsername.setText(UserSession.getUsername());
         
+        btnSend.setOnMouseClicked(e -> {
+            String messageText = messageInput.getText();
+            if (messageText == null || messageText.trim().isEmpty() || currentConversationId == null) {
+                return;
+            }
+            String senderId = UserSession.getUserId();
+            String senderName = UserSession.getUsername();
+            MessageDAO messageDAO = new MessageDAO();
+            // Save message to DB
+            messageDAO.sendMessage(currentConversationId, senderId, senderName, messageText);
+            // Optionally clear input
+            messageInput.clear();
+            // Refresh messages
+            showConversationMessages(currentConversationId);
+        });
         // Load conversations
         loadConversations();
+
+        // Show some example messages dynamically
+        if (messagesContainer != null) {
+            messagesContainer.getChildren().clear();
+            messagesContainer.getChildren().add(
+                MessageItemBuilder.createReceivedMessage(
+                    "genki/img/user-default.png",
+                    "Aimane Aboufadle",
+                    "Long message text goes here, demonstrating a message received from another user."
+                )
+            );
+            messagesContainer.getChildren().add(
+                MessageItemBuilder.createSentMessage(
+                    "genki/img/user-default.png",
+                    "You",
+                    "hhhhhhhhhhhhhh salam"
+                )
+            );
+        }
+    }
+
+     /**
+         * Set the current conversation and show its messages
+         */
+        public void setCurrentConversation(ObjectId conversationId) {
+            this.currentConversationId = conversationId;
+            showConversationMessages(conversationId);
+        }
+
+
+        //Sending Messages
+        
+       
+
+    /**
+     * Fetch all messages for a conversation and display them in the UI
+     * @param conversationId The ObjectId of the conversation
+     */
+    public void showConversationMessages(ObjectId conversationId) {
+        if (messagesContainer == null || conversationId == null) return;
+        messagesContainer.getChildren().clear();
+        try {
+            MessageDAO messageDAO = new MessageDAO();
+            // Fetch all messages for the conversation, sorted by timestamp ascending
+            com.mongodb.client.FindIterable<org.bson.Document> docs = messageDAO.getDatabase().getCollection("Message")
+                .find(new org.bson.Document("conversationId", conversationId))
+                .sort(new org.bson.Document("timestamp", 1));
+
+            String currentUserId = genki.utils.UserSession.getUserId();
+            for (org.bson.Document doc : docs) {
+                String senderId = doc.getString("senderId");
+                String senderName = doc.getString("senderName");
+                String content = doc.getString("content");
+                String photoUrl = "genki/img/user-default.png"; // Optionally fetch real photo
+                if (senderId != null && senderId.equals(currentUserId)) {
+                    messagesContainer.getChildren().add(
+                        MessageItemBuilder.createSentMessage(photoUrl, senderName, content)
+                    );
+                } else {
+                    messagesContainer.getChildren().add(
+                        MessageItemBuilder.createReceivedMessage(photoUrl, senderName, content)
+                    );
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error loading messages for conversation", e);
+        }
     }
 
     @FXML
@@ -225,17 +321,29 @@ public class HomeController {
             }
             
             // For each friend, create a conversation item
+
             for (Document friendDoc : friends) {
                 String friendName = friendDoc.getString("username");
                 String photoUrl = friendDoc.getString("photo_url");
-                
+                String friendId;
+                // Try to get the friend's user ID as a string (MongoDB _id is usually ObjectId)
+                Object objId = friendDoc.get("_id");
+                if (objId instanceof org.bson.types.ObjectId) {
+                    friendId = ((org.bson.types.ObjectId)objId).toHexString();
+                } else {
+                    friendId = String.valueOf(objId);
+                }
+                String currentUserId = UserSession.getUserId();
+                ConversationDAO conversationDAO = new ConversationDAO();
+                ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+
                 // Optional: Get last message and time from conversations collection
                 // For now, display empty message
                 String lastMessage = "";
                 String time = "";
                 int unreadCount = 0;
                 boolean isOnline = true; // TODO: Get from presence system
-                
+
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                     photoUrl != null ? photoUrl : "genki/img/user-default.png",
                     friendName,
@@ -244,7 +352,10 @@ public class HomeController {
                     unreadCount,
                     isOnline
                 );
-                
+
+                // Add click handler to set current conversation
+                conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId));
+
                 conversationListContainer.getChildren().add(conversationItem);
             }
             

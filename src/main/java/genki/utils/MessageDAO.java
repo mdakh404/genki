@@ -13,6 +13,8 @@ public class MessageDAO {
     private MongoDatabase database = DBConnect.getDatabase();
     private MongoCollection<Document> messages = database.getCollection("Message");
     
+    
+
     /**
      * Insert a new message into the database
      * @param message The message object to insert
@@ -102,4 +104,14 @@ public class MessageDAO {
             e.printStackTrace();
         }
     }
+
+public MongoDatabase getDatabase() {
+		return database;
+	}
+
+	public void setDatabase(MongoDatabase database) {
+		this.database = database;
+	}
+    
+
 }
