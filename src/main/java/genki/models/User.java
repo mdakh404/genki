@@ -86,4 +86,14 @@ public class User {
     public void setFriends(List<String> friends) {
         this.friends = friends;
     }
+
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", username=" + username + ", password=" + password + ", bio=" + bio + ", role="
+				+ role + ", photoUrl=" + photoUrl + ", createdAt=" + createdAt + ", friends=" + friends + ", groups="
+				+ groups + "]";
+	}
+    
+    
+    
 }
