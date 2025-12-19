@@ -1,5 +1,7 @@
 package genki.controllers;
 
+import genki.models.Group;
+import genki.models.GroupsModel;
 import genki.models.AuthModel;
 import genki.utils.AuthResult;
 import genki.utils.UserSession;
@@ -30,6 +32,7 @@ public class LoginController implements Initializable {
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
 
      private static final AuthModel authModel = new AuthModel();
+     private static final GroupsModel groupsModel = new GroupsModel();
 
      @FXML
      private TextField userName;
@@ -38,7 +41,7 @@ public class LoginController implements Initializable {
 
      @FXML
      private Button loginButton;
-     
+
 
      @FXML
      public void redirectToRegister() {
@@ -106,6 +109,20 @@ public class LoginController implements Initializable {
                                loginResult.getUserRole(),
                                loginResult.getImageUrl()
                          );
+
+                         groupsModel.loadGroups(loginResult.getUsername());
+
+                         if (groupsModel.getGroups().isEmpty()) {
+                             logger.warning("Empty groups list for user " + user);
+                         }
+
+                         else {
+                             for (Group group: groupsModel.getGroups()) {
+                                 UserSession.addGroup(group);
+                             }
+                         }
+
+
 
                          ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {

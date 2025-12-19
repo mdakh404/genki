@@ -45,6 +45,7 @@ public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
     @FXML
     private Button btnSettings;
+    
     @FXML
     private Label chatContactName;
     @FXML
@@ -82,6 +83,8 @@ public class HomeController {
     @FXML private Button btnAll;
     @FXML private Button btnGroups;
       
+
+
     @FXML
     public void initialize() {
         if (profilTrigger != null) {
@@ -151,6 +154,18 @@ public class HomeController {
         if (btnGroups != null) {
             btnGroups.setOnMouseClicked(e -> showGroupConversations());
         }
+
+        btnAll.setOnMouseClicked(e -> {
+             btnAll.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+             btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
+
+        btnGroups.setOnMouseClicked(e -> {
+            btnGroups.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
     }
 
     /**
