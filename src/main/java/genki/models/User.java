@@ -2,8 +2,10 @@ package genki.models;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 public class User {
+    private String id;  // Add this
     private String username;
     private String password;
     private String bio;
@@ -11,6 +13,7 @@ public class User {
     private String photoUrl;
     private LocalDateTime createdAt;
     private List<String> friends; // store friend ids as strings
+    private ArrayList<Group> groups; // groups that user joined
 
     public User() {}
 
@@ -18,6 +21,14 @@ public class User {
         this.username = username;
         this.password = password;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUsername() {

@@ -4,6 +4,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.scene.Scene;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -46,6 +48,14 @@ public class HomeController {
     @FXML
     private Button btnSettings;
 
+    @FXML
+    private Button btnAll;
+    @FXML
+    private Button btnUnread;
+    @FXML
+    private Button btnGroups;
+    
+    
     @FXML
     private Label chatContactName;
     @FXML
@@ -90,6 +100,7 @@ public class HomeController {
     private Button btnNotifications;
 
     private Popup addMenuPopup;
+
 
     @FXML
     public void initialize() {
@@ -138,7 +149,7 @@ public class HomeController {
         });
         // Load conversations
         loadConversations();
-
+        System.out.println(UserSession.getFriends());
         // Show some example messages dynamically
         if (messagesContainer != null) {
             messagesContainer.getChildren().clear();
@@ -153,6 +164,26 @@ public class HomeController {
                             "You",
                             "hhhhhhhhhhhhhh salam"));
         }
+
+        btnAll.setOnMouseClicked(e -> {
+             btnAll.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+             btnUnread.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+             btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
+        btnUnread.setOnMouseClicked(e -> {
+            btnUnread.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
+
+        btnGroups.setOnMouseClicked(e -> {
+            btnGroups.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnUnread.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
     }
 
     /**
@@ -569,6 +600,27 @@ public class HomeController {
 
             // Get all friends for the current user
             List<Document> friends = userDAO.getFriendsForUser(currentUsername);
+
+            // Convert Document friends to List<User>
+            ArrayList<genki.models.User> userFriends = new ArrayList<>();
+            if (friends != null) {
+                for (Document friendDoc : friends) {
+                    genki.models.User user = new genki.models.User();
+                    user.setId(friendDoc.getObjectId("_id").toHexString());
+                    user.setUsername(friendDoc.getString("username"));
+                    user.setPhotoUrl(friendDoc.getString("photo_url"));
+                    user.setBio(friendDoc.getString("bio"));
+                    user.setRole(friendDoc.getString("role"));
+                    userFriends.add(user);
+                }
+            }
+
+            // Build conversations list (if you have Conversation objects, otherwise use empty)
+            ArrayList<genki.models.Conversation> conversations = new ArrayList<>();
+            // Optionally, populate conversations here if you have the data
+
+            // Initialize UserSession static lists
+            UserSession.loadConversations(userFriends, conversations);
 
             if (friends == null || friends.isEmpty()) {
                 logger.log(Level.INFO, "No friends found for user: " + currentUsername);

@@ -1,10 +1,21 @@
 package genki.utils;
 
+import genki.models.User;
+import genki.models.Group;
+import genki.models.Conversation;
+
+import java.util.ArrayList;
+
+
 public class UserSession {
+
     private static String username;
     private static String userId;
     private static String userRole;
     private static String imageUrl;
+    private static ArrayList<User> listFriends = new ArrayList<>();
+    private static ArrayList<Group> listGroups = new ArrayList<>();
+    private static ArrayList<Conversation> listConversations = new ArrayList<>();
 
     private UserSession() {}
 
@@ -50,6 +61,52 @@ public class UserSession {
         UserSession.username = null;
         UserSession.userId = null;
         UserSession.userRole = null;
+    }
+
+    public static ArrayList<User> getFriends() {
+        return UserSession.listFriends;
+    }
+
+    public static ArrayList<Group> getGroups() {
+        return UserSession.listGroups;
+    }
+
+    public static ArrayList<Conversation> getConversations() {
+        return UserSession.listConversations;
+    }
+
+    public static void addFriend(User friend){
+        UserSession.listFriends.add(friend);
+    }
+
+    public static void addGroup(Group group) {
+        UserSession.listGroups.add(group);
+    }
+
+    public static void addConversation(Conversation conversation) {
+        UserSession.listConversations.add(conversation);
+    }
+
+    public static void removeFriend(User friend) {
+        UserSession.listFriends.remove(friend);
+    }
+
+    public static void removeGroup(Group group) {
+        UserSession.listGroups.remove(group);
+    }
+
+    public static void removeConversation(Conversation conversation) {
+        UserSession.listConversations.remove(conversation);
+    }
+
+    /**
+     * Initializes the session's friends and conversations lists.
+     * @param friends List of User objects representing friends.
+     * @param conversations List of Conversation objects.
+     */
+    public static void loadConversations(ArrayList<User> friends, ArrayList<Conversation> conversations) {
+        UserSession.listFriends = friends != null ? friends : new ArrayList<>();
+        UserSession.listConversations = conversations != null ? conversations : new ArrayList<>();
     }
 
 }
