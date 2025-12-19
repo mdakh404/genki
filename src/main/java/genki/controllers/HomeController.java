@@ -42,17 +42,10 @@ import genki.utils.ConversationDAO;
 public class HomeController {
 
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
-    @FXML private Button btnNotifications;
-    // private Boolean rightSideVisibilite = false;
-    private Popup addMenuPopup;
     @FXML
     private Button btnSettings;
-    @FXML
-    private Button btnAdd;
-    @FXML
-    private VBox rightSideContainer;
-    @FXML
-    private ImageView profilTrigger;
+    
+    
     @FXML
     private Label chatContactName;
     @FXML
@@ -65,10 +58,8 @@ public class HomeController {
     private VBox messagesContainer;
     @FXML
     private TextField messageInput;
-    @FXML
-    private ImageView messageProfil;
-    @FXML
-    private Label CurrentUsername;
+   
+    
     @FXML
     private Button btnSend;
     @FXML private ImageView rightProfileImage;
@@ -80,6 +71,19 @@ public class HomeController {
     // Track the currently open conversation
     private ObjectId currentConversationId = null;
 
+    
+   
+    @FXML private Button btnAdd;
+    @FXML private VBox rightSideContainer;
+    @FXML private ImageView profilTrigger;
+    @FXML private VBox UserNameStatus;
+    @FXML private ImageView messageProfil;
+    @FXML private Label CurrentUsername;
+    @FXML private Button btnNotifications;
+  
+   
+    private Popup addMenuPopup;
+      
     @FXML
     public void initialize() {
         if (profilTrigger != null) {
@@ -651,3 +655,4 @@ public class HomeController {
         }
     }
 }
+
