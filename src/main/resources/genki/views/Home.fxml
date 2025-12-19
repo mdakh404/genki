@@ -38,8 +38,7 @@
 
             <!-- Filter buttons -->
             <HBox spacing="8.0" style="-fx-background-color: #232e2e; -fx-padding: 0 16 16 16;">
-                <Button fx:id="btnAll" style="-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;" text="All" />
-                <Button fx:id="btnUnread" style="-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;" text="Unread" />
+                <Button fx:id="btnAll" style="-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;" text="Users" />
                 <Button fx:id="btnGroups" style="-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;" text="Groups" />
             </HBox>
 

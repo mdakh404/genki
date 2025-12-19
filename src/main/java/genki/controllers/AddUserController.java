@@ -25,6 +25,14 @@ public class AddUserController implements Initializable {
     @FXML
     private Button btnCancel;
     
+    // hamza ajoute ca
+    private HomeController homeController;
+
+    public void setHomeController(HomeController homeController) {
+        this.homeController = homeController;
+    }
+    //---
+    
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         txtUsername.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -57,7 +65,11 @@ public class AddUserController implements Initializable {
         }
         
         logger.log(Level.INFO, "Adding user: " + username);
-        
+        //hamza ajoute ca 
+        if (homeController != null) {
+            homeController.handleAddUserFromDialog(username);
+        }
+        //---
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Success");
         alert.setHeaderText("User Added");

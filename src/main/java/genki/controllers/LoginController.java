@@ -5,12 +5,13 @@ import genki.utils.AuthResult;
 import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
 
-
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -96,14 +97,8 @@ public class LoginController implements Initializable {
 
                          logger.log(Level.INFO, "Login successful by " + user);
 
-
-                         
                          //Creating Client Socket
                          client = new clientSocketController(loginResult.getUsername());
-                         
-                         
-                         
-
 
                          UserSession.startSession(
                                loginResult.getUsername(),
@@ -111,8 +106,6 @@ public class LoginController implements Initializable {
                                loginResult.getUserRole(),
                                loginResult.getImageUrl()
                          );
-
-
 
                          ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {
@@ -169,6 +162,7 @@ public class LoginController implements Initializable {
 
      @Override
      public void initialize(URL location, ResourceBundle resources) {
+         // Listeners pour les styles des champs
          userName.focusedProperty().addListener((obs, oldVal, newVal) -> {
                if (newVal) {
                    userName.setStyle("-fx-border-color: #374151");
@@ -184,6 +178,20 @@ public class LoginController implements Initializable {
              }
              else {
                  password.setStyle("-fx-border-color: #F2F2F2");
+             }
+         });
+         
+         // Ajouter le listener pour la touche Entrée sur le champ username
+         userName.setOnKeyPressed(event -> {
+             if (event.getCode() == KeyCode.ENTER) {
+                 onLogin();
+             }
+         });
+         
+         // Ajouter le listener pour la touche Entrée sur le champ password
+         password.setOnKeyPressed(event -> {
+             if (event.getCode() == KeyCode.ENTER) {
+                 onLogin();
              }
          });
      }
