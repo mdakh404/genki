@@ -45,8 +45,7 @@ public class HomeController {
 
     @FXML
     private Button btnSettings;
-    
-    
+
     @FXML
     private Label chatContactName;
     @FXML
@@ -59,32 +58,39 @@ public class HomeController {
     private VBox messagesContainer;
     @FXML
     private TextField messageInput;
-   
-    
+
     @FXML
     private Button btnSend;
-    @FXML private ImageView rightProfileImage;
-    @FXML private Label rightContactName;
-    @FXML private Label rightContactTitle;
-    @FXML private Label rightContactBio;
+    @FXML
+    private ImageView rightProfileImage;
+    @FXML
+    private Label rightContactName;
+    @FXML
+    private Label rightContactTitle;
+    @FXML
+    private Label rightContactBio;
 
     private Boolean rightSideVisibilite = false;
     // Track the currently open conversation
     private ObjectId currentConversationId = null;
 
-    
-   
-    @FXML private Button btnAdd;
-    @FXML private VBox rightSideContainer;
-    @FXML private ImageView profilTrigger;
-    @FXML private VBox UserNameStatus;
-    @FXML private ImageView messageProfil;
-    @FXML private Label CurrentUsername;
-    @FXML private Button btnNotifications;
-  
-   
+    @FXML
+    private Button btnAdd;
+    @FXML
+    private VBox rightSideContainer;
+    @FXML
+    private ImageView profilTrigger;
+    @FXML
+    private VBox UserNameStatus;
+    @FXML
+    private ImageView messageProfil;
+    @FXML
+    private Label CurrentUsername;
+    @FXML
+    private Button btnNotifications;
+
     private Popup addMenuPopup;
-      
+
     @FXML
     public void initialize() {
         if (profilTrigger != null) {
@@ -151,7 +157,7 @@ public class HomeController {
 
     /**
      * Set the current conversation and show its messages
-    */
+     */
     public void setCurrentConversation(ObjectId conversationId) {
         System.out.println("The Set method...");
         this.currentConversationId = conversationId;
@@ -161,10 +167,10 @@ public class HomeController {
             // Use a new DBConnection for fetching the conversation document
             DBConnection dbConnection = new DBConnection("genki_testing");
             org.bson.Document conversationDoc = dbConnection
-                .getDatabase()
-                .getCollection("Conversation")
-                .find(new org.bson.Document("_id", conversationId))
-                .first();
+                    .getDatabase()
+                    .getCollection("Conversation")
+                    .find(new org.bson.Document("_id", conversationId))
+                    .first();
             if (conversationDoc != null && conversationDoc.containsKey("participantIds")) {
                 java.util.List<?> participants = conversationDoc.getList("participantIds", Object.class);
                 String friendIdStr = null;
@@ -217,7 +223,8 @@ public class HomeController {
                                     }
                                 } catch (Exception e) {
                                     System.out.println(e.getMessage());
-                                    profilTrigger.setImage(new Image("genki/img/user-default.png", 40, 40, false, true));
+                                    profilTrigger
+                                            .setImage(new Image("genki/img/user-default.png", 40, 40, false, true));
                                 }
                             }
                         }
@@ -306,107 +313,97 @@ public class HomeController {
             addMenuPopup = null;
             return;
         }
-        
+
         // Créer le conteneur du menu
         VBox menuContainer = new VBox(5);
         menuContainer.setPadding(new Insets(10));
         menuContainer.setMaxWidth(100);
         menuContainer.setBackground(new Background(new BackgroundFill(
-            Color.rgb(51, 213, 214),
-            new CornerRadii(8), 
-            Insets.EMPTY
-        )));
-        
+                Color.rgb(51, 213, 214),
+                new CornerRadii(8),
+                Insets.EMPTY)));
+
         // Ajouter une ombre
         DropShadow dropShadow = new DropShadow();
         dropShadow.setColor(Color.rgb(0, 0, 0, 0.5));
         dropShadow.setRadius(10);
         dropShadow.setOffsetY(3);
         menuContainer.setEffect(dropShadow);
-        
+
         // Créer le bouton "Add User"
         Button addUserBtn = new Button("Add User");
         addUserBtn.setPrefWidth(150);
         addUserBtn.setStyle(
-            "-fx-background-color: transparent; " +
-            "-fx-text-fill: black; " +
-            "-fx-cursor: hand; " +
-            "-fx-padding: 5; " +
-            "-fx-alignment: CENTER-LEFT; " +
-            "-fx-font-size: 14px;"
-        );
+                "-fx-background-color: transparent; " +
+                        "-fx-text-fill: black; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-padding: 5; " +
+                        "-fx-alignment: CENTER-LEFT; " +
+                        "-fx-font-size: 14px;");
         addUserBtn.setOnMouseEntered(e -> addUserBtn.setStyle(
-            addUserBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
-        ));
+                addUserBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"));
         addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(
-            addUserBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
-        ));
+                addUserBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")));
         addUserBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
             openAddUserDialog();
         });
-        
+
         // Créer le bouton "Add Group"
         Button addGroupBtn = new Button("Add Group");
         addGroupBtn.setPrefWidth(150);
         addGroupBtn.setStyle(
-            "-fx-background-color: transparent; " +
-            "-fx-text-fill: black; " +
-            "-fx-cursor: hand; " +
-            "-fx-padding: 5; " +
-            "-fx-alignment: CENTER-LEFT; " +
-            "-fx-font-size: 14px;"
-        );
+                "-fx-background-color: transparent; " +
+                        "-fx-text-fill: black; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-padding: 5; " +
+                        "-fx-alignment: CENTER-LEFT; " +
+                        "-fx-font-size: 14px;");
         addGroupBtn.setOnMouseEntered(e -> addGroupBtn.setStyle(
-            addGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
-        ));
+                addGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"));
         addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(
-            addGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
-        ));
+                addGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")));
         addGroupBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
             openAddGroupDialog();
         });
-        
-        //ajouter ca 
+
+        // ajouter ca
         // Créer le bouton "Join Group"
         Button joinGroupBtn = new Button("Join Group");
         joinGroupBtn.setPrefWidth(150);
         joinGroupBtn.setStyle(
-            "-fx-background-color: transparent;" +
-            "-fx-text-fill: black; " +
-            "-fx-cursor: hand; " +
-            "-fx-padding: 5; " +
-            "-fx-alignment: CENTER-LEFT; " +
-            "-fx-font-size: 14px;"
-        );
+                "-fx-background-color: transparent;" +
+                        "-fx-text-fill: black; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-padding: 5; " +
+                        "-fx-alignment: CENTER-LEFT; " +
+                        "-fx-font-size: 14px;");
         joinGroupBtn.setOnMouseEntered(e -> joinGroupBtn.setStyle(
-        		joinGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
-        ));
+                joinGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"));
         joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(
-        		joinGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
-        ));
+                joinGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")));
         joinGroupBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
             openJoinGroupDialog();
         });
-        
+
         // Ajouter les boutons au conteneur
-        menuContainer.getChildren().addAll(addUserBtn, addGroupBtn , joinGroupBtn);
-        
+        menuContainer.getChildren().addAll(addUserBtn, addGroupBtn, joinGroupBtn);
+
         // Créer le popup
         addMenuPopup = new Popup();
         addMenuPopup.setAutoHide(true);
         addMenuPopup.getContent().add(menuContainer);
-        
+
         // Calculer la position (sous le bouton btnAdd)
         Bounds bounds = btnAdd.localToScreen(btnAdd.getBoundsInLocal());
         addMenuPopup.show(btnAdd, bounds.getMinX(), bounds.getMaxY());
     }
-    
+
     private void openAddUserDialog() {
         try {
             logger.log(Level.INFO, "Loading AddUser.fxml");
@@ -433,7 +430,7 @@ public class HomeController {
             errorAlert.showAndWait();
         }
     }
-    
+
     private void openAddGroupDialog() {
         try {
             logger.log(Level.INFO, "Loading AddGroup.fxml");
@@ -461,16 +458,18 @@ public class HomeController {
             errorAlert.showAndWait();
         }
     }
-    // ajouter ca : 
+
+    // ajouter ca :
     private void openJoinGroupDialog() {
         try {
             logger.log(Level.INFO, "Loading AddGroup.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/JoinGroup.fxml"));
             Parent root = loader.load();
-            
+
             Stage dialogStage = new Stage();
             try {
-                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true, true);
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true,
+                        true);
                 dialogStage.getIcons().add(logo);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to load application logo", e);
@@ -488,35 +487,36 @@ public class HomeController {
             errorAlert.showAndWait();
         }
     }
-    
-    //ajouter ca :
+
+    // ajouter ca :
     @FXML
     public void openNotifications() {
         try {
             logger.log(Level.INFO, "Loading Notifications.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Notifications.fxml"));
             Parent root = loader.load();
-            
+
             Stage notificationStage = new Stage();
             try {
-                Image logo = new Image(getClass().getResourceAsStream("/genki/img/notifications.jpg"), 50, 50, true, true);
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/notifications.jpg"), 50, 50, true,
+                        true);
                 notificationStage.getIcons().add(logo);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to load notification icon", e);
             }
-            
+
             notificationStage.setTitle("Notifications");
             notificationStage.setResizable(false);
             notificationStage.initModality(Modality.APPLICATION_MODAL);
-            
+
             if (btnNotifications != null && btnNotifications.getScene() != null) {
                 notificationStage.initOwner(btnNotifications.getScene().getWindow());
             }
-            
+
             notificationStage.setScene(new Scene(root));
             notificationStage.centerOnScreen();
             notificationStage.showAndWait();
-            
+
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error loading Notifications dialog", e);
             Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load Notifications dialog.");
@@ -597,10 +597,10 @@ public class HomeController {
                 try {
                     DBConnection dbConnection = new DBConnection("genki_testing");
                     org.bson.Document conversationDoc = dbConnection
-                        .getDatabase()
-                        .getCollection("Conversation")
-                        .find(new org.bson.Document("_id", conversationId))
-                        .first();
+                            .getDatabase()
+                            .getCollection("Conversation")
+                            .find(new org.bson.Document("_id", conversationId))
+                            .first();
                     if (conversationDoc != null) {
                         lastMessage = conversationDoc.getString("lastMessageContent");
                         Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
@@ -611,18 +611,21 @@ public class HomeController {
                                 msgTime = (java.time.LocalDateTime) lastMsgTimeObj;
                             } else if (lastMsgTimeObj instanceof java.util.Date) {
                                 java.util.Date date = (java.util.Date) lastMsgTimeObj;
-                                msgTime = java.time.LocalDateTime.ofInstant(date.toInstant(), java.time.ZoneId.systemDefault());
+                                msgTime = java.time.LocalDateTime.ofInstant(date.toInstant(),
+                                        java.time.ZoneId.systemDefault());
                             } else if (lastMsgTimeObj instanceof String) {
                                 try {
                                     msgTime = java.time.LocalDateTime.parse((String) lastMsgTimeObj);
-                                } catch (Exception ignore) {}
+                                } catch (Exception ignore) {
+                                }
                             }
                             if (msgTime != null) {
                                 java.time.LocalDate today = java.time.LocalDate.now();
                                 if (msgTime.toLocalDate().equals(today)) {
                                     time = String.format("%02d:%02d", msgTime.getHour(), msgTime.getMinute());
                                 } else {
-                                    time = String.format("%02d/%02d/%02d", msgTime.getDayOfMonth(), msgTime.getMonthValue(), msgTime.getYear() % 100);
+                                    time = String.format("%02d/%02d/%02d", msgTime.getDayOfMonth(),
+                                            msgTime.getMonthValue(), msgTime.getYear() % 100);
                                 }
                             } else {
                                 time = lastMsgTimeObj.toString();
@@ -655,4 +658,3 @@ public class HomeController {
         }
     }
 }
-
