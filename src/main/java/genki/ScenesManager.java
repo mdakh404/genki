@@ -19,6 +19,8 @@ public class ScenesManager extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+    	
+    	
    	try {
    	server.startServer();}
    	catch(Exception e) {
@@ -38,6 +40,7 @@ public class ScenesManager extends Application {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to load application logo", e);
         }
+        
 //        primaryStage.setOnCloseRequest(e -> {
 //        	server.stopServer();
 //        });

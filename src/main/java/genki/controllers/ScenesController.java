@@ -22,8 +22,8 @@ public class ScenesController {
 
                   stage.setScene(new Scene(root));
 
-                  //stage.setMaximized(true);
-//                  stage.centerOnScreen();
+                  stage.centerOnScreen();
+
                   stage.setTitle(title);
       }
 }
