@@ -28,7 +28,11 @@ public class ScenesManager extends Application {
    	}
 
         ScenesController.setStage(primaryStage);
-        
+        try {
+        	server.startServer();
+        }catch(Exception e) {
+        	System.out.println("deja running");
+        }
         // Ajouter le logo de l'application
         try {
             Image logo = new Image(getClass().getResourceAsStream("/genki/img/logo.png"), 128, 128, true, true);

@@ -65,7 +65,7 @@
                         <Image url="@../img/password.jpg" />
                     </image>
                 </ImageView>
-                <Button fx:id="registerButton" layoutX="32.0" layoutY="558.0" mnemonicParsing="false" prefWidth="384.0" styleClass="register-button" stylesheets="@../css/register.css" text="Sign Up" textAlignment="CENTER" textFill="WHITE" onAction="#onRegister">
+                <Button fx:id="registerButton" layoutX="32.0" layoutY="558.0" mnemonicParsing="false" onAction="#onRegister" prefWidth="384.0" styleClass="register-button" stylesheets="@../css/register.css" text="Sign Up" textAlignment="CENTER" textFill="WHITE">
                     <padding>
                         <Insets bottom="11.0" top="7.0" />
                     </padding>
@@ -89,6 +89,11 @@
             <ImageView fitHeight="23.0" fitWidth="24.0" layoutX="41.0" layoutY="436.0" pickOnBounds="true" preserveRatio="true">
                <image>
                   <Image url="@../img/pen.jpg" />
+               </image>
+            </ImageView>
+            <ImageView fx:id="backToLoginImage" fitHeight="23.0" fitWidth="95.0" layoutX="20.0" layoutY="14.0" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand">
+               <image>
+                  <Image url="@../img/arrow_back.png" />
                </image>
             </ImageView>
             </children>

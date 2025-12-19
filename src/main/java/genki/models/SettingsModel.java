@@ -9,6 +9,7 @@ import genki.utils.CredsValidator;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.MongoException;
 import org.bson.Document;
 
@@ -90,7 +91,7 @@ public class SettingsModel {
                         Updates.set("username", newUsername)
                 );
 
-                logger.log(Level.INFO, "Updated username ...");
+                logger.log(Level.INFO, "Updated username " + oldUsername + " to " + newUsername);
                 return new UpdateResult(UpdateStatus.USERNAME_UPDATED);
 
             } catch (MongoException mongoExc) {
@@ -115,14 +116,14 @@ public class SettingsModel {
             return new UpdateResult(UpdateStatus.BIO_UPDATED);
 
 
-        } catch (MongoException mongoExc) {
-            logger.log(Level.WARNING, "Error updating bio ", mongoExc);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error updating bio ", e);
             return new UpdateResult(UpdateStatus.DB_ERROR);
         }
 
     }
 
-    private UpdateResult updatePassword(String username, String oldPassword, String newPassword) {
+    public UpdateResult updatePassword(String username, String oldPassword, String newPassword) {
 
         if (!checkPasswordValidity(newPassword)) {
             return new UpdateResult(UpdateStatus.INVALID_NEW_PASSWORD);
@@ -158,6 +159,29 @@ public class SettingsModel {
             }
         }
 
+   }
+
+   public UpdateResult deleteAccount(String username) throws MongoException {
+
+        try {
+
+              MongoCollection<Document> usersCollection = SettingsUpdateConnection.getCollection("users");
+
+              DeleteResult deleteResult = usersCollection.deleteOne(
+                     Filters.eq("username", username)
+              );
+
+              if (deleteResult.getDeletedCount() > 0) {
+                  return new UpdateResult(UpdateStatus.ACCOUNT_DELETED);
+              }
+              else {
+                  return new UpdateResult(UpdateStatus.ACCOUNT_DELETION_ERROR);
+              }
+
+        } catch (MongoException mongoExc) {
+            logger.log(Level.WARNING, "DB error while deleting account", mongoExc);
+            return new UpdateResult(UpdateStatus.DB_ERROR);
+        }
    }
 
 }

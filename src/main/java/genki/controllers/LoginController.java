@@ -37,6 +37,7 @@ public class LoginController implements Initializable {
 
      @FXML
      private Button loginButton;
+     
 
      @FXML
      public void redirectToRegister() {
@@ -100,21 +101,16 @@ public class LoginController implements Initializable {
                          
                          
                          
+
+
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
                                loginResult.getUserRole(),
                                loginResult.getImageUrl()
                          );
-                         
-                         
 
-                         AlertConstruct.alertConstructor(
-                           "Login",
-                           "Login Successful",
-                           "You have successfully logged in.",
-                           Alert.AlertType.INFORMATION
-                         );
+
 
                          ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {

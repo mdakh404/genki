@@ -36,19 +36,6 @@ public class DBConnection {
           throw new MongoException("Mongo Exception", mongoEXCP);
        }
     }
-    
-//  private static Connection connection;
-//  
-//  public static Connection getConnection() throws SQLException {
-//      if (connection == null || connection.isClosed()) {
-//          String url = "jdbc:mysql://localhost:3306/votre_db";
-//          String user = "root";
-//          String password = "password";
-//          connection = DriverManager.getConnection(url, user, password);
-//      }
-//      return connection;
-//  }
-//}
 
     public MongoCollection<Document> getUsersCollection() throws MongoException {
         try {
@@ -58,6 +45,16 @@ public class DBConnection {
         } catch (MongoException mongoException) {
             throw new MongoException(mongoException.getMessage());
         }
-
     }
+    
+    // hamza add this
+    public MongoCollection<Document> getCollection(String collectionName) throws MongoException {
+        try {
+            logger.log(Level.INFO, "Accessing collection: " + collectionName);
+            return this.getDatabase().getCollection(collectionName);
+        } catch (MongoException mongoException) {
+            throw new MongoException("Failed to access collection: " + collectionName, mongoException);
+        }
+    }
+    
 }
