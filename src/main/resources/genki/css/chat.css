@@ -100,8 +100,9 @@
 /* ==================================== */
 
 /* Styles specific to a message sent by the current user */
+
 .sent-message {
-    /* Alignment is handled in FXML, but this is a good selector */
+   /* Add right padding so sent messages don't touch the edge */
 }
 
 /* Name label for sent message (e.g., align right) */

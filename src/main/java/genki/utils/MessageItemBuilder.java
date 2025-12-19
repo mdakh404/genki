@@ -20,6 +20,7 @@ public class MessageItemBuilder {
         container.setAlignment(Pos.TOP_LEFT);
 
         ImageView avatar = buildAvatar(profileImageUrl);
+        avatar.getStyleClass().add("avatar");
 
         VBox content = new VBox(4);
         Label name = new Label(senderName);
@@ -42,6 +43,7 @@ public class MessageItemBuilder {
         container.setAlignment(Pos.TOP_RIGHT);
 
         ImageView avatar = buildAvatar(UserSession.getImageUrl());
+        avatar.getStyleClass().add("avatar");
 
         VBox content = new VBox(4);
         Label name = new Label("You");
@@ -64,19 +66,21 @@ public class MessageItemBuilder {
         ImageView avatar = new ImageView();
         avatar.setFitHeight(40);
         avatar.setFitWidth(40);
-        avatar.setPreserveRatio(true);
+        avatar.setPreserveRatio(false); // Always fill the 40x40 area
         try {
             String imageUrl = profileImageUrl;
             if (profileImageUrl != null && !profileImageUrl.startsWith("http") && !profileImageUrl.startsWith("file:")) {
                 var res = MessageItemBuilder.class.getResource("/" + profileImageUrl);
                 if (res != null) imageUrl = res.toExternalForm();
             }
-            if (imageUrl != null) avatar.setImage(new Image(imageUrl));
+            if (imageUrl != null) avatar.setImage(new Image(imageUrl, 40, 40, false, true));
         } catch (Exception e) {
             System.err.println("Error loading avatar image: " + e.getMessage());
         }
-        Circle clip = new Circle(22.5, 22.5, 22.5);
+        // Center the clip for a 40x40 image
+        Circle clip = new Circle(20, 20, 20);
         avatar.setClip(clip);
+        avatar.getStyleClass().add("avatar");
         return avatar;
     }
 }
