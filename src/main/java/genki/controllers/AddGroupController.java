@@ -1,6 +1,14 @@
 package genki.controllers;
 
+import genki.utils.UserSession;
+import genki.utils.AddGroupResult;
+import genki.utils.AddGroupStatus;
+import genki.utils.AlertConstruct;
+import genki.models.GroupModel;
+
+
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -11,8 +19,10 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
+
 public class AddGroupController {
-    
+
+
     @FXML
     private TextField txtGroupName;
     
@@ -45,10 +55,13 @@ public class AddGroupController {
     
     @FXML
     private void handleAddGroup() {
-        String groupName = txtGroupName.getText().trim();
 
+        String groupName = txtGroupName.getText().trim();
+        String groupDescription = txtDescription.getText().trim();
         String privacy = rbPublic.isSelected() ? "Public" : "Private";
-        
+
+        boolean groupPrivacyPublic = privacy.equals("Public");
+
         if (groupName.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Validation Error");
@@ -57,17 +70,52 @@ public class AddGroupController {
             alert.showAndWait();
             return;
         }
+
+        AddGroupResult addGroupResult = GroupModel.addGroup(groupName, groupDescription, groupPrivacyPublic, UserSession.getUsername());
+
+        switch (addGroupResult.getResult()) {
+
+            case AddGroupStatus.GROUP_ADD_SUCCESS:
+                 AlertConstruct.alertConstructor(
+                         "Create Group",
+                              "Group creation success",
+                              "Your group has been successfully created !",
+                         AlertType.INFORMATION
+                 );
+                 closeWindow();
+                 break;
+
+            case AddGroupStatus.GROUP_ADD_FAILURE:
+                AlertConstruct.alertConstructor(
+                        "Create Group",
+                        "Group creation failure",
+                        "An unexpected error occurred while creating your group, please try again.",
+                        AlertType.INFORMATION
+                );
+                break;
+
+            case AddGroupStatus.DB_ERROR:
+                AlertConstruct.alertConstructor(
+                        "Network Error",
+                        "Database Connection Error",
+                        "Failed to connect to database, please try again in a few minutes.",
+                        AlertType.ERROR
+                );
+                break;
+
+            default:
+                AlertConstruct.alertConstructor(
+                        "Unexpected Error",
+                        "Something went wrong",
+                        "An unexpected error occurred, please ty again in a few minutes.",
+                        AlertType.ERROR
+                );
+
+        }
+
+
         
-        // TODO: Ajouter la logique pour sauvegarder le groupe dans votre base de données
-        System.out.println("Adding group: " + groupName);
-        
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Success");
-        alert.setHeaderText(null);
-        alert.setContentText("Group '" + groupName + "' added successfully!");
-        alert.showAndWait();
-        
-        closeWindow();
+
     }
     
     @FXML
