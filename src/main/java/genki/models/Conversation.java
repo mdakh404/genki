@@ -1,11 +1,9 @@
 package genki.models;
 
-import org.bson.types.ObjectId;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class Conversation {
-    private ObjectId id;
     private String type; // "direct" or "group"
     private List<String> participantIds; // List of user IDs
     private String lastMessageContent;
@@ -25,13 +23,6 @@ public class Conversation {
     }
 
     // Getters and Setters
-    public ObjectId getId() {
-        return id;
-    }
-
-    public void setId(ObjectId id) {
-        this.id = id;
-    }
 
     public String getType() {
         return type;

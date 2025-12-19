@@ -18,9 +18,12 @@ import java.util.logging.Logger;
 
 import genki.utils.UserSession;
 import genki.utils.ConversationItemBuilder;
+import genki.utils.UserDAO;
+import org.bson.Document;
 
 import java.util.logging.Level;
 import java.io.IOException;
+import java.util.List;
 
 public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
@@ -210,56 +213,43 @@ public class HomeController {
      */
     private void loadConversations() {
         try {
-            // Example: Add sample conversations (replace with database queries later)
-            addConversation(
-                "genki/img/user-default.png",
-                "Sarah Wilson",
-                "Sent a photo",
-                "12:45 PM",
-                2,
-                true
-            );
+            UserDAO userDAO = new UserDAO();
+            String currentUsername = UserSession.getUsername();
             
-            addConversation(
-                "genki/img/user-default.png",
-                "John Developer",
-                "Great project!",
-                "10:30 AM",
-                0,
-                true
-            );
+            // Get all friends for the current user
+            List<Document> friends = userDAO.getFriendsForUser(currentUsername);
             
-            addConversation(
-                "@../../../resources/img/user-default.png",
-                "Emma Designer",
-                "Let's discuss the design",
-                "Yesterday",
-                3,
-                false
-            );
+            if (friends == null || friends.isEmpty()) {
+                logger.log(Level.INFO, "No friends found for user: " + currentUsername);
+                return;
+            }
+            
+            // For each friend, create a conversation item
+            for (Document friendDoc : friends) {
+                String friendName = friendDoc.getString("username");
+                String photoUrl = friendDoc.getString("photo_url");
+                
+                // Optional: Get last message and time from conversations collection
+                // For now, display empty message
+                String lastMessage = "";
+                String time = "";
+                int unreadCount = 0;
+                boolean isOnline = true; // TODO: Get from presence system
+                
+                HBox conversationItem = ConversationItemBuilder.createConversationItem(
+                    photoUrl != null ? photoUrl : "genki/img/user-default.png",
+                    friendName,
+                    lastMessage,
+                    time,
+                    unreadCount,
+                    isOnline
+                );
+                
+                conversationListContainer.getChildren().add(conversationItem);
+            }
+            
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error loading conversations", e);
-        }
-    }
-    
-    /**
-     * Helper method to add a conversation to the list
-     */
-    private void addConversation(String profileImageUrl, String contactName, String lastMessage, 
-                                  String time, int unreadCount, boolean isOnline) {
-        try {
-            HBox conversationItem = ConversationItemBuilder.createConversationItem(
-                profileImageUrl,
-                contactName,
-                lastMessage,
-                time,
-                unreadCount,
-                isOnline
-            );
-            
-            conversationListContainer.getChildren().add(conversationItem);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error adding conversation: " + contactName, e);
         }
     }
 }

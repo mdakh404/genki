@@ -4,7 +4,6 @@ import org.bson.types.ObjectId;
 import java.time.LocalDateTime;
 
 public class Message {
-    private ObjectId id;
     private ObjectId conversationId;
     private String senderId;
     private String senderName;
@@ -24,19 +23,11 @@ public class Message {
         this.isRead = false;
     }
 
+
     // Getters and Setters
-    public ObjectId getId() {
-        return id;
-    }
-
-    public void setId(ObjectId id) {
-        this.id = id;
-    }
-
     public ObjectId getConversationId() {
-        return conversationId;
+        return this.conversationId;
     }
-
     public void setConversationId(ObjectId conversationId) {
         this.conversationId = conversationId;
     }
