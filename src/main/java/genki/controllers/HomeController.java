@@ -45,6 +45,13 @@ public class HomeController {
 
     @FXML
     private Button btnSettings;
+
+    @FXML
+    private Button btnAll;
+    @FXML
+    private Button btnUnread;
+    @FXML
+    private Button btnGroups;
     
     
     @FXML
@@ -84,7 +91,8 @@ public class HomeController {
   
    
     private Popup addMenuPopup;
-      
+
+
     @FXML
     public void initialize() {
         if (profilTrigger != null) {
@@ -147,6 +155,26 @@ public class HomeController {
                             "You",
                             "hhhhhhhhhhhhhh salam"));
         }
+
+        btnAll.setOnMouseClicked(e -> {
+             btnAll.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+             btnUnread.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+             btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
+        btnUnread.setOnMouseClicked(e -> {
+            btnUnread.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
+
+        btnGroups.setOnMouseClicked(e -> {
+            btnGroups.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnUnread.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+        });
+
     }
 
     /**

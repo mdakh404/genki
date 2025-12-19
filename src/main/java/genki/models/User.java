@@ -2,6 +2,7 @@ package genki.models;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 public class User {
     private String username;
@@ -11,6 +12,7 @@ public class User {
     private String photoUrl;
     private LocalDateTime createdAt;
     private List<String> friends; // store friend ids as strings
+    private ArrayList<Group> groups; // groups that user joined
 
     public User() {}
 
