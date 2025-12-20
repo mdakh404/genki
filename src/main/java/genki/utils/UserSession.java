@@ -17,6 +17,7 @@ public class UserSession {
     private static ArrayList<User> listFriends = new ArrayList<>();
     private static ArrayList<Group> listGroups = new ArrayList<>();
     private static ArrayList<Conversation> listConversations = new ArrayList<>();
+    public  static ArrayList<User> ConnectedUsers = new ArrayList<>();
     private static clientSocketController ClientSocket; 
 
     private UserSession() {}
@@ -64,7 +65,15 @@ public class UserSession {
 
 
 
-    public static boolean isLoggedIn() {
+    public static ArrayList<User> getConnectedUsers() {
+		return ConnectedUsers;
+	}
+
+	public static void setConnectedUsers(ArrayList<User> connectedUsers) {
+		ConnectedUsers = connectedUsers;
+	}
+
+	public static boolean isLoggedIn() {
         return UserSession.username != null;
     }
 
