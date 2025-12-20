@@ -740,7 +740,7 @@ public class HomeController {
 	        if (friends == null || friends.isEmpty()) {
 	        	Label noUsersLabel = new Label("No users found");
 	            noUsersLabel.setStyle(
-	                "-fx-text-fill: #6b9e9e; " +
+	                "-fx-text-fill: white; " +
 	                "-fx-font-size: 14px; " +
 	                "-fx-padding: 20;"
 	            );
