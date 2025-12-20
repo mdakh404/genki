@@ -24,10 +24,11 @@
 }
 
 .register-redirect {
-    -fx-background-color: white;
+    -fx-background-color: transparent;
     -fx-border-color: white;
     -fx-text-fill: #46c9cb;
     -fx-cursor: hand;
+    -fx-padding-left :1px;
 }
 
 /*TODO add letter spacing between characters*/

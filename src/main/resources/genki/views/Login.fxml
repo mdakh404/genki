@@ -71,7 +71,7 @@
                         <Image url="@../img/password.jpg" />
                     </image>
                 </ImageView>
-                <Button fx:id="loginButton" layoutX="34.0" layoutY="455.0" mnemonicParsing="false" onAction="#onLogin" prefWidth="384.0" styleClass="login-button" stylesheets="@../css/login.css" text="Se connecter" textAlignment="CENTER" textFill="WHITE">
+                <Button fx:id="loginButton" layoutX="34.0" layoutY="455.0" mnemonicParsing="false" onAction="#onLogin" prefWidth="384.0" styleClass="login-button" stylesheets="@../css/login.css" text="Sign in" textAlignment="CENTER" textFill="WHITE">
                     <padding>
                         <Insets bottom="11.0" top="7.0" />
                     </padding>
@@ -79,11 +79,16 @@
                         <Font size="18.0" />
                     </font>
                 </Button>
-            <Button layoutX="20.0" layoutY="404.0" fx:id="redirectToRegister" mnemonicParsing="false" styleClass="register-redirect" stylesheets="@../css/login.css" text="Sign Up" onAction="#redirectToRegister">
-               <font>
-                  <Font size="16.0" />
-               </font>
-            </Button>
+                <Text layoutX="95.0" layoutY="420.0" text="You don't have an account ? ">
+                    <font>
+                        <Font size="14.0" />
+                    </font>
+                </Text>
+                <Button layoutX="265.0" layoutY="395.0" fx:id="redirectToRegister" mnemonicParsing="false" styleClass="register-redirect" stylesheets="@../css/login.css" text="Sign Up" onAction="#redirectToRegister">
+                    <font>
+                        <Font size="17.0" />
+                    </font>
+                </Button>
             </children>
         </Pane>
     </children>
