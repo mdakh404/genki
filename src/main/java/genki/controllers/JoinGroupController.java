@@ -1,5 +1,9 @@
 package genki.controllers;
 
+import genki.models.GroupModel;
+import genki.utils.DBConnection;
+
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -11,7 +15,10 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class JoinGroupController {
-    
+
+    private static final GroupModel groupModel = new GroupModel();
+    private static final DBConnection JoinGroupDBConnection = new DBConnection("genki_testing");
+
     @FXML
     private TextField CodeJoinGroup;
     
@@ -25,17 +32,12 @@ public class JoinGroupController {
     private Button btnCancel;
     
     // Liste de tous les groupes disponibles
-    private ObservableList<String> allGroups = FXCollections.observableArrayList(
-        "Group-Alpha-2024",
-        "Group-Beta-Test",
-        "Group-Gamma-Dev",
-        "Developers-Team",
-        "Design-Squad"
-    );
+    private ObservableList<String> allGroups = FXCollections.observableArrayList();
     
     @FXML
     public void initialize() {
         setupAutoComplete();
+        allGroups.addAll(groupModel.getGroupNames());
     }
     
     /**

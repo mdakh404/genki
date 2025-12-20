@@ -1,6 +1,8 @@
 package genki.models;
 
+import genki.models.Group;
 import genki.utils.DBConnection;
+import genki.utils.UserSession;
 import genki.utils.AddGroupResult;
 import genki.utils.AddGroupStatus;
 
@@ -8,9 +10,11 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.MongoException;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.ArrayList;
 
 public class GroupModel {
 
@@ -20,7 +24,7 @@ public class GroupModel {
 
        public static AddGroupResult addGroup(String groupName, String groupDescription, boolean isPublic, String groupAdmin) {
 
-              logger.log(Level.INFO, "Adding group " + groupName + " ...");
+             logger.log(Level.INFO, "Adding group " + groupName + " ...");
 
               if (groupAdmin == null) {
                   logger.log(Level.WARNING, "UserSession was revoked.");
@@ -41,6 +45,18 @@ public class GroupModel {
 
                 if (insertGroupResult.wasAcknowledged()) {
                     logger.log(Level.INFO, "Successfully added group " + groupName);
+
+                    ObjectId nvGroupId = new ObjectId();
+                    Group nvGroup = new Group(
+                            nvGroupId.toHexString(),
+                            groupName,
+                            groupDescription,
+                            isPublic,
+                            "",
+                            groupAdmin
+                    );
+
+                    UserSession.addGroup(nvGroup);
                     return new AddGroupResult(AddGroupStatus.GROUP_ADD_SUCCESS);
                 }
 
@@ -56,5 +72,27 @@ public class GroupModel {
 
        }
 
+
+       public ArrayList<String> getGroupNames() {
+
+           ArrayList<String> groupNames = new ArrayList<>();
+
+           try {
+
+               MongoCollection<Document> groupsCollection = groupModelDBConnection.getCollection("groups");
+
+               groupsCollection.find().forEach(groupDoc -> {
+                   groupNames.add(groupDoc.getString("group_name"));
+               });
+
+               return groupNames;
+
+           } catch (MongoException ex) {
+               logger.warning("DB Error while getting group names" + ex);
+               return new ArrayList<>();
+           }
+
+
+       }
 
 }
