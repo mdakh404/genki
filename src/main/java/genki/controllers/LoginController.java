@@ -109,6 +109,8 @@ public class LoginController implements Initializable {
                                loginResult.getUserRole(),
                                loginResult.getImageUrl()
                          );
+                         
+                         
 
                          groupsModel.loadGroups(loginResult.getUsername());
 

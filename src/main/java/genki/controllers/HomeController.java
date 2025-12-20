@@ -727,7 +727,15 @@ public class HomeController {
                 }
 
                 int unreadCount = 0;
-                boolean isOnline = true; // TODO: Get from presence system
+                UserDAO usrMethods = new UserDAO();
+                genki.models.User usr = usrMethods.documentToUser(friendDoc);
+                boolean isOnline;
+                if(UserSession.getConnectedUsers().contains(usr)){
+                    isOnline = true;
+                }else{
+                    isOnline = false;
+                }
+                 
 
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                         photoUrl != null ? photoUrl : "genki/img/user-default.png",

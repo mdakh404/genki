@@ -10,6 +10,7 @@ import java.util.List;
 import genki.models.User;
 import genki.network.ClientHandler;
 import genki.network.MessageListener;
+import genki.utils.GsonUtility;
 import genki.utils.UserSession;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -98,6 +99,7 @@ public class ServerSocketController implements MessageListener {
 			System.out.println("Registered user: " + handler.getUser().getUsername());
 			System.out.println("Connected2222 : " + UserSession.getConnectedUsers());
 			//printConnectedUsers();
+			broadcastConnectedUsers();
 		});
 	}
 
@@ -116,14 +118,18 @@ public class ServerSocketController implements MessageListener {
 		// MUST use Platform.runLater because this method is called by the
 		// ClientHandler's background thread
 		Platform.runLater(() -> {
-
 			// Clean up the list of active handlers (remove the one that closed)
 			UserSession.getConnectedUsers().removeIf(client -> client.equals(user));
 			ConnectedUsers.removeIf(handler -> !handler.isAlive());
 			System.out.println("Client had disconnected : " + user.getUsername());
 			System.out.println(UserSession.getConnectedUsers());
+			broadcastConnectedUsers();
 		});
 	}
+    
+    
+
+
 
 	// Called when the FX application shuts down
 	public void shutdown() {
@@ -147,6 +153,20 @@ public class ServerSocketController implements MessageListener {
 	@FXML
 	private void handleShowConnectedUsers() {
 		printConnectedUsers();
+	}
+
+	// Broadcast the list of connected users to all clients via socket
+	private void broadcastConnectedUsers() {
+		List<User> connectedUsersList = UserSession.getConnectedUsers();
+		String jsonUsers = GsonUtility.getGson().toJson(connectedUsersList);
+		String message = "USERS_LIST:" + jsonUsers;
+		
+		// Send to all connected clients
+		for (ClientHandler handler : ConnectedUsers) {
+			handler.sendMessage(message);
+		}
+		
+		System.out.println("Broadcasted users list: " + message);
 	}
 
 	// public void openClientWindows() {
