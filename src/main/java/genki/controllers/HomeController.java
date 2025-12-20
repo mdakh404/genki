@@ -727,14 +727,15 @@ public class HomeController {
                 }
 
                 int unreadCount = 0;
-                UserDAO usrMethods = new UserDAO();
-                genki.models.User usr = usrMethods.documentToUser(friendDoc);
-                boolean isOnline;
-                if(UserSession.getConnectedUsers().contains(usr)){
-                    isOnline = true;
-                }else{
-                    isOnline = false;
-                }
+                boolean isOnline = false;
+                // UserDAO usrMethods = new UserDAO();
+                // genki.models.User usr = usrMethods.documentToUser(friendDoc);
+                // boolean isOnline;
+                // if(UserSession.getConnectedUsers().contains(usr)){
+                //     isOnline = true;
+                // }else{
+                //     isOnline = false;
+                // }
                  
 
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
@@ -745,9 +746,18 @@ public class HomeController {
                         unreadCount,
                         isOnline);
 
+                // Store the friend User object in the HBox for later reference
+                genki.models.User friendUser = new genki.models.User();
+                friendUser.setId(friendId);
+                friendUser.setUsername(friendName);
+                friendUser.setPhotoUrl(photoUrl);
+                conversationItem.setUserData(friendUser);
+
                 // Add click handler to set current conversation
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId));
 
+                // Store in UserSession for easy access from other files
+                UserSession.addConversationItem(conversationItem);
                 conversationListContainer.getChildren().add(conversationItem);
             }
 

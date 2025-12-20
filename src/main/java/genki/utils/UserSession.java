@@ -4,6 +4,7 @@ import genki.models.User;
 import genki.models.Group;
 import genki.controllers.clientSocketController;
 import genki.models.Conversation;
+import javafx.scene.layout.HBox;
 
 import java.util.ArrayList;
 
@@ -18,6 +19,7 @@ public class UserSession {
     private static ArrayList<Group> listGroups = new ArrayList<>();
     private static ArrayList<Conversation> listConversations = new ArrayList<>();
     public  static ArrayList<User> ConnectedUsers = new ArrayList<>();
+    public  static ArrayList<HBox> conversationItems = new ArrayList<>();
     private static clientSocketController ClientSocket; 
 
     private UserSession() {}
@@ -93,6 +95,22 @@ public class UserSession {
 
     public static ArrayList<Conversation> getConversations() {
         return UserSession.listConversations;
+    }
+
+    public static ArrayList<HBox> getConversationItems() {
+        return conversationItems;
+    }
+
+    public static void setConversationItems(ArrayList<HBox> items) {
+        conversationItems = items;
+    }
+
+    public static void addConversationItem(HBox item) {
+        conversationItems.add(item);
+    }
+
+    public static void removeConversationItem(HBox item) {
+        conversationItems.remove(item);
     }
 
     public static void addFriend(User friend){

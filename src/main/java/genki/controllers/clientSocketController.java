@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.bson.codecs.pojo.Convention;
+
+import genki.models.Conversation;
 import genki.models.User;
 import genki.network.ClientHandler;
 import genki.network.ClientsThreads;
@@ -16,6 +19,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+
 
 public class clientSocketController implements t2{
 
@@ -76,11 +81,39 @@ public class clientSocketController implements t2{
 			// Update the session with the connected users
 			UserSession.setConnectedUsers(new ArrayList<>(connectedUsers));
 			
+			// Update online status for all conversation items
+			for(HBox conversationItem : UserSession.getConversationItems()) {
+				// Get the user data stored in the HBox
+				Object userData = conversationItem.getUserData();
+				if (userData instanceof User) {
+					User friend = (User) userData;
+					
+					// Check if friend is in connected users list
+					boolean isOnline = connectedUsers.stream()
+						.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
+					
+					// Update the online status indicator (status circle)
+					updateConversationItemOnlineStatus(conversationItem, isOnline);
+				}
+			}
+			
 			System.out.println("Updated connected users: " + UserSession.ConnectedUsers);
 			// You can now use connectedUsers list for UI updates
 		} catch (Exception e) {
 			System.err.println("Error parsing users list: " + e.getMessage());
 			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Update the online status indicator for a conversation item
+	 */
+	private void updateConversationItemOnlineStatus(HBox conversationItem, boolean isOnline) {
+		// Find the status circle (second child in the profile container StackPane)
+		javafx.scene.layout.StackPane profileContainer = (javafx.scene.layout.StackPane) conversationItem.getChildren().get(0);
+		if (profileContainer.getChildren().size() > 1) {
+			javafx.scene.shape.Circle statusCircle = (javafx.scene.shape.Circle) profileContainer.getChildren().get(1);
+			statusCircle.setFill(isOnline ? javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af"));
 		}
 	}
 	

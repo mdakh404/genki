@@ -119,7 +119,9 @@ public class ServerSocketController implements MessageListener {
 		// ClientHandler's background thread
 		Platform.runLater(() -> {
 			// Clean up the list of active handlers (remove the one that closed)
-			UserSession.getConnectedUsers().removeIf(client -> client.equals(user));
+			// Compare by username since User.equals() is not properly implemented
+			UserSession.getConnectedUsers().removeIf(client -> 
+				client.getUsername() != null && client.getUsername().equals(user.getUsername()));
 			ConnectedUsers.removeIf(handler -> !handler.isAlive());
 			System.out.println("Client had disconnected : " + user.getUsername());
 			System.out.println(UserSession.getConnectedUsers());
