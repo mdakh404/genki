@@ -6,13 +6,14 @@ import java.util.List;
 import genki.network.ClientHandler;
 import genki.network.ClientsThreads;
 import genki.network.MessageListener;
+import genki.network.t2;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
-public class clientSocketController implements MessageListener{
+public class clientSocketController implements t2{
 
 	
 	private ClientsThreads ClientThread;
@@ -23,7 +24,7 @@ public class clientSocketController implements MessageListener{
 		ClientThread = new ClientsThreads("127.0.0.1", 5001, this);
 		this.username = username;
 		ClientThread.connect();
-		// Send the username as the first message so server can register this handler
+
 		ClientThread.sendMessage(this.username);
 	}
 	
@@ -38,21 +39,20 @@ public class clientSocketController implements MessageListener{
 //		
 //	}
 	
-	public void sendMessages() {
-//		String message = input.getText();
-//		ClientThread.sendMessage(message);
-//		input.clear();
-//		Platform.runLater(() -> {
-//			mymessages.appendText(message + "\n");
-//		});
+	public void sendMessages(String message) {
+		ClientThread.sendMessage(message);
+		
+		Platform.runLater(() -> {
+			//dddd
+		});
 	}
 
 	@Override
 	public void onMessageReceived(String message) {
-//		// TODO Auto-generated method stub
-//		Platform.runLater(() -> {
-//		group.appendText(message + "\n");
-//		});
+		// TODO Auto-generated method stub
+		Platform.runLater(() -> {
+		System.out.println("Client recieved : " + message);
+		});
 		
 	}
 

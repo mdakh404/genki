@@ -54,8 +54,7 @@ public class HomeController {
     private Button btnUnread;
     @FXML
     private Button btnGroups;
-    
-    
+
     @FXML
     private Label chatContactName;
     @FXML
@@ -101,7 +100,6 @@ public class HomeController {
 
     private Popup addMenuPopup;
 
-
     @FXML
     public void initialize() {
         if (profilTrigger != null) {
@@ -140,6 +138,8 @@ public class HomeController {
             messagesContainer.getChildren().add(
                     MessageItemBuilder.createSentMessage("genki/img/user-default.png", senderName, messageText));
             messageInput.clear();
+            //Send message via socket 
+            UserSession.getClientSocket().sendMessages(messageText);
 
             // Save to DB in background
             new Thread(() -> {
@@ -149,7 +149,7 @@ public class HomeController {
         });
         // Load conversations
         loadConversations();
-        System.out.println(UserSession.getFriends());
+
         // Show some example messages dynamically
         if (messagesContainer != null) {
             messagesContainer.getChildren().clear();
@@ -166,22 +166,30 @@ public class HomeController {
         }
 
         btnAll.setOnMouseClicked(e -> {
-             btnAll.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-             btnUnread.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-             btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle(
+                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnUnread.setStyle(
+                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnGroups.setStyle(
+                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
         });
 
         btnUnread.setOnMouseClicked(e -> {
-            btnUnread.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnUnread.setStyle(
+                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle(
+                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnGroups.setStyle(
+                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
         });
 
-
         btnGroups.setOnMouseClicked(e -> {
-            btnGroups.setStyle("-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnUnread.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnGroups.setStyle(
+                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnUnread.setStyle(
+                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle(
+                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
         });
 
     }
@@ -615,14 +623,44 @@ public class HomeController {
                 }
             }
 
-            // Build conversations list (if you have Conversation objects, otherwise use empty)
+            // Build conversations list from friends
             ArrayList<genki.models.Conversation> conversations = new ArrayList<>();
-            // Optionally, populate conversations here if you have the data
+            if (friends != null) {
+                String currentUserId = UserSession.getUserId();
+                for (Document friendDoc : friends) {
+                    genki.models.Conversation conversation = new genki.models.Conversation();
+                    conversation.setType("direct");
+
+                    // Set participant IDs
+                    String friendId = friendDoc.getObjectId("_id").toHexString();
+                    List<String> participantIds = new ArrayList<>();
+                    participantIds.add(currentUserId);
+                    participantIds.add(friendId);
+                    conversation.setParticipantIds(participantIds);
+
+                    // Set last message info
+                    conversation.setLastMessageContent(friendDoc.getString("lastMessageContent"));
+                    conversation.setLastMessageSenderId(friendDoc.getString("lastMessageSenderId"));
+
+                    // Parse last message time
+                    Object lastMsgTimeObj = friendDoc.get("lastMessageTime");
+                    if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
+                        conversation.setLastMessageTime((java.time.LocalDateTime) lastMsgTimeObj);
+                    } else if (lastMsgTimeObj instanceof java.util.Date) {
+                        java.util.Date date = (java.util.Date) lastMsgTimeObj;
+                        conversation.setLastMessageTime(java.time.LocalDateTime.ofInstant(date.toInstant(),
+                                java.time.ZoneId.systemDefault()));
+                    }
+
+                    conversations.add(conversation);
+                }
+            }
 
             // Initialize UserSession static lists
             UserSession.loadConversations(userFriends, conversations);
-
-            if (friends == null || friends.isEmpty()) {
+            System.out.println("Conversations : "+ UserSession.getConversations());
+            System.out.println("Friends : " + UserSession.getFriends());
+            if (UserSession.getFriends() == null || UserSession.getFriends().isEmpty()) {
                 logger.log(Level.INFO, "No friends found for user: " + currentUsername);
                 return;
             }

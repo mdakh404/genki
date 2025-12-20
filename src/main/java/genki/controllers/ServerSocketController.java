@@ -7,6 +7,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+import genki.models.User;
 import genki.network.ClientHandler;
 import genki.network.MessageListener;
 import genki.utils.UserSession;
@@ -120,11 +121,12 @@ public class ServerSocketController implements MessageListener{
 	}
 
 	@Override
-    public void onMessageReceived(String message) {
-       
-        System.out.println("Server dit : "+message);
-        for(ClientHandler ServerThread : ConnectedUsers) {
-        	ServerThread.sendMessage(message);
+    public void onMessageReceived(String message, User user) {
+        System.out.println("Server recievied : "+message);
+        for(ClientHandler handler : ConnectedUsers) {
+        	if(handler.getUser().equals(user)){
+				System.out.println("message recieved from : " + user.getUsername());
+			}
         }
     }
 

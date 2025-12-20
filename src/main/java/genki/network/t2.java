@@ -3,12 +3,12 @@ package genki.network;
 import genki.models.User;
 
 //File: MessageListener.java
-public interface MessageListener {
+public interface t2 {
  /**
   * Called by a ClientHandler when a message is received from a client.
   * @param message The text received.
   */
- void onMessageReceived(String message, User user);
+ void onMessageReceived(String message);
 
  /**
   * Called by a ClientHandler when a connection is closed unexpectedly.

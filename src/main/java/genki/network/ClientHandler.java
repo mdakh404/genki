@@ -8,7 +8,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import org.bson.Document;
+
+import genki.models.User;
 import genki.utils.FindUsers;
+import genki.utils.UserDAO;
 
 public class ClientHandler extends Thread {
  private final Socket socket;
@@ -17,14 +21,16 @@ public class ClientHandler extends Thread {
  private BufferedReader in;
  private PrintWriter out;
  private volatile boolean isRunning = true; 
- private FindUsers user;
+ private User user;
+ private UserDAO userMethods;
 
  public ClientHandler(Socket socket, MessageListener listener) {
      this.socket = socket;
      this.listener = listener;
      user = null;
+     userMethods = new UserDAO();
  }
- public ClientHandler(Socket socket, FindUsers user  , MessageListener listener) {
+ public ClientHandler(Socket socket, User user  , MessageListener listener) {
      this.socket = socket;
      this.listener = listener;
      this.user = user;
@@ -65,7 +71,8 @@ public class ClientHandler extends Thread {
          
          // Create FindUsers object with the username to fetch all user info
          try {
-             this.user = new FindUsers(Username);
+             Document userDoc = userMethods.getUserByUsername(Username);
+             this.user = userMethods.documentToUser(userDoc);
          } catch (Exception e) {
              System.out.println("User not found or error fetching user: " + Username);
              closeConnection();
@@ -83,7 +90,7 @@ public class ClientHandler extends Thread {
          // This line blocks until a message is received or the socket closes.
          while (isRunning && (line = in.readLine()) != null) {
              // When a message arrives, send it back to the controller via the listener.
-             listener.onMessageReceived("[" + clientInfo + "] " + line);
+             listener.onMessageReceived("[" + clientInfo + "] " + line, this.user);
          }
 
      } catch (IOException e) {
@@ -121,16 +128,18 @@ public class ClientHandler extends Thread {
  
 
 
- public FindUsers getUser() {
+ public User getUser() {
 	return user;
 }
- public void setUser(FindUsers user) {
+ public void setUser(User user) {
 	this.user = user;
  }
  @Override
  public String toString() {
 	return this.user.toString();
  }
+ 
+ 
 }
 
 

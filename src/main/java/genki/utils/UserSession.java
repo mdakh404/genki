@@ -2,6 +2,7 @@ package genki.utils;
 
 import genki.models.User;
 import genki.models.Group;
+import genki.controllers.clientSocketController;
 import genki.models.Conversation;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class UserSession {
     private static ArrayList<User> listFriends = new ArrayList<>();
     private static ArrayList<Group> listGroups = new ArrayList<>();
     private static ArrayList<Conversation> listConversations = new ArrayList<>();
+    private static clientSocketController ClientSocket; 
 
     private UserSession() {}
 
@@ -24,10 +26,19 @@ public class UserSession {
         UserSession.userId= userId;
         UserSession.userRole = userRole;
         UserSession.imageUrl = imageUrl;
+        UserSession.ClientSocket = new clientSocketController(username);
     }
 
 
-    public static String getImageUrl() {
+    public static clientSocketController getClientSocket() {
+		return ClientSocket;
+	}
+
+	public static void setClientSocket(clientSocketController clientSocket) {
+		ClientSocket = clientSocket;
+	}
+
+	public static String getImageUrl() {
 		return imageUrl;
 	}
 

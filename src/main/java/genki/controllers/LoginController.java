@@ -100,7 +100,7 @@ public class LoginController implements Initializable {
                          logger.log(Level.INFO, "Login successful by " + user);
                          
                          //Creating Client Socket
-                         client = new clientSocketController(loginResult.getUsername());
+                         
 
 
                          UserSession.startSession(
