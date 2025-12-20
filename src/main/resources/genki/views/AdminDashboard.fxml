@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox spacing="20" prefWidth="900" prefHeight="600" style="-fx-padding: 30; -fx-background-color: #f3f4f6;" 
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.AdminController">
+    
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="Panneau de Contrôle Admin" style="-fx-font-size: 24; -fx-font-weight: bold;" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Button text="Déconnexion" onAction="#handleLogout" style="-fx-background-color: #4b5563; -fx-text-fill: white;" />
+    </HBox>
+
+    <TableView fx:id="userTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colName" text="Nom" prefWidth="200" />
+            <TableColumn fx:id="colEmail" text="Email" prefWidth="250" />
+            <TableColumn fx:id="colRole" text="Rôle" prefWidth="100" />
+        </columns>
+    </TableView>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Supprimer l'utilisateur" onAction="#handleDeleteUser" 
+                style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;" />
+    </HBox>
+</VBox>

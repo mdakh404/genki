@@ -97,7 +97,7 @@ public class LoginController implements Initializable {
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
-                               loginResult.getUserRole()
+                               loginResult.getUserRole()  
                          );
 
                          AlertConstruct.alertConstructor(
@@ -106,8 +106,17 @@ public class LoginController implements Initializable {
                            "You have successfully logged in.",
                            Alert.AlertType.INFORMATION
                          );
+                      // --- LOGIQUE DE REDIRECTION ---
+                         if ("admin".equals(loginResult.getUserRole())) {
+                             logger.log(Level.INFO, "Redirection vers l'espace ADMIN");
+                             ScenesController.switchToScene("/genki/views/AdminDashboard.fxml", "Genki - Admin Dashboard");
+                         } else {
+                             logger.log(Level.INFO, "Redirection vers l'espace UTILISATEUR");
+                             ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
+                         }
+                         // ------------------------------
 
-                         ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
+                        // ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {
                          logger.log(Level.SEVERE, "Error while loading Home.fxml", ex);
                          loginButton.setDisable(false);

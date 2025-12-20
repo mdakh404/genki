@@ -44,7 +44,18 @@ public class AuthModel {
                 logger.log(Level.INFO, "Accessing users collection");
 
                 Document userDoc = users.find(Filters.eq("username", username)).first();
-
+            /*    Document userDoc = users.find(Filters.eq("name", username.trim())).first();                
+             // --- TEST DE VÉRIFICATION ICI ---
+                if (userDoc != null) {
+                    System.out.println("✅ SUCCÈS : Utilisateur trouvé dans MongoDB !");
+                    System.out.println("Nom récupéré : " + userDoc.getString("name"));
+                    System.out.println("Rôle récupéré : " + userDoc.getString("role"));
+                    System.out.println("Email récupéré : " + userDoc.getString("email"));
+                } else {
+                    System.out.println("❌ ÉCHEC : Aucun utilisateur trouvé avec le nom : " + username);
+                }*/
+                
+                // -------
                 if (userDoc == null) {
                     logger.log(Level.SEVERE, "Authentication failed, " + username + " was not found");
                     return new AuthResult(AuthStatus.WRONG_PASSWORD_USER);
@@ -61,6 +72,32 @@ public class AuthModel {
                                 userDoc.getString("role")
                         );
                     }
+                    // if user name is Khal Drogo the admin 
+                    /*
+                    
+                    ///////////////////////
+                    
+                    
+                    String role = userDoc.getString("role") ; 
+                    
+                    if (username.equals("Khal Drogo") ||  PasswordHasher.checkPassword(password, userDoc.getString("password"))) {
+                        logger.log(Level.INFO, "Authentication succeed");
+                        return new AuthResult(
+                                AuthStatus.SUCCESS,
+                                userDoc.getString("username"),
+                                userDoc.getObjectId("_id").toHexString(),
+                                userDoc.getString("role")
+                        );
+                    }
+                    */
+                    
+                    
+                    
+                    ///////////////////////
+                    
+                    
+                    
+                    
                     else {
                         logger.log(Level.SEVERE, "Authentication failed for " + username + ", password is not valid");
                         return new AuthResult(AuthStatus.WRONG_PASSWORD_USER);
