@@ -44,7 +44,7 @@ public class ScenesManager extends Application {
 //        primaryStage.setOnCloseRequest(e -> {
 //        	server.stopServer();
 //        });
-        primaryStage.centerOnScreen();
+        
         primaryStage.show();
         try {
             ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");

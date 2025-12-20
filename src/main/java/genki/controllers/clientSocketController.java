@@ -3,6 +3,7 @@ package genki.controllers;
 import java.util.ArrayList;
 import java.util.List;
 
+import genki.models.User;
 import genki.network.ClientHandler;
 import genki.network.ClientsThreads;
 import genki.network.MessageListener;

@@ -95,7 +95,7 @@ public class ClientHandler extends Thread {
 
      } catch (IOException e) {
          if (isRunning) { 
-             listener.onConnectionClosed("[" + clientInfo + "] disconnected: " + e.getMessage());
+             listener.onConnectionClosed("[" + clientInfo + "] disconnected: " + e.getMessage(),this.user);
          }
      } finally {
          closeConnection();

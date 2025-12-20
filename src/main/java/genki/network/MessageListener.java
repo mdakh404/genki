@@ -14,7 +14,7 @@ public interface MessageListener {
   * Called by a ClientHandler when a connection is closed unexpectedly.
   * @param reason A description of the connection error.
   */
- void onConnectionClosed(String reason);
+ void onConnectionClosed(String reason, User user);
 
  /**
   * Called by a ClientHandler when the client has sent its identifying information (username)
