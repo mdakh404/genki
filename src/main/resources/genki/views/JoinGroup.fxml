@@ -37,7 +37,7 @@
             <StackPane>
                 <VBox spacing="0">
                     <!-- TextField de recherche -->
-                    <TextField fx:id="CodeJoinGroup" 
+                    <TextField fx:id="nameJoinGroup"
                                focusTraversable="false" 
                                prefHeight="40" 
                                promptText="Enter group name" 

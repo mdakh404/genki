@@ -10,6 +10,7 @@ public class Group {
     private boolean isPublic;
     private String profilePictureUrl;
     private String groupAdmin;
+    private ArrayList<String> listUsers = new ArrayList<>();
 
 
     public Group(String groupId, String groupName, String description, boolean isPublic,
@@ -34,6 +35,12 @@ public class Group {
     public String getGroupProfilePicture() { return this.profilePictureUrl; }
 
     public String getGroupAdmin() { return this.groupAdmin; }
+
+    public void addUser(String username) {
+        listUsers.add(username);
+    }
+
+
 
 
 }

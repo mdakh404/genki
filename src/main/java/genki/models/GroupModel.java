@@ -39,7 +39,8 @@ public class GroupModel {
                                        .append("description", groupDescription)
                                        .append("is_public", isPublic)
                                        .append("profile_picture", "")
-                                       .append("group_admin", groupAdmin);
+                                       .append("group_admin", groupAdmin)
+                                       .append("users", new ArrayList<>());
 
                 InsertOneResult insertGroupResult = groupsCollection.insertOne(newGroupDoc);
 
