@@ -47,10 +47,6 @@ public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
     @FXML
     private Button btnSettings;
-
-    @FXML
-    private Button btnUnread;
-
     @FXML
     private Label chatContactName;
     @FXML
@@ -75,7 +71,7 @@ public class HomeController {
     private Label rightContactBio;
 
     private Boolean rightSideVisibilite = false;
-    // Track the currently open conversation
+
     private ObjectId currentConversationId = null;
     @FXML private Button btnAdd;
     @FXML private VBox rightSideContainer;
@@ -85,12 +81,14 @@ public class HomeController {
     @FXML private Label CurrentUsername;
     @FXML private Button btnNotifications;
     
- // Ajoutez ces variables d'instance dans la classe HomeController
+
     @FXML private Button btnAll;
     @FXML private Button btnGroups;
       
 
     private Popup addMenuPopup;
+    
+    @FXML private Button btnLogout;
 
     @FXML
     public void initialize() {
@@ -126,23 +124,20 @@ public class HomeController {
             String senderId = UserSession.getUserId();
             String senderName = UserSession.getUsername();
 
-            // Add to UI immediately
             messagesContainer.getChildren().add(
                     MessageItemBuilder.createSentMessage("genki/img/user-default.png", senderName, messageText));
             messageInput.clear();
-            //Send message via socket 
+
             UserSession.getClientSocket().sendMessages(messageText);
 
-            // Save to DB in background
+
             new Thread(() -> {
                 MessageDAO messageDAO = new MessageDAO();
                 messageDAO.sendMessage(currentConversationId, senderId, senderName, messageText);
             }).start();
         });
-        // Load conversations
         loadConversations();
 
-        // Show some example messages dynamically
         if (messagesContainer != null) {
             messagesContainer.getChildren().clear();
             messagesContainer.getChildren().add(
@@ -156,7 +151,7 @@ public class HomeController {
                             "You",
                             "hhhhhhhhhhhhhh salam"));
         }
-        // Configuration des filtres
+
         if (btnAll != null) {
             btnAll.setOnMouseClicked(e -> showUserConversations());
         }
@@ -164,38 +159,8 @@ public class HomeController {
             btnGroups.setOnMouseClicked(e -> showGroupConversations());
         }
 
-        btnAll.setOnMouseClicked(e -> {
-            btnAll.setStyle(
-                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnUnread.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnGroups.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-        });
-
-        btnUnread.setOnMouseClicked(e -> {
-            btnUnread.setStyle(
-                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnAll.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnGroups.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-        });
-
-        btnGroups.setOnMouseClicked(e -> {
-            btnGroups.setStyle(
-                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnUnread.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnAll.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-        });
-
     }
 
-    /**
-     * Set the current conversation and show its messages
-     */
     public void setCurrentConversation(ObjectId conversationId) {
         System.out.println("The Set method...");
         this.currentConversationId = conversationId;

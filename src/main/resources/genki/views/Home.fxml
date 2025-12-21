@@ -10,6 +10,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
+<?import javafx.scene.layout.Region?>
 
 <StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
     <HBox style="-fx-background-color: #f8fefe;">
@@ -52,23 +53,34 @@
         <VBox style="-fx-background-color: #f8fefe;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
 
             <!-- Chat header -->
-            <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: transparent; -fx-padding:16; -fx-border-color:#e0f7fa; -fx-border-width:0 0 1 0; -fx-cursor:hand;">
-                <ImageView fx:id="profilTrigger" fitHeight="43.0" fitWidth="43.0" pickOnBounds="true" preserveRatio="true">
-                    <clip>
-                        <Circle centerX="22.5" centerY="22.5" radius="22.5" />
-                    </clip>
-                    <image>
-                        <Image url="@../img/user-default.png" />
-                    </image>
-                </ImageView>
-                <VBox fx:id="AmisNameStatus" spacing="2.0" HBox.hgrow="ALWAYS">
-                    <Label fx:id="chatContactName" style="-fx-text-fill: #232e2e; -fx-font-size: 16px; -fx-font-weight: bold;" text="Sarah Wilson" />
-                    <HBox alignment="CENTER_LEFT" spacing="6.0">
-                        <Circle fx:id="chatContactStatusCircle" fill="green" radius="4.0" />
-                        <Label fx:id="chatContactStatus" style="-fx-text-fill: green; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
-                    </HBox>
-                </VBox>
-            </HBox>
+
+			<HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: transparent; -fx-padding:16; -fx-border-color:#e0f7fa; -fx-border-width:0 0 1 0;">
+			    <ImageView fx:id="profilTrigger" fitHeight="43.0" fitWidth="43.0" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+			        <clip>
+			            <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+			        </clip>
+			        <image>
+			            <Image url="@../img/user-default.png" />
+			        </image>
+			    </ImageView>
+			    <VBox fx:id="AmisNameStatus" spacing="2.0" style="-fx-cursor: hand;" HBox.hgrow="ALWAYS">
+			        <Label fx:id="chatContactName" style="-fx-text-fill: #232e2e; -fx-font-size: 16px; -fx-font-weight: bold;" text="Sarah Wilson" />
+			        <HBox alignment="CENTER_LEFT" spacing="6.0">
+			            <Circle fx:id="chatContactStatusCircle" fill="green" radius="4.0" />
+			            <Label fx:id="chatContactStatus" style="-fx-text-fill: green; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
+			        </HBox>
+			    </VBox>
+			    <!-- BOUTON LOGOUT à la fin -->
+					<Button fx:id="btnLogout" style="-fx-background-color: transparent; -fx-cursor: hand;">
+					    <graphic>
+					        <ImageView fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true">
+					            <image>
+					                <Image url="@../img/logout.jpg" />
+					            </image>
+					        </ImageView>
+					    </graphic>
+					</Button>
+			</HBox>
 
             <!-- Messages area -->
             <ScrollPane fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
@@ -103,8 +115,8 @@
                 <Label fx:id="rightContactTitle" style="-fx-text-fill: #6b7280; -fx-font-size: 14px;" text="Product Designer" />
                 <Label fx:id="rightContactBio" maxWidth="240" style="-fx-text-fill: #6b7280; -fx-font-size: 13px; -fx-wrap-text: true;" text="Short bio goes here. This will wrap if longer." />
                 <HBox alignment="CENTER" spacing="6.0">
-                    <Circle fill="#2bfbfb" radius="4.0" />
-                    <Label fx:id="rightContactStatus" style="-fx-text-fill: #2bfbfb; -fx-font-size: 13px; -fx-font-weight: bold;" text="Online" />
+                    <Circle fill="green" radius="4.0" />
+                    <Label fx:id="rightContactStatus" style="-fx-text-fill: green; -fx-font-size: 13px; -fx-font-weight: bold;" text="Online" />
                 </HBox>
             </VBox>
         </VBox>
