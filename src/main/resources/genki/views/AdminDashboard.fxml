@@ -1,27 +1,146 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<VBox spacing="20" prefWidth="900" prefHeight="600" style="-fx-padding: 30; -fx-background-color: #f3f4f6;" 
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.AdminController">
-    
-    <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Panneau de Contrôle Admin" style="-fx-font-size: 24; -fx-font-weight: bold;" />
-        <Region HBox.hgrow="ALWAYS" />
-        <Button text="Déconnexion" onAction="#handleLogout" style="-fx-background-color: #4b5563; -fx-text-fill: white;" />
-    </HBox>
+<HBox prefHeight="800.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.AdminController">
+   <children>
+      
+      <VBox prefWidth="260.0" spacing="10.0" style="-fx-background-color: #2c3e50; -fx-padding: 20;">
+         <children>
+            <Label text="GENKI ADMIN" textFill="WHITE">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+               <VBox.margin>
+                  <Insets bottom="20.0" />
+               </VBox.margin>
+            </Label>
+            
+            <Button maxWidth="Infinity" onAction="#showUsersPanel" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" text="👤 Utilisateurs" />
+            <Button maxWidth="Infinity" onAction="#showMessagesPanel" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" text="📢 Message Global" />
+            <Button maxWidth="Infinity" onAction="#showStatsPanel" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" text="📊 Statistiques" />
+            <Button maxWidth="Infinity" onAction="#showSettingsPanel" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" text="⚙️ Paramètres" />
+            <Button maxWidth="Infinity" onAction="#showNotifPanel" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" text="🔔 Notifications" />
+            
+            <Region VBox.vgrow="ALWAYS" />
+            
+            <Button maxWidth="Infinity" onAction="#handleLogout" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;" text="Déconnexion" />
+         </children>
+      </VBox>
 
-    <TableView fx:id="userTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="colName" text="Nom" prefWidth="200" />
-            <TableColumn fx:id="colEmail" text="Email" prefWidth="250" />
-            <TableColumn fx:id="colRole" text="Rôle" prefWidth="100" />
-        </columns>
-    </TableView>
+      <StackPane HBox.hgrow="ALWAYS" style="-fx-background-color: #f4f7f6;">
+         <children>
 
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Supprimer l'utilisateur" onAction="#handleDeleteUser" 
-                style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;" />
-    </HBox>
-</VBox>
+            <VBox fx:id="panelUsers" spacing="20.0" style="-fx-padding: 30;">
+               <children>
+                  <Label fx:id="viewTitle" text="Gestion des Utilisateurs" textFill="#2c3e50">
+                     <font>
+                        <Font name="System Bold" size="24.0" />
+                     </font>
+                  </Label>
+
+                  <HBox spacing="20.0">
+                     <children>
+                        <VBox prefWidth="200.0" style="-fx-background-color: #3498db; -fx-padding: 15; -fx-background-radius: 10;">
+                           <children>
+                              <Label text="Total Inscrits" textFill="WHITE" />
+                              <Label fx:id="totalCountLabel" text="0" textFill="WHITE">
+                                 <font>
+                                    <Font name="System Bold" size="20.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </VBox>
+                        <VBox prefWidth="200.0" style="-fx-background-color: #2ecc71; -fx-padding: 15; -fx-background-radius: 10;">
+                           <children>
+                              <Label text="En ligne" textFill="WHITE" />
+                              <Label fx:id="onlineCountLabel" text="0 Actifs" textFill="WHITE">
+                                 <font>
+                                    <Font name="System Bold" size="20.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </VBox>
+                     </children>
+                  </HBox>
+
+                  <TableView fx:id="userTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                      <TableColumn fx:id="colName" prefWidth="150.0" text="Username" />
+                      <TableColumn fx:id="colEmail" prefWidth="200.0" text="Bio" />
+                        <TableColumn fx:id="colRole" prefWidth="100.0" text="Rôle" />
+                        <TableColumn fx:id="colStatus" prefWidth="100.0" text="Statut" />
+                    </columns>
+                  </TableView>
+
+                  <HBox spacing="10.0">
+                     <children>
+                        <Button onAction="#addUser" style="-fx-background-color: #2ecc71; -fx-text-fill: white;" text="Ajouter" />
+                        <Button onAction="#toggleStatus" style="-fx-background-color: #f1c40f;" text="Bloquer/Activer" />
+                        <Button onAction="#handleDeleteUser" style="-fx-background-color: #e74c3c; -fx-text-fill: white;" text="Supprimer" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+
+            <VBox fx:id="panelMessages" visible="false" spacing="20.0" style="-fx-padding: 30;">
+               <children>
+                  <Label text="📢 Diffusion de Message Global" textFill="#2c3e50">
+                     <font>
+                        <Font name="System Bold" size="24.0" />
+                     </font>
+                  </Label>
+                  
+                  <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10;">
+                     <children>
+                        <Label text="Nouveau message pour tous les utilisateurs :" style="-fx-font-weight: bold;" />
+                        <TextArea fx:id="globalMessageField" prefHeight="100.0" promptText="Tapez votre annonce ici..." wrapText="true" />
+                        <HBox alignment="CENTER_RIGHT">
+                           <children>
+                              <Button onAction="#sendGlobalMessage" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;" text="🚀 Diffuser le message" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+
+                  <VBox spacing="10.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <Label text="Historique des annonces" style="-fx-font-weight: bold;" />
+                        <TableView fx:id="messageTable" VBox.vgrow="ALWAYS">
+                           <columns>
+                              <TableColumn fx:id="colMsgDate" prefWidth="180.0" text="Date / Heure" />
+                              <TableColumn fx:id="colMsgContent" prefWidth="500.0" text="Contenu" />
+                           </columns>
+                        </TableView>
+                        <HBox alignment="CENTER_RIGHT">
+                           <children>
+                              <Button onAction="#deleteMessage" style="-fx-background-color: #e74c3c; -fx-text-fill: white;" text="Supprimer de l'historique" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+
+            <VBox fx:id="panelStats" visible="false" spacing="20.0" style="-fx-padding: 30;">
+               <children>
+                  <Label text="Statistiques" />
+                  <HBox spacing="10.0">
+                     <children>
+                        <Button onAction="#exportPDF" text="Export PDF" />
+                        <Button onAction="#exportCSV" text="Export CSV" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            
+            <VBox fx:id="panelSettings" visible="false" style="-fx-padding: 30;"><Label text="Paramètres système" /></VBox>
+            <VBox fx:id="panelNotif" visible="false" style="-fx-padding: 30;"><Label text="Notifications" /></VBox>
+
+         </children>
+      </StackPane>
+   </children>
+</HBox>
