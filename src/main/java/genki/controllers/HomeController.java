@@ -1,5 +1,7 @@
 package genki.controllers;
 
+import genki.models.Group;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
@@ -34,6 +36,7 @@ import org.bson.Document;
 import java.util.logging.Level;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
 import genki.utils.MessageDAO;
 import genki.models.Message;
@@ -855,7 +858,7 @@ public class HomeController {
 	                unreadCount,
 	                isOnline
 	            );
-	            
+
 	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId));
 	            conversationListContainer.getChildren().add(conversationItem);
 	        }
@@ -955,5 +958,13 @@ public class HomeController {
 	    }
 	    return "";
 	}
+
+
+    @FXML
+    public void loadGroups() {
+
+           ArrayList<Group> userGroups = UserSession.getGroups();
+
+    }
 }
 
