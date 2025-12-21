@@ -144,9 +144,7 @@ public class LoginController implements Initializable {
                              logger.log(Level.INFO, "Redirection vers l'espace UTILISATEUR");
                              ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                          }
-                         // ------------------------------
-=======
->>>>>>> 51a5877af693044164268e81dd22a34c8872e58e
+      
 
                         // ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {
