@@ -2,7 +2,9 @@ package genki.utils;
 
 import genki.models.User;
 import genki.models.Group;
+import genki.controllers.clientSocketController;
 import genki.models.Conversation;
+import javafx.scene.layout.HBox;
 
 import java.util.ArrayList;
 
@@ -16,6 +18,9 @@ public class UserSession {
     private static ArrayList<User> listFriends = new ArrayList<>();
     private static ArrayList<Group> listGroups = new ArrayList<>();
     private static ArrayList<Conversation> listConversations = new ArrayList<>();
+    public  static ArrayList<User> ConnectedUsers = new ArrayList<>();
+    public  static ArrayList<HBox> conversationItems = new ArrayList<>();
+    private static clientSocketController ClientSocket; 
 
     private UserSession() {}
 
@@ -24,10 +29,19 @@ public class UserSession {
         UserSession.userId= userId;
         UserSession.userRole = userRole;
         UserSession.imageUrl = imageUrl;
+        UserSession.ClientSocket = new clientSocketController(username);
     }
 
 
-    public static String getImageUrl() {
+    public static clientSocketController getClientSocket() {
+		return ClientSocket;
+	}
+
+	public static void setClientSocket(clientSocketController clientSocket) {
+		ClientSocket = clientSocket;
+	}
+
+	public static String getImageUrl() {
 		return imageUrl;
 	}
 
@@ -53,7 +67,15 @@ public class UserSession {
 
 
 
-    public static boolean isLoggedIn() {
+    public static ArrayList<User> getConnectedUsers() {
+		return ConnectedUsers;
+	}
+
+	public static void setConnectedUsers(ArrayList<User> connectedUsers) {
+		ConnectedUsers = connectedUsers;
+	}
+
+	public static boolean isLoggedIn() {
         return UserSession.username != null;
     }
 
@@ -73,6 +95,22 @@ public class UserSession {
 
     public static ArrayList<Conversation> getConversations() {
         return UserSession.listConversations;
+    }
+
+    public static ArrayList<HBox> getConversationItems() {
+        return conversationItems;
+    }
+
+    public static void setConversationItems(ArrayList<HBox> items) {
+        conversationItems = items;
+    }
+
+    public static void addConversationItem(HBox item) {
+        conversationItems.add(item);
+    }
+
+    public static void removeConversationItem(HBox item) {
+        conversationItems.remove(item);
     }
 
     public static void addFriend(User friend){
@@ -97,6 +135,16 @@ public class UserSession {
 
     public static void removeConversation(Conversation conversation) {
         UserSession.listConversations.remove(conversation);
+    }
+
+    /**
+     * Initializes the session's friends and conversations lists.
+     * @param friends List of User objects representing friends.
+     * @param conversations List of Conversation objects.
+     */
+    public static void loadConversations(ArrayList<User> friends, ArrayList<Conversation> conversations) {
+        UserSession.listFriends = friends != null ? friends : new ArrayList<>();
+        UserSession.listConversations = conversations != null ? conversations : new ArrayList<>();
     }
 
 }

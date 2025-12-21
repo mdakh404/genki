@@ -79,4 +79,14 @@ public class Conversation {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+	@Override
+	public String toString() {
+		return "Conversation [type=" + type + ", participantIds=" + participantIds + ", lastMessageContent="
+				+ lastMessageContent + ", lastMessageSenderId=" + lastMessageSenderId + ", lastMessageTime="
+				+ lastMessageTime + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
+	}
+    
+    
+    
 }

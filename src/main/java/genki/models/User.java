@@ -3,16 +3,27 @@ package genki.models;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
+import com.google.gson.annotations.Expose;
 
 public class User {
+    @Expose
+    private String id;
+    @Expose
     private String username;
+    @Expose
     private String password;
+    @Expose
     private String bio;
+    @Expose
     private String role;
+    @Expose
     private String photoUrl;
+    @Expose
     private LocalDateTime createdAt;
-    private List<String> friends; // store friend ids as strings
-    private ArrayList<Group> groups; // groups that user joined
+    @Expose
+    private List<String> friends;
+    @Expose(serialize = false, deserialize = false)
+    private ArrayList<Group> groups;
 
     public User() {}
 
@@ -20,6 +31,14 @@ public class User {
         this.username = username;
         this.password = password;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUsername() {
@@ -77,4 +96,11 @@ public class User {
     public void setFriends(List<String> friends) {
         this.friends = friends;
     }
+
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", username=" + username + ", password=" + password + ", bio=" + bio + ", role="
+				+ role + ", photoUrl=" + photoUrl + ", createdAt=" + createdAt + ", friends=" + friends + ", groups="
+				+ groups + "]";
+	}
 }

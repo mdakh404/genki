@@ -8,7 +8,7 @@ import java.util.concurrent.CountDownLatch;
 public class ClientsThreads {
     private final String host;
     private final int port;
-    private final MessageListener listener; 
+    private final t2 listener; 
     
     private Socket socket;
     private PrintWriter sender;
@@ -17,7 +17,8 @@ public class ClientsThreads {
     private final CountDownLatch counterLatch = new CountDownLatch(1);
     private final CountDownLatch senderReadyLatch = new CountDownLatch(1);
 
-    public ClientsThreads(String host, int port, MessageListener listener) {
+    
+    public ClientsThreads(String host, int port, t2 listener) {
         this.host = host;
         this.port = port;
         this.listener = listener;

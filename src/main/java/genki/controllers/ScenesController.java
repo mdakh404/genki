@@ -9,23 +9,22 @@ import java.io.IOException;
 
 public class ScenesController {
 
-      private static Stage stage;
+    private static Stage stage;
 
-      public static void setStage(Stage stage) {
-          ScenesController.stage = stage;
-      }
+    public static void setStage(Stage stage) {
+        ScenesController.stage = stage;
+    }
 
-      public static void switchToScene(String scene, String title) throws IOException {
+    public static void switchToScene(String scene, String title) throws IOException {
 
-                  FXMLLoader loader = new FXMLLoader(ScenesController.class.getResource(scene));
-                  Parent root = (Parent) loader.load();
+        FXMLLoader loader = new FXMLLoader(ScenesController.class.getResource(scene));
+        Parent root = (Parent) loader.load();
 
-                  stage.setScene(new Scene(root));
+        stage.setScene(new Scene(root));
 
-                  stage.centerOnScreen();
-
-                  //stage.setMaximized(true);
-//                  stage.centerOnScreen();
-                  stage.setTitle(title);
-      }
+        // stage.setMaximized(true);
+        // stage.centerOnScreen();
+        stage.centerOnScreen();
+        stage.setTitle(title);
+    }
 }
