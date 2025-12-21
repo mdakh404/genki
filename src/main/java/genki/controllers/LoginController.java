@@ -1,5 +1,7 @@
 package genki.controllers;
 
+import genki.models.Group;
+import genki.models.GroupsModel;
 import genki.models.AuthModel;
 import genki.utils.AuthResult;
 import genki.utils.UserSession;
@@ -23,10 +25,13 @@ import java.io.IOException;
  * Implements Initializable interface to use the init method after fully loading the Login.fxml file components
  */
 public class LoginController implements Initializable {
+	
+	private clientSocketController client;
 
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
 
      private static final AuthModel authModel = new AuthModel();
+     private static final GroupsModel groupsModel = new GroupsModel();
 
      @FXML
      private TextField userName;
@@ -35,6 +40,7 @@ public class LoginController implements Initializable {
 
      @FXML
      private Button loginButton;
+
 
      @FXML
      public void redirectToRegister() {
@@ -88,18 +94,42 @@ public class LoginController implements Initializable {
              AuthResult loginResult = loginTask.getValue();
 
              switch (loginResult.getStatus()) {
-
                  case SUCCESS:
                      try {
 
                          logger.log(Level.INFO, "Login successful by " + user);
+                         
+                         //Creating Client Socket
+                         
+
 
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
+<<<<<<< HEAD
                                loginResult.getUserRole()  
+=======
+                               loginResult.getUserRole(),
+                               loginResult.getImageUrl()
+>>>>>>> 51a5877af693044164268e81dd22a34c8872e58e
                          );
+                         
+                         
 
+                         groupsModel.loadGroups(loginResult.getUsername());
+
+                         if (groupsModel.getGroups().isEmpty()) {
+                             logger.warning("Empty groups list for user " + user);
+                         }
+
+                         else {
+                             for (Group group: groupsModel.getGroups()) {
+                                 UserSession.addGroup(group);
+                             }
+                         }
+
+
+<<<<<<< HEAD
                          AlertConstruct.alertConstructor(
                            "Login",
                            "Login Successful",
@@ -115,6 +145,8 @@ public class LoginController implements Initializable {
                              ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                          }
                          // ------------------------------
+=======
+>>>>>>> 51a5877af693044164268e81dd22a34c8872e58e
 
                         // ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {
@@ -189,5 +221,8 @@ public class LoginController implements Initializable {
              }
          });
      }
+
+
+
 
 }

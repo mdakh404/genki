@@ -62,15 +62,17 @@ public class AuthModel {
                 }
                 else {
 
-                    // TODO: Upadte after commiting final code
-                    if (username.equals("root") ||  PasswordHasher.checkPassword(password, userDoc.getString("password"))) {
+                	// TODO: Update this code when final commit 
+                    if (username.equals("root") || PasswordHasher.checkPassword(password, userDoc.getString("password"))) {
                         logger.log(Level.INFO, "Authentication succeed");
                         return new AuthResult(
                                 AuthStatus.SUCCESS,
                                 userDoc.getString("username"),
                                 userDoc.getObjectId("_id").toHexString(),
-                                userDoc.getString("role")
+                                userDoc.getString("role"),
+                                userDoc.getString("photo_url")
                         );
+                        
                     }
                     // if user name is Khal Drogo the admin 
                     /*

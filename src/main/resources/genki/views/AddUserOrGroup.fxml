@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--   <?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.AnchorPane?>
+
+
+<AnchorPane fx:id="AddUserOrGroup" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="194.0" prefWidth="305.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.AddUserOrGroupController">
+   <children>
+      <Button fx:id="AddUser" layoutX="83.0" layoutY="53.0" mnemonicParsing="false" onAction="#AddUser" prefHeight="25.0" prefWidth="139.0" text="Add User" style="-fx-cursor: hand;" />
+      <Button fx:id="AddGroup" layoutX="84.0" layoutY="115.0" mnemonicParsing="false" onAction="#AddGroup" prefHeight="25.0" prefWidth="139.0" text="Add Group" style="-fx-cursor: hand;"/>
+   </children>
+</AnchorPane> -->

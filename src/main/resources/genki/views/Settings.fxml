@@ -7,21 +7,17 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefWidth="780" prefHeight="620"
+<AnchorPane prefWidth="500" prefHeight="500"
             style="-fx-background-color: #F9FAFB;"
-            xmlns="http://javafx.com/javafx/25"
+            xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="genki.controllers.SettingsController">
 
-    <VBox alignment="TOP_CENTER" spacing="25"
-          AnchorPane.topAnchor="20"
+    <VBox alignment="TOP_CENTER" spacing="15"
+          AnchorPane.topAnchor="10"
           AnchorPane.leftAnchor="20"
           AnchorPane.rightAnchor="20"
           AnchorPane.bottomAnchor="20">
-
-        <Label text="User Settings" textFill="#1F2937">
-            <font><Font size="26"/></font>
-        </Label>
 
         <VBox alignment="CENTER" spacing="12">
             <StackPane>
@@ -34,7 +30,7 @@
             </StackPane>
 
             <Button fx:id="btnUploadPhoto" text="Upload Photo" onAction="#handleUploadPhoto"
-                    style="-fx-background-color: #4B5563; -fx-text-fill: #F9FAFB;-fx-background-radius: 6;-fx-padding: 8 20;"/>
+                    style="-fx-cursor: hand; -fx-background-color: #4B5563; -fx-text-fill: #F9FAFB;-fx-background-radius: 6;-fx-padding: 8 20;"/>
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
@@ -44,25 +40,26 @@
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
-            <Label text="Password" textFill="#374151"/>
-            <PasswordField fx:id="currentPassword" promptText="Current Password"
+            <Label text="Current Password" textFill="#374151"/>
+            <PasswordField fx:id="currentPassword" promptText="Enter your Current Password"
                            style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
-            <PasswordField fx:id="newPassword" promptText="New Password"
+            <Label text="New Password" textFill="#374151"/>
+            <PasswordField fx:id="newPassword" promptText="Enter a New Password"
                            style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
             <Label text="Bio" textFill="#374151"/>
-            <TextArea prefHeight="110" promptText="Tell us about yourself..." fx:id="bioField"
-                      style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 10;"/>
+            <TextArea prefHeight="140" prefWidth="110" promptText="Tell us about yourself..." fx:id="bioField"
+                      style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 0.3;"/>
         </VBox>
 
         <HBox spacing="20" alignment="CENTER" style="-fx-padding: 20 0 0 0;">
             <Button fx:id="btnSaveSettings" text="Save Settings" prefWidth="150" prefHeight="40" onAction="#handleSaveSettings"
-                    style="-fx-background-color: #374151; -fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
+                    style="-fx-cursor: hand; -fx-background-color: Green; -fx-text-fill: white;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
 
-            <Button fx:id="btnDeleteAccount" text="Delete Account" prefWidth="150" prefHeight="40"
-                    style="-fx-background-color: #DC2626;-fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
+            <Button fx:id="btnDeleteAccount" text="Delete Account" prefWidth="150" prefHeight="40" onAction="#handleDeleteAccount"
+                    style="-fx-cursor: hand; -fx-background-color: #DC2626;-fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
         </HBox>
 
     </VBox>

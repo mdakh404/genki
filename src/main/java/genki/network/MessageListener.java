@@ -1,0 +1,25 @@
+package genki.network;
+
+import genki.models.User;
+
+//File: MessageListener.java
+public interface MessageListener {
+ /**
+  * Called by a ClientHandler when a message is received from a client.
+  * @param message The text received.
+  */
+ void onMessageReceived(String message, User user);
+
+ /**
+  * Called by a ClientHandler when a connection is closed unexpectedly.
+  * @param reason A description of the connection error.
+  */
+ void onConnectionClosed(String reason, User user);
+
+ /**
+  * Called by a ClientHandler when the client has sent its identifying information (username)
+  * and the handler is ready to be registered by the server.
+  * @param handler the ClientHandler that just registered
+  */
+ void onClientConnected(ClientHandler handler);
+}
