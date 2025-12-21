@@ -19,8 +19,7 @@ public class ScenesManager extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-    	
-    	
+
    	try {
    	server.startServer();}
    	catch(Exception e) {

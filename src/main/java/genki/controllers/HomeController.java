@@ -15,6 +15,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.geometry.Bounds;
@@ -55,7 +56,13 @@ public class HomeController {
     @FXML
     private VBox AmisNameStatus;
     @FXML
+    private ScrollPane usersPane;
+    @FXML
+    private ScrollPane groupsPane;
+    @FXML
     private VBox conversationListContainer;
+    @FXML
+    private VBox groupsListContainer;
     @FXML
     private VBox messagesContainer;
     @FXML
@@ -84,9 +91,22 @@ public class HomeController {
  // Ajoutez ces variables d'instance dans la classe HomeController
     @FXML private Button btnAll;
     @FXML private Button btnGroups;
+
+    // handle toggling between users and groups panes
+    private void switchUsers(boolean switchToUsers) {
+        usersPane.setVisible(switchToUsers);
+        usersPane.setManaged(switchToUsers);
+
+        groupsPane.setVisible(!switchToUsers);
+        groupsPane.setManaged(!switchToUsers);
+    }
       
     @FXML
     public void initialize() {
+
+        switchUsers(true);
+
+
         if (profilTrigger != null) {
             profilTrigger.setOnMouseClicked(e -> toggleRightPanel());
         }
@@ -152,7 +172,9 @@ public class HomeController {
             btnAll.setOnMouseClicked(e -> showUserConversations());
         }
         if (btnGroups != null) {
+
             btnGroups.setOnMouseClicked(e -> showGroupConversations());
+
         }
     }
 
@@ -557,8 +579,7 @@ public class HomeController {
     }
 
     
-    // Example: Add a conversation dynamically
-    public void addConversationExample() {
+    public void addGroupConversation() {
         HBox conversationItem = ConversationItemBuilder.createConversationItem(
                 "url/to/image.png", // profileImageUrl
                 "Sarah Wilson", // contactName
@@ -869,13 +890,30 @@ public class HomeController {
 	    
 	// Ajouter ces lignes après la boucle :
 	if (conversationListContainer.getChildren().isEmpty()) {
-	    Label noGroupsLabel = new Label("No groups found");
-	    noGroupsLabel.setStyle(
-	        "-fx-text-fill: #6b9e9e; " +
-	        "-fx-font-size: 14px; " +
-	        "-fx-padding: 20;"
-	    );
-	    conversationListContainer.getChildren().add(noGroupsLabel);
+
+        if (UserSession.getGroups().isEmpty()) {
+            Label noGroupsLabel = new Label("No groups found");
+            noGroupsLabel.setStyle(
+                    "-fx-text-fill: #6b9e9e; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-padding: 20;"
+            );
+            conversationListContainer.getChildren().add(noGroupsLabel);
+        } else {
+
+                for (Group group : UserSession.getGroups()) {
+                    HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
+                            group.getGroupProfilePicture(),
+                            group.getGroupName(),
+                            "",
+                            "",
+                            2
+                    );
+
+                    conversationListContainer.getChildren().add(nvGroupContainer);
+                }
+
+        }
 	}
 	}
 
@@ -960,10 +998,38 @@ public class HomeController {
 	}
 
 
-    @FXML
     public void loadGroups() {
 
            ArrayList<Group> userGroups = UserSession.getGroups();
+
+
+           if (userGroups != null) {
+
+               for (Group group : userGroups) {
+                   HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
+                           group.getGroupProfilePicture(),
+                           group.getGroupName(),
+                           "",
+                           "",
+                           2
+                   );
+
+                   conversationListContainer.getChildren().add(nvGroupContainer);
+               }
+
+           }
+
+        if (conversationListContainer.getChildren().isEmpty()) {
+            Label noGroupsLabel = new Label("No groups found");
+            noGroupsLabel.setStyle(
+                    "-fx-text-fill: #6b9e9e; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-padding: 20;"
+            );
+            conversationListContainer.getChildren().add(noGroupsLabel);
+        }
+
+
 
     }
 }

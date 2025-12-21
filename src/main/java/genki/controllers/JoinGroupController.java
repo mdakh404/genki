@@ -132,18 +132,39 @@ public class JoinGroupController {
         try {
 
             MongoCollection<Document> groupsCollection = JoinGroupDBConnection.getCollection("groups");
+            MongoCollection<Document> usersCollection = JoinGroupDBConnection.getCollection("users");
+
             Document groupDoc = groupsCollection.find(
                     Filters.eq("group_name", nameGroup)
             ).first();
+
 
             if (groupDoc.getBoolean("is_public")) {
 
                 groupsCollection.updateOne(
                         Filters.eq("_id", groupDoc.getObjectId("_id")),
-                        Updates.push("users", UserSession.getUserId())
+                        Updates.addToSet("users", UserSession.getUserId())
+                );
+
+                usersCollection.updateOne(
+                        Filters.eq("_id", new ObjectId(UserSession.getUserId())),
+                        Updates.addToSet("groups", groupDoc.getObjectId("_id").toHexString())
                 );
 
                 logger.info(UserSession.getUsername() + " has joined " + nameGroup);
+
+                Group nvGroup = new Group(
+                       groupDoc.getObjectId("_id").toHexString(),
+                       groupDoc.getString("group_name"),
+                       groupDoc.getString("description"),
+                       groupDoc.getBoolean("is_public"),
+                       groupDoc.getString("profile_picture"),
+                       groupDoc.getString("group_admin")
+                );
+
+                UserSession.addGroup(nvGroup);
+                // TODO remove this one after testing
+                logger.info("Groups are " + UserSession.getGroups());
                 AlertConstruct.alertConstructor(
                            "Success",
                         "",

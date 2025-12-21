@@ -11,6 +11,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.MongoException;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -82,7 +83,8 @@ public class RegisterModel {
                         .append("role", "user")
                         .append("photo_url", "")
                         .append("created_at", LocalDate.now())
-                        .append("groups", new ArrayList<String>());
+                        .append("groups", new ArrayList<String>())
+                        .append("friends", new ArrayList<ObjectId>());
 
                 usersCollection.insertOne(newUser);
                 logger.log(Level.INFO, username + " account has been created");

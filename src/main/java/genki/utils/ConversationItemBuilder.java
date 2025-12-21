@@ -56,14 +56,14 @@ public class ConversationItemBuilder {
 
     /**
      * Create a conversation item HBox with all necessary styling and data
-     * @param profileImageUrl URL or path to the group image
+     * @param groupImageUrl URL or path to the group image
      * @param groupName Name of the group
      * @param lastMessage Last message text
      * @param time Time of the last message
      * @param unreadCount Number of unread messages
      * @return HBox representing the conversation item
      */
-    public static HBox createGroupConversationItem(String profileImageUrl, String groupName,
+    public static HBox createGroupConversationItem(String groupImageUrl, String groupName,
                                               String lastMessage, String time, int unreadCount) {
 
         // Main container HBox
@@ -73,7 +73,7 @@ public class ConversationItemBuilder {
         mainGroupContainer.getStyleClass().add("conversation-item");
 
         // Profile image with online indicator
-        StackPane groupContainer = createGroupContainer(profileImageUrl);
+        StackPane groupContainer = createGroupContainer(groupImageUrl);
 
         // Contact name and last message
         VBox messageInfo = createMessageInfo(groupName, lastMessage);
@@ -126,7 +126,7 @@ public class ConversationItemBuilder {
      * Create group image container
      */
 
-    private static StackPane createGroupContainer(String profileImageUrl) {
+    private static StackPane createGroupContainer(String groupImageUrl) {
 
         StackPane groupContainer = new StackPane();
 
@@ -139,7 +139,11 @@ public class ConversationItemBuilder {
 
         // Load image
         try {
-            groupImage.setImage(new Image(profileImageUrl != null ? profileImageUrl : "@../img/group-default.png"));
+            groupImage.setImage(
+                    (groupImageUrl != null && !groupImageUrl.isEmpty())
+                            ? new Image(groupImageUrl, true)
+                            : new Image(ConversationItemBuilder.class.getResource("/genki/img/group-default.png").toExternalForm())
+            );
         } catch (Exception e) {
             logger.info("Error loading group image: " + e.getMessage());
         }

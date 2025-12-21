@@ -1,6 +1,8 @@
 package genki.controllers;
 
 import genki.models.AuthModel;
+import genki.models.Group;
+import genki.models.GroupsModel;
 import genki.utils.AuthResult;
 import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
@@ -28,7 +30,7 @@ public class LoginController implements Initializable {
 	private clientSocketController client;
 
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
-
+     private static final GroupsModel groupsModel = new GroupsModel();
      private static final AuthModel authModel = new AuthModel();
 
      @FXML
@@ -96,6 +98,9 @@ public class LoginController implements Initializable {
                      try {
 
                          logger.log(Level.INFO, "Login successful by " + user);
+                         groupsModel.loadGroups(loginResult.getUsername());
+                         logger.info("groups are: " + UserSession.getGroups());
+
 
                          //Creating Client Socket
                          client = new clientSocketController(loginResult.getUsername());

@@ -43,8 +43,12 @@
             </HBox>
 
             <!-- Conversations list -->
-            <ScrollPane fitToWidth="true" style="-fx-background-color: #232e2e; -fx-background: #232e2e;" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
-                <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #232e2e;" />
+            <ScrollPane fx:id="usersPane" fitToWidth="true" style="-fx-background-color: #232e2e; -fx-background: #232e2e;" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
+            <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #232e2e;" />
+            </ScrollPane>
+
+            <ScrollPane fx:id="groupsPane" fitToWidth="true" style="-fx-background-color: #232e2e; -fx-background: #232e2e;" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
+                <VBox fx:id="groupsListContainer" spacing="2" style="-fx-background-color: #232e2e;" />
             </ScrollPane>
         </VBox>
 
