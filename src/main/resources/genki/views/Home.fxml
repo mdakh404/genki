@@ -71,7 +71,7 @@
 
             </HBox>
 
-            <ScrollPane fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
+            <ScrollPane fx:id="messagesScrollPane" fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
     <VBox fx:id="messagesContainer" prefHeight="400" prefWidth="700" spacing="16">
         <!-- Messages will be added dynamically from the controller -->
     </VBox>

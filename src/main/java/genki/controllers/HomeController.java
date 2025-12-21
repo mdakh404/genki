@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
+import javafx.application.Platform;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.Scene;
@@ -11,6 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -38,6 +40,7 @@ import java.util.List;
 
 import genki.utils.MessageDAO;
 import genki.models.Message;
+import genki.models.MessageData;
 import org.bson.types.ObjectId;
 import genki.utils.ConversationDAO;
 
@@ -66,6 +69,8 @@ public class HomeController {
     @FXML
     private VBox messagesContainer;
     @FXML
+    private ScrollPane messagesScrollPane;
+    @FXML
     private TextField messageInput;
 
     @FXML
@@ -82,6 +87,8 @@ public class HomeController {
     private Boolean rightSideVisibilite = false;
     // Track the currently open conversation
     private ObjectId currentConversationId = null;
+    private String currentRecipientId = null;  // Track recipient for message sending
+    private String currentRecipientName = null;  // Track recipient name for fallback matching
 
     @FXML
     private Button btnAdd;
@@ -99,6 +106,37 @@ public class HomeController {
     private Button btnNotifications;
 
     private Popup addMenuPopup;
+
+    // CSS Style Constants - centralized styles to avoid hardcoding
+    private static final String MENU_BUTTON_STYLE_DEFAULT = 
+        "-fx-background-color: transparent; " +
+        "-fx-text-fill: black; " +
+        "-fx-cursor: hand; " +
+        "-fx-padding: 5; " +
+        "-fx-alignment: CENTER-LEFT; " +
+        "-fx-font-size: 14px;";
+    
+    private static final String MENU_BUTTON_STYLE_HOVER = 
+        MENU_BUTTON_STYLE_DEFAULT + "-fx-background-color: rgba(255, 255, 255, 0.1);";
+    
+    private static final String FILTER_BUTTON_ACTIVE_STYLE = 
+        "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;";
+    
+    private static final String FILTER_BUTTON_INACTIVE_STYLE = 
+        "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;";
+
+    /**
+     * IMPROVEMENT 1: Resource Management
+     * Using DBConnection singleton pattern to avoid connection leaks
+     */
+    private static DBConnection dbConnectionInstance = null;
+
+    private static synchronized DBConnection getDBConnection() {
+        if (dbConnectionInstance == null) {
+            dbConnectionInstance = new DBConnection("genki_testing");
+        }
+        return dbConnectionInstance;
+    }
 
     @FXML
     public void initialize() {
@@ -138,13 +176,35 @@ public class HomeController {
             messagesContainer.getChildren().add(
                     MessageItemBuilder.createSentMessage("genki/img/user-default.png", senderName, messageText));
             messageInput.clear();
-            //Send message via socket 
-            UserSession.getClientSocket().sendMessages(messageText);
+            // Auto-scroll to bottom
+            scrollToBottom();
+            
+            // Create structured message data with all required info
+            MessageData msgData = new MessageData(
+                currentConversationId.toString(),
+                senderId,
+                senderName,
+                messageText,
+                UserSession.getImageUrl(),
+                System.currentTimeMillis(),
+                currentRecipientId,  // Include recipient ID
+                currentRecipientName  // Include recipient name for fallback
+            );
+            
+            // Send message as JSON via socket
+            String jsonMessage = genki.utils.GsonUtility.getGson().toJson(msgData);
+            UserSession.getClientSocket().sendMessages(jsonMessage);
 
-            // Save to DB in background
+            // IMPROVEMENT 2: Thread Safety and UI Updates
+            // Save to DB in background thread and update UI safely if needed
             new Thread(() -> {
                 MessageDAO messageDAO = new MessageDAO();
                 messageDAO.sendMessage(currentConversationId, senderId, senderName, messageText);
+                
+                // If you need to update UI after save (e.g., show success icon), use Platform.runLater()
+                // Platform.runLater(() -> {
+                //     // Update UI elements here
+                // });
             }).start();
         });
         // Load conversations
@@ -165,31 +225,48 @@ public class HomeController {
                             "hhhhhhhhhhhhhh salam"));
         }
 
+        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded strings
         btnAll.setOnMouseClicked(e -> {
-            btnAll.setStyle(
-                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnUnread.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnGroups.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnAll.setStyle(FILTER_BUTTON_ACTIVE_STYLE);
+            btnUnread.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
+            btnGroups.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
         });
 
         btnUnread.setOnMouseClicked(e -> {
-            btnUnread.setStyle(
-                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnAll.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnGroups.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnUnread.setStyle(FILTER_BUTTON_ACTIVE_STYLE);
+            btnAll.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
+            btnGroups.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
         });
 
         btnGroups.setOnMouseClicked(e -> {
-            btnGroups.setStyle(
-                    "-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnUnread.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
-            btnAll.setStyle(
-                    "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;");
+            btnGroups.setStyle(FILTER_BUTTON_ACTIVE_STYLE);
+            btnUnread.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
+            btnAll.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
+        });
+
+        // Register callback for incoming messages
+        UserSession.getClientSocket().setOnNewMessageCallback(msgData -> {
+            System.out.println("HomeController callback triggered!");
+            System.out.println("Received message conversationId: " + msgData.conversationId);
+            System.out.println("Current conversationId: " + currentConversationId);
+            // Only add message if it's for the current conversation
+            if (msgData.conversationId != null && 
+                currentConversationId != null && 
+                msgData.conversationId.equals(currentConversationId.toString())) {
+                
+                System.out.println("Match found! Adding message from " + msgData.senderName);
+                messagesContainer.getChildren().add(
+                    MessageItemBuilder.createReceivedMessage(
+                        msgData.senderProfileImage,
+                        msgData.senderName,
+                        msgData.messageText
+                    )
+                );
+                // Auto-scroll to bottom
+                scrollToBottom();
+            } else {
+                System.out.println("No match: conversationId=" + msgData.conversationId + ", currentConversationId=" + currentConversationId);
+            }
         });
 
     }
@@ -203,8 +280,8 @@ public class HomeController {
         // Update chat header with friend's info using conversation participants
         try {
             String currentUserId = UserSession.getUserId();
-            // Use a new DBConnection for fetching the conversation document
-            DBConnection dbConnection = new DBConnection("genki_testing");
+            // IMPROVEMENT 1: Resource Management - Use singleton DBConnection instead of creating new instance
+            DBConnection dbConnection = getDBConnection();
             org.bson.Document conversationDoc = dbConnection
                     .getDatabase()
                     .getCollection("Conversation")
@@ -220,6 +297,9 @@ public class HomeController {
                         break;
                     }
                 }
+                // Store the recipient ID for message sending
+                this.currentRecipientId = friendIdStr;
+                
                 if (friendIdStr != null) {
                     org.bson.types.ObjectId friendId = null;
                     try {
@@ -232,6 +312,8 @@ public class HomeController {
                         Document friendDoc = userDAO.getUserById(friendId);
                         if (friendDoc != null) {
                             String friendName = friendDoc.getString("username");
+                            // Store the recipient name as well for fallback matching
+                            this.currentRecipientName = friendName;
                             String photoUrl = friendDoc.getString("photo_url");
                             String bio = friendDoc.getString("bio");
                             String role = friendDoc.getString("role");
@@ -309,8 +391,22 @@ public class HomeController {
                             MessageItemBuilder.createReceivedMessage(photoUrl, senderName, content));
                 }
             }
+            // Auto-scroll to bottom after loading messages
+            scrollToBottom();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error loading messages for conversation", e);
+        }
+    }
+
+    /**
+     * Scroll the messages container to the bottom to show the latest messages
+     */
+    private void scrollToBottom() {
+        if (messagesScrollPane != null) {
+            // Use runLater to ensure the scroll happens after layout updates
+            Platform.runLater(() -> {
+                messagesScrollPane.setVvalue(1.0);  // 1.0 = bottom of scroll pane
+            });
         }
     }
 
@@ -372,17 +468,10 @@ public class HomeController {
         // Créer le bouton "Add User"
         Button addUserBtn = new Button("Add User");
         addUserBtn.setPrefWidth(150);
-        addUserBtn.setStyle(
-                "-fx-background-color: transparent; " +
-                        "-fx-text-fill: black; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-padding: 5; " +
-                        "-fx-alignment: CENTER-LEFT; " +
-                        "-fx-font-size: 14px;");
-        addUserBtn.setOnMouseEntered(e -> addUserBtn.setStyle(
-                addUserBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"));
-        addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(
-                addUserBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")));
+        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded strings
+        addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
+        addUserBtn.setOnMouseEntered(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
+        addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         addUserBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
@@ -392,17 +481,10 @@ public class HomeController {
         // Créer le bouton "Add Group"
         Button addGroupBtn = new Button("Add Group");
         addGroupBtn.setPrefWidth(150);
-        addGroupBtn.setStyle(
-                "-fx-background-color: transparent; " +
-                        "-fx-text-fill: black; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-padding: 5; " +
-                        "-fx-alignment: CENTER-LEFT; " +
-                        "-fx-font-size: 14px;");
-        addGroupBtn.setOnMouseEntered(e -> addGroupBtn.setStyle(
-                addGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"));
-        addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(
-                addGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")));
+        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded strings
+        addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
+        addGroupBtn.setOnMouseEntered(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
+        addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         addGroupBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
@@ -413,17 +495,10 @@ public class HomeController {
         // Créer le bouton "Join Group"
         Button joinGroupBtn = new Button("Join Group");
         joinGroupBtn.setPrefWidth(150);
-        joinGroupBtn.setStyle(
-                "-fx-background-color: transparent;" +
-                        "-fx-text-fill: black; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-padding: 5; " +
-                        "-fx-alignment: CENTER-LEFT; " +
-                        "-fx-font-size: 14px;");
-        joinGroupBtn.setOnMouseEntered(e -> joinGroupBtn.setStyle(
-                joinGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"));
-        joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(
-                joinGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")));
+        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded strings
+        joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
+        joinGroupBtn.setOnMouseEntered(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
+        joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         joinGroupBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
@@ -600,6 +675,10 @@ public class HomeController {
 
     /**
      * Load conversations for the current user from the database
+     * 
+     * IMPROVEMENT 3: Data Access Objects (DAO)
+     * This method orchestrates the loading of conversations by delegating
+     * data transformation to DAO classes where appropriate.
      */
     private void loadConversations() {
         try {
@@ -685,7 +764,8 @@ public class HomeController {
                 String lastMessage = "";
                 String time = "";
                 try {
-                    DBConnection dbConnection = new DBConnection("genki_testing");
+                    // IMPROVEMENT 1: Resource Management - Use singleton DBConnection
+                    DBConnection dbConnection = getDBConnection();
                     org.bson.Document conversationDoc = dbConnection
                             .getDatabase()
                             .getCollection("Conversation")
