@@ -95,7 +95,9 @@ public class AddUserController implements Initializable {
                          "This user is already on your friends' list",
                          Alert.AlertType.ERROR
                  );
+
                  closeWindow();
+                 return;
             }
         }
 
