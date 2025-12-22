@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import genki.models.User;
+import genki.models.MessageData;
 import genki.network.ClientHandler;
 import genki.network.MessageListener;
 import genki.utils.GsonUtility;
@@ -105,11 +106,51 @@ public class ServerSocketController implements MessageListener {
 
 	@Override
 	public void onMessageReceived(String message, User user) {
-		System.out.println("Server recievied : " + message);
-		for (ClientHandler handler : ConnectedUsers) {
-			if (handler.getUser().equals(user)) {
-				System.out.println("message recieved from : " + user.getUsername());
+		System.out.println("Server received: " + message);
+		
+		// Strip the [clientInfo] prefix that ClientHandler adds
+		String cleanMessage = message;
+		int bracketIndex = message.indexOf("] ");
+		if (bracketIndex != -1) {
+			cleanMessage = message.substring(bracketIndex + 2);
+		}
+		
+		// Skip USERS_LIST broadcasts - they're handled separately
+		if (cleanMessage.startsWith("USERS_LIST:")) {
+			System.out.println("Ignoring USERS_LIST broadcast");
+			return;
+		}
+		
+		try {
+			// Try to parse as MessageData (regular message)
+			MessageData msgData = GsonUtility.getGson().fromJson(cleanMessage, MessageData.class);
+			System.out.println("Looking for recipient: " + msgData.recipientId + " (or name: " + msgData.recipientName + ")");
+			
+			// Find the recipient and send the message to them
+			if (msgData.recipientId != null) {
+				System.out.println("Connected users count: " + ConnectedUsers.size());
+				for (ClientHandler handler : ConnectedUsers) {
+					User handlerUser = handler.getUser();
+					if (handlerUser != null) {
+						String userId = handlerUser.getId() != null ? handlerUser.getId().toString() : null;
+						String username = handlerUser.getUsername();
+						System.out.println("  Checking user: id=" + userId + ", username=" + username);
+						
+						// Try to match by ID first, then fall back to username
+						if ((userId != null && userId.equals(msgData.recipientId)) ||
+							(username != null && username.equals(msgData.recipientId)) ||
+							(username != null && username.equals(msgData.recipientName))) {
+							System.out.println("MATCH FOUND! Routing message from " + user.getUsername() + " to " + username);
+							handler.sendMessage(cleanMessage);  // Send the clean JSON without the prefix
+							break;
+						}
+					}
+				}
 			}
+		} catch (Exception e) {
+			// If it's not a valid MessageData, it might be another type of message
+			System.err.println("Error parsing message as MessageData: " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 

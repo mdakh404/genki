@@ -3,11 +3,13 @@ package genki.controllers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.bson.codecs.pojo.Convention;
 
 import genki.models.Conversation;
 import genki.models.User;
+import genki.models.MessageData;
 import genki.network.ClientHandler;
 import genki.network.ClientsThreads;
 import genki.network.MessageListener;
@@ -28,6 +30,7 @@ public class clientSocketController implements t2{
 	private ClientsThreads ClientThread;
 	private String username;
 	private List<User> connectedUsers = new ArrayList<>();
+	private Consumer<MessageData> onNewMessageCallback;
 	
 	
 	public clientSocketController(String username) {
@@ -40,6 +43,10 @@ public class clientSocketController implements t2{
 	
 	public String getUser() {
 		return this.username;
+	}
+	
+	public void setOnNewMessageCallback(Consumer<MessageData> callback) {
+		this.onNewMessageCallback = callback;
 	}
 	
 	
@@ -63,12 +70,41 @@ public class clientSocketController implements t2{
 		Platform.runLater(() -> {
 			System.out.println("Client recieved : " + message);
 			
+			// Skip system messages (connection status, etc.)
+			if (message.startsWith("---") || message.startsWith("Server: ---")) {
+				System.out.println("Skipping system message");
+				return;
+			}
+			
 			// Check if this is a users list message
 			if (message.startsWith("Server: USERS_LIST:")) {
 				// Extract JSON from message
 				String jsonPart = message.substring("Server: USERS_LIST:".length());
 				parseAndUpdateUsersList(jsonPart);
-				
+			}
+			else {
+				// This is a regular message - parse and notify callback
+				try {
+					// Strip "Server: " prefix if present
+					String jsonMessage = message;
+					if (message.startsWith("Server: ")) {
+						jsonMessage = message.substring("Server: ".length());
+					}
+					
+					System.out.println("Attempting to parse as MessageData");
+					System.out.println("Message to parse: " + jsonMessage.substring(0, Math.min(100, jsonMessage.length())));
+					MessageData msgData = GsonUtility.getGson().fromJson(jsonMessage, MessageData.class);
+					System.out.println("Parsed MessageData: conversationId=" + msgData.conversationId + ", senderName=" + msgData.senderName);
+					if (onNewMessageCallback != null) {
+						System.out.println("Callback found, calling it");
+						onNewMessageCallback.accept(msgData);
+					} else {
+						System.out.println("WARNING: onNewMessageCallback is null!");
+					}
+				} catch (Exception e) {
+					System.err.println("Error parsing incoming message: " + e.getMessage());
+					e.printStackTrace();
+				}
 			}
 		});
 	}
