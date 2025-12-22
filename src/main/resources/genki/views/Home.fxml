@@ -44,10 +44,10 @@
                 <Button fx:id="btnGroups" style="-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;" text="Groups" />
             </HBox>
 
-            <ScrollPane fx:id="usersPane" fitToWidth="true" style="-fx-background-color: #1e2936; -fx-background: #1e2936; " stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
+            <ScrollPane fx:id="usersPane" fitToWidth="true" style="-fx-background-color: #232e2e; -fx-background: #1e2936; " stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
                 <StackPane alignment="CENTER">
-                    <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #1e2936;" />
-                    <VBox fx:id="loadingSpinnerContainer" alignment="CENTER" managed="false" style="-fx-background-color: rgba(30, 41, 54, 0.9);" visible="false">
+                    <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #232e2e;" />
+                    <VBox fx:id="loadingSpinnerContainer" alignment="CENTER" managed="false" style="-fx-background-color: #232e2e;" visible="false">
                         <ProgressIndicator fx:id="loadingSpinner" maxHeight="120.0" maxWidth="120.0" prefHeight="120.0" prefWidth="120.0" style="-fx-padding: 20;" />
                     </VBox>
                 </StackPane>
