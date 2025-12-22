@@ -163,8 +163,7 @@ public class JoinGroupController {
                 );
 
                 UserSession.addGroup(nvGroup);
-                // TODO remove this one after testing
-                logger.info("Groups are " + UserSession.getGroups());
+
                 AlertConstruct.alertConstructor(
                            "Success",
                         "",

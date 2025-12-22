@@ -97,17 +97,24 @@ public class ConversationItemBuilder {
         ImageView profileImage = new ImageView();
         profileImage.setFitHeight(45.0);
         profileImage.setFitWidth(45.0);
-        profileImage.setPreserveRatio(true);
+        profileImage.setPreserveRatio(false);  // Always fill the 45x45 area
         profileImage.setPickOnBounds(true);
         
-        // Load image
+        // Load image at a larger size for clarity, then display at 45x45
         try {
-            profileImage.setImage(new Image(profileImageUrl != null ? profileImageUrl : "@../img/user-default.png"));
+            String imageUrl = profileImageUrl;
+            if (profileImageUrl != null && !profileImageUrl.startsWith("http") && !profileImageUrl.startsWith("file:")) {
+                var res = ConversationItemBuilder.class.getResource("/" + profileImageUrl);
+                if (res != null) imageUrl = res.toExternalForm();
+                else imageUrl = ConversationItemBuilder.class.getResource("/genki/img/user-default.png").toExternalForm();
+            }
+            // Load at 180x180 for better clarity when displaying at 45x45
+            if (imageUrl != null) profileImage.setImage(new Image(imageUrl, 180, 180, false, true));
         } catch (Exception e) {
             System.err.println("Error loading profile image: " + e.getMessage());
         }
         
-        // Circular clip
+        // Circular clip - center at 22.5, 22.5 with radius 22.5
         Circle clip = new Circle(22.5, 22.5, 22.5);
         profileImage.setClip(clip);
         

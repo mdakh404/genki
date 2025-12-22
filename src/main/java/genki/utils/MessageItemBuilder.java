@@ -73,7 +73,8 @@ public class MessageItemBuilder {
                 var res = MessageItemBuilder.class.getResource("/" + profileImageUrl);
                 if (res != null) imageUrl = res.toExternalForm();
             }
-            if (imageUrl != null) avatar.setImage(new Image(imageUrl, 40, 40, false, true));
+            // Load at 160x160 for better clarity when displaying at 40x40
+            if (imageUrl != null) avatar.setImage(new Image(imageUrl, 160, 160, false, true));
         } catch (Exception e) {
             System.err.println("Error loading avatar image: " + e.getMessage());
         }

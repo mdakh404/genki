@@ -57,8 +57,21 @@ public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
     @FXML
     private Button btnSettings;
+
+    @FXML
+    private Button btnAll;
+    @FXML
+    private Button btnUnread;
+    @FXML
+    private Button btnGroups;
+    
+    @FXML
+    private Label chatContactStatus;
+
     @FXML
     private Label chatContactName;
+    @FXML
+    private javafx.scene.shape.Circle chatContactStatusCircle;
     @FXML
     private ImageView UserProfil;
     @FXML
@@ -74,6 +87,9 @@ public class HomeController {
     @FXML
     private VBox conversationListContainer;
     @FXML
+    private VBox loadingSpinnerContainer;
+    @FXML
+    private javafx.scene.control.ProgressIndicator loadingSpinner;
     private VBox groupsListContainer;
     @FXML
     private HBox messageInputArea;
@@ -94,6 +110,11 @@ public class HomeController {
     // Track the currently open conversation
     private String currentRecipientId = null;  // Track recipient for message sending
     private String currentRecipientName = null;  // Track recipient name for fallback matching
+    
+    // Track conversation loading progress
+    private int totalConversations = 0;
+    private int loadedConversations = 0;
+    private Object loadingLock = new Object();
 
     private ObjectId currentConversationId = null;
     @FXML private Button btnAdd;
@@ -105,10 +126,17 @@ public class HomeController {
     @FXML private Button btnNotifications;
     
 
-    @FXML private Button btnAll;
-    @FXML private Button btnGroups;
 
 
+    // handle logout of user
+    public void handleLogout() {
+        UserSession.logout();
+        try {
+            ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");
+        } catch (IOException ex) {
+            logger.info("Error loading Login.fxml " + ex.getMessage());
+        }
+    }
 
     // handle toggling between users and groups panes
     private void switchUsers(boolean switchToUsers) {
@@ -120,11 +148,9 @@ public class HomeController {
     }
 
 
-      
+
 
     private Popup addMenuPopup;
-    
-    @FXML private Button btnLogout;
 
     // CSS Style Constants - centralized styles to avoid hardcoding
     private static final String MENU_BUTTON_STYLE_DEFAULT = 
@@ -145,6 +171,7 @@ public class HomeController {
         "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;";
 
     /**
+     * 
      * IMPROVEMENT 1: Resource Management
      * Using DBConnection singleton pattern to avoid connection leaks
      */
@@ -162,7 +189,7 @@ public class HomeController {
 
         switchUsers(true);
 
-        if (UserSession.getGroups().isEmpty() || UserSession.getConversations().isEmpty()) {
+        if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
 
                      chatHeader.getChildren().clear();
                      messageInputArea.getChildren().clear();
@@ -230,29 +257,18 @@ public class HomeController {
             rightSideContainer.setVisible(rightSideVisibilite);
             rightSideContainer.setManaged(rightSideVisibilite);
         }
-
-        if (UserSession.getImageUrl().isEmpty()) {
-               UserProfil.setImage(new Image(Objects.requireNonNull(HomeController.class.getResourceAsStream("/genki/img/user-default.png"))));
-               UserProfil.setFitWidth(40);
-               UserProfil.setFitHeight(40);
-               UserProfil.setPreserveRatio(false);
-               javafx.scene.shape.Circle userClip = new javafx.scene.shape.Circle(20, 20, 20);
-               UserProfil.setClip(userClip);
-               UserProfil.getStyleClass().add("avatar");
-        }
-        else {
-            try {
-                Image image = new Image(UserSession.getImageUrl(), 40, 40, false, true);
-                UserProfil.setImage(image);
-                UserProfil.setFitWidth(40);
-                UserProfil.setFitHeight(40);
-                UserProfil.setPreserveRatio(false);
-                javafx.scene.shape.Circle userClip = new javafx.scene.shape.Circle(20, 20, 20);
-                UserProfil.setClip(userClip);
-                UserProfil.getStyleClass().add("avatar");
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
+        try {
+            // Load at 160x160 for better clarity when displaying at 40x40
+            Image image = new Image(UserSession.getImageUrl(), 160, 160, false, true);
+            UserProfil.setImage(image);
+            UserProfil.setFitWidth(40);
+            UserProfil.setFitHeight(40);
+            UserProfil.setPreserveRatio(false);
+            javafx.scene.shape.Circle userClip = new javafx.scene.shape.Circle(20, 20, 20);
+            UserProfil.setClip(userClip);
+            UserProfil.getStyleClass().add("avatar");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
         CurrentUsername.setText(UserSession.getUsername());
 
@@ -263,9 +279,10 @@ public class HomeController {
             }
             String senderId = UserSession.getUserId();
             String senderName = UserSession.getUsername();
+            String senderImageUrl = UserSession.getImageUrl();
 
             messagesContainer.getChildren().add(
-                    MessageItemBuilder.createSentMessage("genki/img/user-default.png", senderName, messageText));
+                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, messageText));
             messageInput.clear();
 
             // UserSession.getClientSocket().sendMessages(messageText);
@@ -280,7 +297,7 @@ public class HomeController {
                 senderId,
                 senderName,
                 messageText,
-                UserSession.getImageUrl(),
+                senderImageUrl,
                 System.currentTimeMillis(),
                 currentRecipientId,  // Include recipient ID
                 currentRecipientName  // Include recipient name for fallback
@@ -294,7 +311,7 @@ public class HomeController {
             // Save to DB in background thread and update UI safely if needed
             new Thread(() -> {
                 MessageDAO messageDAO = new MessageDAO();
-                messageDAO.sendMessage(currentConversationId, senderId, senderName, messageText);
+                messageDAO.sendMessage(currentConversationId, senderId, senderName, senderImageUrl, messageText);
                 
                 // If you need to update UI after save (e.g., show success icon), use Platform.runLater()
                 // Platform.runLater(() -> {
@@ -302,7 +319,15 @@ public class HomeController {
                 // });
             }).start();
         });
-        loadConversations();
+        
+        // Load conversations in background thread for fast UI response
+        new Thread(() -> {
+            try {
+                loadConversations();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error loading conversations in background", e);
+            }
+        }).start();
 
         if (messagesContainer != null) {
         // Show some example messages dynamically
@@ -363,8 +388,8 @@ public class HomeController {
 
     /**
      * Set the current conversation and show its messages
-    */
-    public void setCurrentConversation(ObjectId conversationId) {
+     */
+    public void setCurrentConversation(ObjectId conversationId, Boolean isOnligne) {
         System.out.println("The Set method...");
         this.currentConversationId = conversationId;
         // Update chat header with friend's info using conversation participants
@@ -409,32 +434,46 @@ public class HomeController {
                             String role = friendDoc.getString("role");
 
                             if (chatContactName != null)
-                                chatContactName.setText(friendName != null ? friendName : "");
+                            chatContactName.setText(friendName != null ? friendName : "");
                             rightContactName.setText(friendName != null ? friendName : "");
                             rightContactBio.setText(bio != null ? bio : "");
                             rightContactTitle.setText(role != null ? role : "");
                             if (profilTrigger != null && photoUrl != null) {
                                 try {
-                                    Image friendImg = new Image(photoUrl, 40, 40, false, true);
+                                    // Load at 180x180 for better clarity when displaying at 43x43
+                                    chatContactStatus.setText(isOnligne ? "Online" : "Offline");
+                                    // Style the status based on online status
+                                    javafx.scene.paint.Color statusColor = isOnligne ? 
+                                        javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
+                                    String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80" : "-fx-text-fill: #9ca3af";
+                                    chatContactStatus.setStyle(statusTextColor + "; -fx-font-size: 12px;");
+                                    if (chatContactStatusCircle != null) {
+                                        chatContactStatusCircle.setFill(statusColor);
+                                    }
+                                    
+                                    Image friendImg = new Image(photoUrl, 180, 180, false, true);
                                     profilTrigger.setImage(friendImg);
-                                    profilTrigger.setFitWidth(40);
-                                    profilTrigger.setFitHeight(40);
+                                    profilTrigger.setFitWidth(43);
+                                    profilTrigger.setFitHeight(43);
                                     profilTrigger.setPreserveRatio(false);
-                                    javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(20, 20, 20);
+                                    javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
                                     profilTrigger.setClip(friendClip);
                                     profilTrigger.getStyleClass().add("avatar");
                                     if (rightProfileImage != null) {
-                                        rightProfileImage.setImage(friendImg);
-                                        rightProfileImage.setFitWidth(40);
-                                        rightProfileImage.setFitHeight(40);
+                                        // Load at 400x400 for the larger right panel image (100x100 display)
+                                        Image rightImg = new Image(photoUrl, 400, 400, false, true);
+                                        rightProfileImage.setImage(rightImg);
+                                        rightProfileImage.setFitWidth(100);
+                                        rightProfileImage.setFitHeight(100);
                                         rightProfileImage.setPreserveRatio(false);
-                                        javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(20, 20, 20);
+                                        javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
                                         rightProfileImage.setClip(rightClip);
                                         rightProfileImage.getStyleClass().add("avatar");
                                     }
                                 } catch (Exception e) {
                                     System.out.println(e.getMessage());
-                                    profilTrigger.setImage(new Image("genki/img/user-default.png", 40, 40, false, true));
+                                    profilTrigger
+                                            .setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
                                 }
                             }
                         }
@@ -471,13 +510,17 @@ public class HomeController {
                 String senderId = doc.getString("senderId");
                 String senderName = doc.getString("senderName");
                 String content = doc.getString("content");
-                String photoUrl = "genki/img/user-default.png"; // Optionally fetch real photo
+                String senderImageUrl = doc.getString("senderImageUrl");
+                if (senderImageUrl == null) {
+                    senderImageUrl = doc.getString("photo_url"); // Fallback for legacy data
+                }
+                System.out.println("Image message url : " + senderImageUrl);
                 if (senderId != null && senderId.equals(currentUserId)) {
                     messagesContainer.getChildren().add(
-                            MessageItemBuilder.createSentMessage(photoUrl, senderName, content));
+                            MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content));
                 } else {
                     messagesContainer.getChildren().add(
-                            MessageItemBuilder.createReceivedMessage(photoUrl, senderName, content));
+                            MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content));
                 }
             }
             // Auto-scroll to bottom after loading messages
@@ -812,6 +855,11 @@ public class HomeController {
      * IMPROVEMENT 3: Data Access Objects (DAO)
      * This method orchestrates the loading of conversations by delegating
      * data transformation to DAO classes where appropriate.
+     * 
+     * IMPROVEMENT 5: Background Threading & Parallel Processing
+     * - Each friend's conversation loads on a separate thread
+     * - All conversions load in parallel for faster performance
+     * - UI updates wrapped with Platform.runLater() for thread safety
      */
     private void loadConversations() {
         try {
@@ -821,108 +869,213 @@ public class HomeController {
             // Get all friends for the current user
             List<Document> friends = userDAO.getFriendsForUser(currentUsername);
 
-            if (friends == null || friends.isEmpty()) {
+            // Show loading spinner
+            Platform.runLater(() -> {
+                if (loadingSpinnerContainer != null) {
+                    loadingSpinnerContainer.setVisible(true);
+                    loadingSpinnerContainer.setManaged(true);
+                }
+            });
+
+            // Convert Document friends to List<User>
+            ArrayList<genki.models.User> userFriends = new ArrayList<>();
+            if (friends != null) {
+                for (Document friendDoc : friends) {
+                    genki.models.User user = new genki.models.User();
+                    user.setId(friendDoc.getObjectId("_id").toHexString());
+                    user.setUsername(friendDoc.getString("username"));
+                    user.setPhotoUrl(friendDoc.getString("photo_url"));
+                    user.setBio(friendDoc.getString("bio"));
+                    user.setRole(friendDoc.getString("role"));
+                    userFriends.add(user);
+                }
+            }
+
+            // Build conversations list from friends
+            ArrayList<genki.models.Conversation> conversations = new ArrayList<>();
+            if (friends != null) {
+                String currentUserId = UserSession.getUserId();
+                for (Document friendDoc : friends) {
+                    genki.models.Conversation conversation = new genki.models.Conversation();
+                    conversation.setType("direct");
+
+                    // Set participant IDs
+                    String friendId = friendDoc.getObjectId("_id").toHexString();
+                    List<String> participantIds = new ArrayList<>();
+                    participantIds.add(currentUserId);
+                    participantIds.add(friendId);
+                    conversation.setParticipantIds(participantIds);
+
+                    // Set last message info
+                    conversation.setLastMessageContent(friendDoc.getString("lastMessageContent"));
+                    conversation.setLastMessageSenderId(friendDoc.getString("lastMessageSenderId"));
+
+                    // Parse last message time
+                    Object lastMsgTimeObj = friendDoc.get("lastMessageTime");
+                    if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
+                        conversation.setLastMessageTime((java.time.LocalDateTime) lastMsgTimeObj);
+                    } else if (lastMsgTimeObj instanceof java.util.Date) {
+                        java.util.Date date = (java.util.Date) lastMsgTimeObj;
+                        conversation.setLastMessageTime(java.time.LocalDateTime.ofInstant(date.toInstant(),
+                                java.time.ZoneId.systemDefault()));
+                    }
+
+                    conversations.add(conversation);
+                }
+            }
+
+            // Initialize UserSession static lists
+            UserSession.loadConversations(userFriends, conversations);
+            System.out.println("Conversations : "+ UserSession.getConversations());
+            System.out.println("Friends : " + UserSession.getFriends());
+            
+            if (UserSession.getFriends() == null || UserSession.getFriends().isEmpty()) {
                 logger.log(Level.INFO, "No friends found for user: " + currentUsername);
+                // Hide spinner if no conversations
+                Platform.runLater(() -> {
+                    if (loadingSpinnerContainer != null) {
+                        loadingSpinnerContainer.setVisible(false);
+                        loadingSpinnerContainer.setManaged(false);
+                    }
+                });
                 return;
             }
 
-            // For each friend, create a conversation item
-            for (Document friendDoc : friends) {
-                String friendName = friendDoc.getString("username");
-                String photoUrl = friendDoc.getString("photo_url");
-                String friendId;
-                // Try to get the friend's user ID as a string (MongoDB _id is usually ObjectId)
-                Object objId = friendDoc.get("_id");
-                if (objId instanceof org.bson.types.ObjectId) {
-                    friendId = ((org.bson.types.ObjectId) objId).toHexString();
-                } else {
-                    friendId = String.valueOf(objId);
-                }
-                String currentUserId = UserSession.getUserId();
-                ConversationDAO conversationDAO = new ConversationDAO();
-                ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+            // Set total conversations count for progress tracking
+            synchronized (loadingLock) {
+                totalConversations = friends.size();
+                loadedConversations = 0;
+            }
 
-                // Fetch last message from Conversation collection
-                String lastMessage = "";
-                String time = "";
-                try {
-                    // IMPROVEMENT 1: Resource Management - Use singleton DBConnection
-                    DBConnection dbConnection = getDBConnection();
-                    org.bson.Document conversationDoc = dbConnection
-                        .getDatabase()
-                        .getCollection("Conversation")
-                        .find(new org.bson.Document("_id", conversationId))
-                        .first();
-                    if (conversationDoc != null) {
-                        lastMessage = conversationDoc.getString("lastMessageContent");
-                        Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
-                        if (lastMsgTimeObj != null) {
-                            // Try to format time as HH:mm if today, else show date
-                            java.time.LocalDateTime msgTime = null;
-                            if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
-                                msgTime = (java.time.LocalDateTime) lastMsgTimeObj;
-                            } else if (lastMsgTimeObj instanceof java.util.Date) {
-                                java.util.Date date = (java.util.Date) lastMsgTimeObj;
-                                msgTime = java.time.LocalDateTime.ofInstant(date.toInstant(), java.time.ZoneId.systemDefault());
-                            } else if (lastMsgTimeObj instanceof String) {
-                                try {
-                                    msgTime = java.time.LocalDateTime.parse((String) lastMsgTimeObj);
-                                } catch (Exception ignore) {}
-                            }
-                            if (msgTime != null) {
-                                java.time.LocalDate today = java.time.LocalDate.now();
-                                if (msgTime.toLocalDate().equals(today)) {
-                                    time = String.format("%02d:%02d", msgTime.getHour(), msgTime.getMinute());
-                                } else {
-                                    time = String.format("%02d/%02d/%02d", msgTime.getDayOfMonth(), msgTime.getMonthValue(), msgTime.getYear() % 100);
-                                }
+            // Load each friend's conversation on a separate thread for parallel processing
+            if (friends != null) {
+                String currentUserId = UserSession.getUserId();
+                for (Document friendDoc : friends) {
+                    new Thread(() -> {
+                        try {
+                            String friendName = friendDoc.getString("username");
+                            String photoUrl = friendDoc.getString("photo_url");
+                            String friendId;
+                            Object objId = friendDoc.get("_id");
+                            if (objId instanceof org.bson.types.ObjectId) {
+                                friendId = ((org.bson.types.ObjectId) objId).toHexString();
                             } else {
-                                time = lastMsgTimeObj.toString();
+                                friendId = String.valueOf(objId);
+                            }
+                            
+                            ConversationDAO conversationDAO = new ConversationDAO();
+                            ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+
+                            // Fetch last message from Conversation collection
+                            String lastMessage = "";
+                            String time = "";
+                            try {
+                                DBConnection dbConnection = getDBConnection();
+                                org.bson.Document conversationDoc = dbConnection
+                                        .getDatabase()
+                                        .getCollection("Conversation")
+                                        .find(new org.bson.Document("_id", conversationId))
+                                        .first();
+                                if (conversationDoc != null) {
+                                    lastMessage = conversationDoc.getString("lastMessageContent");
+                                    Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+                                    if (lastMsgTimeObj != null) {
+                                        java.time.LocalDateTime msgTime = null;
+                                        if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
+                                            msgTime = (java.time.LocalDateTime) lastMsgTimeObj;
+                                        } else if (lastMsgTimeObj instanceof java.util.Date) {
+                                            java.util.Date date = (java.util.Date) lastMsgTimeObj;
+                                            msgTime = java.time.LocalDateTime.ofInstant(date.toInstant(),
+                                                    java.time.ZoneId.systemDefault());
+                                        } else if (lastMsgTimeObj instanceof String) {
+                                            try {
+                                                msgTime = java.time.LocalDateTime.parse((String) lastMsgTimeObj);
+                                            } catch (Exception ignore) {
+                                            }
+                                        }
+                                        if (msgTime != null) {
+                                            java.time.LocalDate today = java.time.LocalDate.now();
+                                            if (msgTime.toLocalDate().equals(today)) {
+                                                time = String.format("%02d:%02d", msgTime.getHour(), msgTime.getMinute());
+                                            } else {
+                                                time = String.format("%02d/%02d/%02d", msgTime.getDayOfMonth(),
+                                                        msgTime.getMonthValue(), msgTime.getYear() % 100);
+                                            }
+                                        } else {
+                                            time = lastMsgTimeObj.toString();
+                                        }
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                System.out.println("Error fetching last message: " + ex.getMessage());
+                            }
+
+                            int unreadCount = 0;
+                            boolean isOnline = false;
+
+                            HBox conversationItem = ConversationItemBuilder.createConversationItem(
+                                    photoUrl != null ? photoUrl : "genki/img/user-default.png",
+                                    friendName,
+                                    lastMessage != null ? lastMessage : "",
+                                    time != null ? time : "",
+                                    unreadCount,
+                                    isOnline);
+
+                            // Store the friend User object in the HBox for later reference
+                            genki.models.User friendUser = new genki.models.User();
+                            friendUser.setId(friendId);
+                            friendUser.setUsername(friendName);
+                            friendUser.setPhotoUrl(photoUrl);
+                            conversationItem.setUserData(friendUser);
+
+                            // Add click handler to set current conversation
+                            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
+
+                            // Store in UserSession for easy access from other files
+                            UserSession.addConversationItem(conversationItem);
+                            
+                            // Update UI on JavaFX thread - Thread Safe!
+                            Platform.runLater(() -> {
+                                conversationListContainer.getChildren().add(conversationItem);
+                                
+                                // Update loading progress
+                                synchronized (loadingLock) {
+                                    loadedConversations++;
+                                    System.out.println("Loaded " + loadedConversations + "/" + totalConversations + " conversations");
+                                    
+                                    // Hide spinner when all conversations are loaded
+                                    if (loadedConversations >= totalConversations && loadingSpinnerContainer != null) {
+                                        loadingSpinnerContainer.setVisible(false);
+                                        loadingSpinnerContainer.setManaged(false);
+                                    }
+                                }
+                            });
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "Error loading conversation for friend", e);
+                            // Update counter even on error
+                            synchronized (loadingLock) {
+                                loadedConversations++;
+                                if (loadedConversations >= totalConversations && loadingSpinnerContainer != null) {
+                                    Platform.runLater(() -> {
+                                        loadingSpinnerContainer.setVisible(false);
+                                        loadingSpinnerContainer.setManaged(false);
+                                    });
+                                }
                             }
                         }
-                    }
-                } catch (Exception ex) {
-                    System.out.println("Error fetching last message: " + ex.getMessage());
+                    }).start();
                 }
-
-                int unreadCount = 0;
-                // boolean isOnline = false;
-                // UserDAO usrMethods = new UserDAO();
-                // genki.models.User usr = usrMethods.documentToUser(friendDoc);
-                // boolean isOnline;
-                // if(UserSession.getConnectedUsers().contains(usr)){
-                //     isOnline = true;
-                // }else{
-                //     isOnline = false;
-                // }
-                 
-                boolean isOnline = true; // TODO: Get from presence system
-
-                HBox conversationItem = ConversationItemBuilder.createConversationItem(
-                        photoUrl != null ? photoUrl : "genki/img/user-default.png",
-                        friendName,
-                        lastMessage != null ? lastMessage : "",
-                        time != null ? time : "",
-                        unreadCount,
-                        isOnline);
-
-                // Store the friend User object in the HBox for later reference
-                genki.models.User friendUser = new genki.models.User();
-                friendUser.setId(friendId);
-                friendUser.setUsername(friendName);
-                friendUser.setPhotoUrl(photoUrl);
-                conversationItem.setUserData(friendUser);
-
-                // Add click handler to set current conversation
-                conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId));
-
-                // Store in UserSession for easy access from other files
-                UserSession.addConversationItem(conversationItem);
-                conversationListContainer.getChildren().add(conversationItem);
             }
 
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error loading conversations", e);
+            // Hide spinner on error
+            Platform.runLater(() -> {
+                if (loadingSpinnerContainer != null) {
+                    loadingSpinnerContainer.setVisible(false);
+                    loadingSpinnerContainer.setManaged(false);
+                }
+            });
         }
     }
     //hamza ajoute ca
@@ -1050,7 +1203,7 @@ public class HomeController {
 	                isOnline
 	            );
 	            
-	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId));
+	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
 	            conversationListContainer.getChildren().add(conversationItem);
 	        }
 	        
@@ -1118,7 +1271,7 @@ public class HomeController {
 	                isOnline
 	            );
 
-	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId));
+	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
 	            conversationListContainer.getChildren().add(conversationItem);
 	        }
 	        
