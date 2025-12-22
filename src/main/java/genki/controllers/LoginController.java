@@ -182,6 +182,9 @@ public class LoginController implements Initializable {
          // TODO: aimane logging
          userName.setText("aimane");
          password.setText("Aimaneaboufadle@2020");
+
+
+         
          password.focusedProperty().addListener((obs, oldVal, newVal) -> {
              if (newVal) {
                  password.setStyle("-fx-border-color: #374151");
