@@ -32,7 +32,7 @@
 
             <!-- Search field -->
             <HBox style="-fx-background-color: #232e2e; -fx-padding: 0 16 16 16;">
-                <TextField fx:id="searchField" prefHeight="40.0" promptText="Search conversations..." 
+                <TextField  prefHeight="40.0" promptText="Search conversations..." 
                     style="-fx-background-color: #2a3535; -fx-text-fill: #2bfbfb; -fx-prompt-text-fill: #6b9e9e; -fx-background-radius: 8; -fx-padding: 10;" 
                     HBox.hgrow="ALWAYS" />
             </HBox>
@@ -70,8 +70,8 @@
 			    <VBox fx:id="AmisNameStatus" spacing="2.0" style="-fx-cursor: hand;" HBox.hgrow="ALWAYS">
 			        <Label fx:id="chatContactName" style="-fx-text-fill: #232e2e; -fx-font-size: 16px; -fx-font-weight: bold;" text="Sarah Wilson" />
 			        <HBox alignment="CENTER_LEFT" spacing="6.0">
-			            <Circle fx:id="chatContactStatusCircle" fill="green" radius="4.0" />
-			            <Label fx:id="chatContactStatus" style="-fx-text-fill: green; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
+			            <Circle  fill="green" radius="4.0" />
+			            <Label  style="-fx-text-fill: green; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
 			        </HBox>
 			    </VBox>
 			    <!-- BOUTON LOGOUT à la fin -->
@@ -100,7 +100,7 @@
                     HBox.hgrow="ALWAYS" />
                 <Button fx:id="btnSend" style="-fx-background-color: #6366f1; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 24; -fx-padding: 12; -fx-cursor: hand; -fx-pref-width: 48; -fx-pref-height: 48;">
                     <graphic>
-                        <Label fx:id="sendMessageBtn" style="-fx-text-fill: white; -fx-font-size: 18px;" text="➤" />
+                        <Label style="-fx-text-fill: white; -fx-font-size: 18px;" text="➤" />
                     </graphic>
                 </Button>
             </HBox>
@@ -108,7 +108,7 @@
 
         <!-- RIGHT SIDEBAR -->
         <VBox fx:id="rightSideContainer" maxWidth="320" minWidth="320" prefWidth="320" style="-fx-background-color: #f8fefe; -fx-border-color: #e0f7fa; -fx-border-width: 0 0 0 1;">
-            <VBox fx:id="rightSidePanel" alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">
+            <VBox  alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">
                 <ImageView fx:id="rightProfileImage" fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="avatar">
                     <clip>
                         <Circle centerX="42.5" centerY="42.5" radius="52.5" />
@@ -122,7 +122,7 @@
                 <Label fx:id="rightContactBio" maxWidth="240" style="-fx-text-fill: #6b7280; -fx-font-size: 13px; -fx-wrap-text: true;" text="Short bio goes here. This will wrap if longer." />
                 <HBox alignment="CENTER" spacing="6.0">
                     <Circle fill="green" radius="4.0" />
-                    <Label fx:id="rightContactStatus" style="-fx-text-fill: green; -fx-font-size: 13px; -fx-font-weight: bold;" text="Online" />
+                    <Label style="-fx-text-fill: green; -fx-font-size: 13px; -fx-font-weight: bold;" text="Online" />
                 </HBox>
             </VBox>
         </VBox>
@@ -144,3 +144,4 @@
         </VBox>
     </VBox>
 </StackPane>
+
