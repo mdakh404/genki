@@ -126,6 +126,7 @@ public class HomeController {
         "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;";
 
     /**
+     * 
      * IMPROVEMENT 1: Resource Management
      * Using DBConnection singleton pattern to avoid connection leaks
      */
@@ -151,7 +152,8 @@ public class HomeController {
             rightSideContainer.setManaged(rightSideVisibilite);
         }
         try {
-            Image image = new Image(UserSession.getImageUrl(), 40, 40, false, true);
+            // Load at 160x160 for better clarity when displaying at 40x40
+            Image image = new Image(UserSession.getImageUrl(), 160, 160, false, true);
             UserProfil.setImage(image);
             UserProfil.setFitWidth(40);
             UserProfil.setFitHeight(40);
@@ -232,7 +234,7 @@ public class HomeController {
             btnUnread.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
             btnGroups.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
         });
-
+        
         btnUnread.setOnMouseClicked(e -> {
             btnUnread.setStyle(FILTER_BUTTON_ACTIVE_STYLE);
             btnAll.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
@@ -326,27 +328,30 @@ public class HomeController {
                             rightContactTitle.setText(role != null ? role : "");
                             if (profilTrigger != null && photoUrl != null) {
                                 try {
-                                    Image friendImg = new Image(photoUrl, 40, 40, false, true);
+                                    // Load at 180x180 for better clarity when displaying at 43x43
+                                    Image friendImg = new Image(photoUrl, 180, 180, false, true);
                                     profilTrigger.setImage(friendImg);
-                                    profilTrigger.setFitWidth(40);
-                                    profilTrigger.setFitHeight(40);
+                                    profilTrigger.setFitWidth(43);
+                                    profilTrigger.setFitHeight(43);
                                     profilTrigger.setPreserveRatio(false);
-                                    javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(20, 20, 20);
+                                    javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
                                     profilTrigger.setClip(friendClip);
                                     profilTrigger.getStyleClass().add("avatar");
                                     if (rightProfileImage != null) {
-                                        rightProfileImage.setImage(friendImg);
-                                        rightProfileImage.setFitWidth(40);
-                                        rightProfileImage.setFitHeight(40);
+                                        // Load at 400x400 for the larger right panel image (100x100 display)
+                                        Image rightImg = new Image(photoUrl, 400, 400, false, true);
+                                        rightProfileImage.setImage(rightImg);
+                                        rightProfileImage.setFitWidth(100);
+                                        rightProfileImage.setFitHeight(100);
                                         rightProfileImage.setPreserveRatio(false);
-                                        javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(20, 20, 20);
+                                        javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
                                         rightProfileImage.setClip(rightClip);
                                         rightProfileImage.getStyleClass().add("avatar");
                                     }
                                 } catch (Exception e) {
                                     System.out.println(e.getMessage());
                                     profilTrigger
-                                            .setImage(new Image("genki/img/user-default.png", 40, 40, false, true));
+                                            .setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
                                 }
                             }
                         }
