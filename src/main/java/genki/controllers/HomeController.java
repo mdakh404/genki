@@ -1,5 +1,8 @@
 package genki.controllers;
 
+import genki.models.Group;
+
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
@@ -17,8 +20,10 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Alert;
 import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
 import javafx.stage.Popup;
 import javafx.geometry.Insets;
 import javafx.scene.layout.Background;
@@ -26,6 +31,8 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.scene.effect.DropShadow;
+
+import java.util.Objects;
 import java.util.logging.Logger;
 import genki.utils.UserSession;
 import genki.utils.ConversationItemBuilder;
@@ -37,6 +44,7 @@ import org.bson.Document;
 import java.util.logging.Level;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
 import genki.utils.MessageDAO;
 import genki.models.Message;
@@ -47,7 +55,6 @@ import genki.utils.ConversationDAO;
 public class HomeController {
 
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
-
     @FXML
     private Button btnSettings;
 
@@ -70,32 +77,37 @@ public class HomeController {
     @FXML
     private VBox AmisNameStatus;
     @FXML
+    private VBox mainChatArea;
+    @FXML
+    private HBox chatHeader;
+    @FXML
+    private ScrollPane usersPane;
+    @FXML
+    private ScrollPane groupsPane;
+    @FXML
     private VBox conversationListContainer;
     @FXML
     private VBox loadingSpinnerContainer;
     @FXML
     private javafx.scene.control.ProgressIndicator loadingSpinner;
+    private VBox groupsListContainer;
+    @FXML
+    private HBox messageInputArea;
     @FXML
     private VBox messagesContainer;
     @FXML
     private ScrollPane messagesScrollPane;
     @FXML
     private TextField messageInput;
-
     @FXML
     private Button btnSend;
-    @FXML
-    private ImageView rightProfileImage;
-    @FXML
-    private Label rightContactName;
-    @FXML
-    private Label rightContactTitle;
-    @FXML
-    private Label rightContactBio;
+    @FXML private ImageView rightProfileImage;
+    @FXML private Label rightContactName;
+    @FXML private Label rightContactTitle;
+    @FXML private Label rightContactBio;
 
     private Boolean rightSideVisibilite = false;
     // Track the currently open conversation
-    private ObjectId currentConversationId = null;
     private String currentRecipientId = null;  // Track recipient for message sending
     private String currentRecipientName = null;  // Track recipient name for fallback matching
     
@@ -104,22 +116,35 @@ public class HomeController {
     private int loadedConversations = 0;
     private Object loadingLock = new Object();
 
-    @FXML
-    private Button btnAdd;
-    @FXML
-    private VBox rightSideContainer;
-    @FXML
-    private ImageView profilTrigger;
-    @FXML
-    private VBox UserNameStatus;
-    @FXML
-    private ImageView messageProfil;
-    @FXML
-    private Label CurrentUsername;
-    @FXML
-    private Button btnNotifications;
+    private ObjectId currentConversationId = null;
+    @FXML private Button btnAdd;
+    @FXML private VBox rightSideContainer;
+    @FXML private ImageView profilTrigger;
+    @FXML private VBox UserNameStatus;
+    @FXML private ImageView messageProfil;
+    @FXML private Label CurrentUsername;
+    @FXML private Button btnNotifications;
+    
+
+
+
+
+
+    // handle toggling between users and groups panes
+    private void switchUsers(boolean switchToUsers) {
+        usersPane.setVisible(switchToUsers);
+        usersPane.setManaged(switchToUsers);
+
+        groupsPane.setVisible(!switchToUsers);
+        groupsPane.setManaged(!switchToUsers);
+    }
+
+
+      
 
     private Popup addMenuPopup;
+    
+    @FXML private Button btnLogout;
 
     // CSS Style Constants - centralized styles to avoid hardcoding
     private static final String MENU_BUTTON_STYLE_DEFAULT = 
@@ -155,6 +180,67 @@ public class HomeController {
 
     @FXML
     public void initialize() {
+
+        switchUsers(true);
+
+        if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
+
+                     chatHeader.getChildren().clear();
+                     messageInputArea.getChildren().clear();
+                     messagesContainer.getChildren().clear();
+
+                     ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.png")));
+                     startConversationImageView.setPreserveRatio(true);
+                     startConversationImageView.setSmooth(true);
+                     startConversationImageView.setFitWidth(700);
+                     startConversationImageView.setFitHeight(700);
+
+                     HBox buttonsContainer = new HBox();
+                     buttonsContainer.setAlignment(Pos.CENTER);
+                     buttonsContainer.setSpacing(10);
+
+                     Button addFriendBtn = new Button();
+                     ImageView addFriendIcon = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/add_friend.png")));
+                     addFriendBtn.setGraphic(addFriendIcon);
+                     addFriendBtn.setText("Add a Friend");
+                     addFriendBtn.setStyle("""
+                            -fx-background-color: #746996;
+                            -fx-text-fill: white;
+                            -fx-background-radius: 20;
+                            -fx-padding: 8 16;
+                            -fx-font-size: 14px;
+                            -fx-cursor: hand;
+                        """);
+
+                        Button joinGroupBtn = new Button();
+                        ImageView joinGroupIcon = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/join_group.png")));
+                        joinGroupBtn.setGraphic(joinGroupIcon);
+                        joinGroupBtn.setText("Join a Group");
+                        joinGroupBtn.setStyle("""
+                                        -fx-background-color: #76B885;
+                                        -fx-text-fill: white;
+                                        -fx-background-radius: 20;
+                                        -fx-padding: 8 16;
+                                        -fx-font-size: 14px;
+                                        -fx-cursor: hand
+                                    """);
+
+                     buttonsContainer.getChildren().addAll(addFriendBtn, joinGroupBtn);
+
+                     messagesContainer.getChildren().addAll(startConversationImageView, buttonsContainer);
+                     messagesContainer.setAlignment(Pos.CENTER);
+
+                     addFriendBtn.setOnAction(e-> {
+                         openAddUserDialog();
+                     });
+
+                     joinGroupBtn.setOnAction(e-> {
+                         openJoinGroupDialog();
+                     });
+
+        }
+
+
         if (profilTrigger != null) {
             profilTrigger.setOnMouseClicked(e -> toggleRightPanel());
         }
@@ -189,10 +275,13 @@ public class HomeController {
             String senderName = UserSession.getUsername();
             String senderImageUrl = UserSession.getImageUrl();
 
-            // Add to UI immediately
             messagesContainer.getChildren().add(
                     MessageItemBuilder.createSentMessage(senderImageUrl, senderName, messageText));
             messageInput.clear();
+
+            // UserSession.getClientSocket().sendMessages(messageText);
+
+
             // Auto-scroll to bottom
             scrollToBottom();
             
@@ -234,8 +323,9 @@ public class HomeController {
             }
         }).start();
 
-        // Show some example messages dynamically
         if (messagesContainer != null) {
+        // Show some example messages dynamically
+        /*if (messagesContainer != null) {
             messagesContainer.getChildren().clear();
             messagesContainer.getChildren().add(
                     MessageItemBuilder.createReceivedMessage(
@@ -249,24 +339,17 @@ public class HomeController {
                             "hhhhhhhhhhhhhh salam"));
         }
 
-        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded strings
-        btnAll.setOnMouseClicked(e -> {
-            btnAll.setStyle(FILTER_BUTTON_ACTIVE_STYLE);
-            btnUnread.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
-            btnGroups.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
-        });
-        
-        btnUnread.setOnMouseClicked(e -> {
-            btnUnread.setStyle(FILTER_BUTTON_ACTIVE_STYLE);
-            btnAll.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
-            btnGroups.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
-        });
+        }*/
+        // Configuration des filtres
+        if (btnAll != null) {
+            btnAll.setOnMouseClicked(e -> showUserConversations());
+        }
+        if (btnGroups != null) {
 
-        btnGroups.setOnMouseClicked(e -> {
-            btnGroups.setStyle(FILTER_BUTTON_ACTIVE_STYLE);
-            btnUnread.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
-            btnAll.setStyle(FILTER_BUTTON_INACTIVE_STYLE);
-        });
+            btnGroups.setOnMouseClicked(e -> showGroupConversations());
+
+        }
+        
 
         // Register callback for incoming messages
         UserSession.getClientSocket().setOnNewMessageCallback(msgData -> {
@@ -295,6 +378,8 @@ public class HomeController {
 
     }
 
+    }
+
     /**
      * Set the current conversation and show its messages
      */
@@ -307,10 +392,10 @@ public class HomeController {
             // IMPROVEMENT 1: Resource Management - Use singleton DBConnection instead of creating new instance
             DBConnection dbConnection = getDBConnection();
             org.bson.Document conversationDoc = dbConnection
-                    .getDatabase()
-                    .getCollection("Conversation")
-                    .find(new org.bson.Document("_id", conversationId))
-                    .first();
+                .getDatabase()
+                .getCollection("Conversation")
+                .find(new org.bson.Document("_id", conversationId))
+                .first();
             if (conversationDoc != null && conversationDoc.containsKey("participantIds")) {
                 java.util.List<?> participants = conversationDoc.getList("participantIds", Object.class);
                 String friendIdStr = null;
@@ -489,23 +574,24 @@ public class HomeController {
             addMenuPopup = null;
             return;
         }
-
+        
         // Créer le conteneur du menu
         VBox menuContainer = new VBox(5);
         menuContainer.setPadding(new Insets(10));
         menuContainer.setMaxWidth(100);
         menuContainer.setBackground(new Background(new BackgroundFill(
-                Color.rgb(51, 213, 214),
-                new CornerRadii(8),
-                Insets.EMPTY)));
-
+            Color.rgb(51, 213, 214),
+            new CornerRadii(8), 
+            Insets.EMPTY
+        )));
+        
         // Ajouter une ombre
         DropShadow dropShadow = new DropShadow();
         dropShadow.setColor(Color.rgb(0, 0, 0, 0.5));
         dropShadow.setRadius(10);
         dropShadow.setOffsetY(3);
         menuContainer.setEffect(dropShadow);
-
+        
         // Créer le bouton "Add User"
         Button addUserBtn = new Button("Add User");
         addUserBtn.setPrefWidth(150);
@@ -513,12 +599,26 @@ public class HomeController {
         addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
         addUserBtn.setOnMouseEntered(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
         addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
+        addUserBtn.setStyle(
+            "-fx-background-color: transparent; " +
+            "-fx-text-fill: black; " +
+            "-fx-cursor: hand; " +
+            "-fx-padding: 5; " +
+            "-fx-alignment: CENTER-LEFT; " +
+            "-fx-font-size: 14px;"
+        );
+        addUserBtn.setOnMouseEntered(e -> addUserBtn.setStyle(
+            addUserBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
+        ));
+        addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(
+            addUserBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
+        ));
         addUserBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
             openAddUserDialog();
         });
-
+        
         // Créer le bouton "Add Group"
         Button addGroupBtn = new Button("Add Group");
         addGroupBtn.setPrefWidth(150);
@@ -526,13 +626,27 @@ public class HomeController {
         addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
         addGroupBtn.setOnMouseEntered(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
         addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
+        addGroupBtn.setStyle(
+            "-fx-background-color: transparent; " +
+            "-fx-text-fill: black; " +
+            "-fx-cursor: hand; " +
+            "-fx-padding: 5; " +
+            "-fx-alignment: CENTER-LEFT; " +
+            "-fx-font-size: 14px;"
+        );
+        addGroupBtn.setOnMouseEntered(e -> addGroupBtn.setStyle(
+            addGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
+        ));
+        addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(
+            addGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
+        ));
         addGroupBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
             openAddGroupDialog();
         });
-
-        // ajouter ca
+        
+        //ajouter ca 
         // Créer le bouton "Join Group"
         Button joinGroupBtn = new Button("Join Group");
         joinGroupBtn.setPrefWidth(150);
@@ -540,30 +654,48 @@ public class HomeController {
         joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
         joinGroupBtn.setOnMouseEntered(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
         joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
+        joinGroupBtn.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: black; " +
+            "-fx-cursor: hand; " +
+            "-fx-padding: 5; " +
+            "-fx-alignment: CENTER-LEFT; " +
+            "-fx-font-size: 14px;"
+        );
+        joinGroupBtn.setOnMouseEntered(e -> joinGroupBtn.setStyle(
+        		joinGroupBtn.getStyle() + "-fx-background-color: rgba(255, 255, 255, 0.1);"
+        ));
+        joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(
+        		joinGroupBtn.getStyle().replace("-fx-background-color: rgba(255, 255, 255, 0.1);", "")
+        ));
         joinGroupBtn.setOnAction(e -> {
             addMenuPopup.hide();
             addMenuPopup = null;
             openJoinGroupDialog();
         });
-
+        
         // Ajouter les boutons au conteneur
-        menuContainer.getChildren().addAll(addUserBtn, addGroupBtn, joinGroupBtn);
-
+        menuContainer.getChildren().addAll(addUserBtn, addGroupBtn , joinGroupBtn);
+        
         // Créer le popup
         addMenuPopup = new Popup();
         addMenuPopup.setAutoHide(true);
         addMenuPopup.getContent().add(menuContainer);
-
+        
         // Calculer la position (sous le bouton btnAdd)
         Bounds bounds = btnAdd.localToScreen(btnAdd.getBoundsInLocal());
         addMenuPopup.show(btnAdd, bounds.getMinX(), bounds.getMaxY());
     }
-
+    
     private void openAddUserDialog() {
         try {
             logger.log(Level.INFO, "Loading AddUser.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddUser.fxml"));
             Parent root = loader.load();
+            //hamza ajoute ca
+            AddUserController controller = loader.getController();
+            controller.setHomeController(this);
+            //---------------
             Stage dialogStage = new Stage();
             try {
                 Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_user.jpg"), 128, 128, true,
@@ -585,7 +717,7 @@ public class HomeController {
             errorAlert.showAndWait();
         }
     }
-
+    
     private void openAddGroupDialog() {
         try {
             logger.log(Level.INFO, "Loading AddGroup.fxml");
@@ -613,18 +745,16 @@ public class HomeController {
             errorAlert.showAndWait();
         }
     }
-
-    // ajouter ca :
+    // ajouter ca : 
     private void openJoinGroupDialog() {
         try {
             logger.log(Level.INFO, "Loading AddGroup.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/JoinGroup.fxml"));
             Parent root = loader.load();
-
+            
             Stage dialogStage = new Stage();
             try {
-                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true,
-                        true);
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_group.jpg"), 128, 128, true, true);
                 dialogStage.getIcons().add(logo);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to load application logo", e);
@@ -642,36 +772,35 @@ public class HomeController {
             errorAlert.showAndWait();
         }
     }
-
-    // ajouter ca :
+    
+    //ajouter ca :
     @FXML
     public void openNotifications() {
         try {
             logger.log(Level.INFO, "Loading Notifications.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Notifications.fxml"));
             Parent root = loader.load();
-
+            
             Stage notificationStage = new Stage();
             try {
-                Image logo = new Image(getClass().getResourceAsStream("/genki/img/notifications.jpg"), 50, 50, true,
-                        true);
+                Image logo = new Image(getClass().getResourceAsStream("/genki/img/notifications.jpg"), 50, 50, true, true);
                 notificationStage.getIcons().add(logo);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to load notification icon", e);
             }
-
+            
             notificationStage.setTitle("Notifications");
             notificationStage.setResizable(false);
             notificationStage.initModality(Modality.APPLICATION_MODAL);
-
+            
             if (btnNotifications != null && btnNotifications.getScene() != null) {
                 notificationStage.initOwner(btnNotifications.getScene().getWindow());
             }
-
+            
             notificationStage.setScene(new Scene(root));
             notificationStage.centerOnScreen();
             notificationStage.showAndWait();
-
+            
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error loading Notifications dialog", e);
             Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load Notifications dialog.");
@@ -700,8 +829,8 @@ public class HomeController {
         }
     }
 
-    // Example: Add a conversation dynamically
-    public void addConversationExample() {
+    
+    public void addGroupConversation() {
         HBox conversationItem = ConversationItemBuilder.createConversationItem(
                 "url/to/image.png", // profileImageUrl
                 "Sarah Wilson", // contactName
@@ -943,4 +1072,350 @@ public class HomeController {
             });
         }
     }
+    //hamza ajoute ca
+    public void handleAddUserFromDialog(String username) {
+
+        UserDAO userDAO = new UserDAO();
+
+        // 1️⃣ Vérifier si l'utilisateur existe
+        Document userDoc = userDAO.getUserByUsername(username);
+
+        if (userDoc == null) {
+            showAlert("User not found", "This user does not exist.");
+//            return; 
+        }
+
+        String friendId = userDoc.getObjectId("_id").toHexString();
+        String currentUserId = UserSession.getUserId();
+
+        // 2️⃣ Vérifier s'il existe déjà une conversation
+        ConversationDAO conversationDAO = new ConversationDAO();
+
+        ObjectId conversationId =
+            conversationDAO.findDirectConversation(currentUserId, friendId);
+
+        // 3️⃣ Si pas de conversation → créer
+        if (conversationId == null) {
+            conversationId =
+                conversationDAO.createDirectConversation(currentUserId, friendId);
+        }
+
+        // 4️⃣ Afficher / ouvrir la conversation
+//        openConversation(conversationId);
+    }
+// hamza ajoute ca :
+    
+	private void showAlert(String string, String string2) {
+		// TODO Auto-generated method stub
+		Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(string);
+        alert.setContentText(string2);
+        alert.showAndWait();
+	}
+// aussi ca par hamza
+	/**
+	 * Affiche uniquement les conversations directes (users)
+	 */
+	private void showUserConversations() {
+	    try {
+	        // Mettre à jour les styles des boutons
+	        updateFilterButtonStyles(true);
+	        
+	        // Effacer la liste actuelle
+	        conversationListContainer.getChildren().clear();
+	        
+	        UserDAO userDAO = new UserDAO();
+	        String currentUsername = UserSession.getUsername();
+	        
+	        // Récupérer tous les amis
+	        List<Document> friends = userDAO.getFriendsForUser(currentUsername);
+	        
+	        if (friends == null || friends.isEmpty()) {
+	        	Label noUsersLabel = new Label("No users found");
+	            noUsersLabel.setStyle(
+	                "-fx-text-fill: white; " +
+	                "-fx-font-size: 14px; " +
+	                "-fx-padding: 20;"
+	            );
+	            conversationListContainer.getChildren().add(noUsersLabel);
+	            logger.log(Level.INFO, "No friends found for user: " + currentUsername);
+	            return;
+	        }
+	        
+	        String currentUserId = UserSession.getUserId();
+	        ConversationDAO conversationDAO = new ConversationDAO();
+	        
+	        // Pour chaque ami, créer un item de conversation
+	        for (Document friendDoc : friends) {
+	            String friendName = friendDoc.getString("username");
+	            String photoUrl = friendDoc.getString("photo_url");
+	            
+	            String friendId;
+	            Object objId = friendDoc.get("_id");
+	            if (objId instanceof org.bson.types.ObjectId) {
+	                friendId = ((org.bson.types.ObjectId) objId).toHexString();
+	            } else {
+	                friendId = String.valueOf(objId);
+	            }
+	            
+	            ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+	            
+	            // Récupérer le dernier message
+	            String lastMessage = "";
+	            String time = "";
+	            try {
+	                DBConnection dbConnection = new DBConnection("genki_testing");
+	                org.bson.Document conversationDoc = dbConnection
+	                    .getDatabase()
+	                    .getCollection("Conversation")
+	                    .find(new org.bson.Document("_id", conversationId)
+	                        .append("type", "direct")) // Filtre pour type "direct"
+	                    .first();
+	                    
+	                if (conversationDoc != null) {
+	                    lastMessage = conversationDoc.getString("lastMessageContent");
+	                    Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+	                    
+	                    if (lastMsgTimeObj != null) {
+	                        time = formatMessageTime(lastMsgTimeObj);
+	                    }
+	                }
+	            } catch (Exception ex) {
+	                logger.log(Level.WARNING, "Error fetching last message: " + ex.getMessage());
+	            }
+	            
+	            int unreadCount = 0;
+	            boolean isOnline = true;
+	            
+	            HBox conversationItem = ConversationItemBuilder.createConversationItem(
+	                photoUrl != null ? photoUrl : "genki/img/user-default.png",
+	                friendName,
+	                lastMessage != null ? lastMessage : "",
+	                time != null ? time : "",
+	                unreadCount,
+	                isOnline
+	            );
+	            
+	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
+	            conversationListContainer.getChildren().add(conversationItem);
+	        }
+	        
+	    } catch (Exception e) {
+	        logger.log(Level.WARNING, "Error loading user conversations", e);
+	    }
+	}
+
+	/**
+	 * Affiche uniquement les conversations de groupe
+	 */
+	private void showGroupConversations() {
+	    try {
+	        // Mettre à jour les styles des boutons
+	        updateFilterButtonStyles(false);
+	        
+	        // Effacer la liste actuelle
+	        conversationListContainer.getChildren().clear();
+	        
+	        String currentUserId = UserSession.getUserId();
+	        DBConnection dbConnection = new DBConnection("genki_testing");
+	        
+	        // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
+	        var groupConversations = dbConnection
+	            .getDatabase()
+	            .getCollection("Conversation")
+	            .find(new org.bson.Document("type", "group")
+	                .append("participantIds", currentUserId));
+	        
+	        for (org.bson.Document conversationDoc : groupConversations) {
+	            ObjectId conversationId = conversationDoc.getObjectId("_id");
+	            String groupName = conversationDoc.getString("groupName");
+	            if (groupName == null || groupName.isEmpty()) {
+	                groupName = "Group Chat";
+	            }
+	            
+	            String lastMessage = conversationDoc.getString("lastMessageContent");
+	            if (lastMessage == null) {
+	                lastMessage = "No messages yet";
+	            }
+	            
+	            String time = "";
+	            Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+	            if (lastMsgTimeObj != null) {
+	                time = formatMessageTime(lastMsgTimeObj);
+	            }
+	            
+	            int unreadCount = 0;
+	            
+	            // Pour les groupes, pas de statut "online"
+	            boolean isOnline = false;
+	            
+	            // Image par défaut pour les groupes
+	            String groupPhotoUrl = conversationDoc.getString("photo_url");
+	            if (groupPhotoUrl == null) {
+	                groupPhotoUrl = "genki/img/group-default.png";
+	            }
+	            
+	            HBox conversationItem = ConversationItemBuilder.createConversationItem(
+	                groupPhotoUrl,
+	                groupName,
+	                lastMessage,
+	                time,
+	                unreadCount,
+	                isOnline
+	            );
+
+	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
+	            conversationListContainer.getChildren().add(conversationItem);
+	        }
+	        
+	    } catch (Exception e) {
+	        logger.log(Level.WARNING, "Error loading group conversations", e);
+	    }
+	    
+	// Ajouter ces lignes après la boucle :
+	if (conversationListContainer.getChildren().isEmpty()) {
+
+        if (UserSession.getGroups().isEmpty()) {
+            Label noGroupsLabel = new Label("No groups found");
+            noGroupsLabel.setStyle(
+                    "-fx-text-fill: #6b9e9e; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-padding: 20;"
+            );
+            conversationListContainer.getChildren().add(noGroupsLabel);
+        } else {
+
+                for (Group group : UserSession.getGroups()) {
+                    HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
+                            group.getGroupProfilePicture(),
+                            group.getGroupName(),
+                            "",
+                            "",
+                            2
+                    );
+
+                    conversationListContainer.getChildren().add(nvGroupContainer);
+                }
+
+        }
+	}
+	}
+
+	// aussi ca par hamza
+	/**
+	 * Met à jour les styles des boutons de filtre
+	 * @param showingUsers true si on affiche les users, false pour les groupes
+	 */
+	private void updateFilterButtonStyles(boolean showingUsers) {
+	    if (btnAll != null && btnGroups != null) {
+	        if (showingUsers) {
+	            btnAll.setStyle(
+	                "-fx-background-color: #2bfbfb; " +
+	                "-fx-text-fill: #232e2e; " +
+	                "-fx-font-weight: bold; " +
+	                "-fx-background-radius: 20; " +
+	                "-fx-padding: 8 16;"
+	            );
+	            btnGroups.setStyle(
+	                "-fx-background-color: transparent; " +
+	                "-fx-text-fill: #a0a0a0; " +
+	                "-fx-background-radius: 20; " +
+	                "-fx-padding: 8 16;"
+	            );
+	        } else {
+	            btnAll.setStyle(
+	                "-fx-background-color: transparent; " +
+	                "-fx-text-fill: #a0a0a0; " +
+	                "-fx-background-radius: 20; " +
+	                "-fx-padding: 8 16;"
+	            );
+	            btnGroups.setStyle(
+	                "-fx-background-color: #2bfbfb; " +
+	                "-fx-text-fill: #232e2e; " +
+	                "-fx-font-weight: bold; " +
+	                "-fx-background-radius: 20; " +
+	                "-fx-padding: 8 16;"
+	            );
+	        }
+	    }
+	}
+
+	/**
+	 * Formate l'heure du dernier message
+	 * @param lastMsgTimeObj L'objet temps à formatter
+	 * @return Une chaîne formatée (HH:mm ou DD/MM/YY)
+	 */
+	private String formatMessageTime(Object lastMsgTimeObj) {
+	    try {
+	        java.time.LocalDateTime msgTime = null;
+	        
+	        if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
+	            msgTime = (java.time.LocalDateTime) lastMsgTimeObj;
+	        } else if (lastMsgTimeObj instanceof java.util.Date) {
+	            java.util.Date date = (java.util.Date) lastMsgTimeObj;
+	            msgTime = java.time.LocalDateTime.ofInstant(
+	                date.toInstant(), 
+	                java.time.ZoneId.systemDefault()
+	            );
+	        } else if (lastMsgTimeObj instanceof String) {
+	            try {
+	                msgTime = java.time.LocalDateTime.parse((String) lastMsgTimeObj);
+	            } catch (Exception ignore) {}
+	        }
+	        
+	        if (msgTime != null) {
+	            java.time.LocalDate today = java.time.LocalDate.now();
+	            if (msgTime.toLocalDate().equals(today)) {
+	                return String.format("%02d:%02d", msgTime.getHour(), msgTime.getMinute());
+	            } else {
+	                return String.format("%02d/%02d/%02d", 
+	                    msgTime.getDayOfMonth(), 
+	                    msgTime.getMonthValue(), 
+	                    msgTime.getYear() % 100
+	                );
+	            }
+	        }
+	    } catch (Exception e) {
+	        logger.log(Level.WARNING, "Error formatting message time", e);
+	    }
+	    return "";
+	}
+
+
+    public void loadGroups() {
+
+           ArrayList<Group> userGroups = UserSession.getGroups();
+
+
+           if (userGroups != null) {
+
+               for (Group group : userGroups) {
+                   HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
+                           group.getGroupProfilePicture(),
+                           group.getGroupName(),
+                           "",
+                           "",
+                           2
+                   );
+
+                   conversationListContainer.getChildren().add(nvGroupContainer);
+               }
+
+           }
+
+        if (conversationListContainer.getChildren().isEmpty()) {
+            Label noGroupsLabel = new Label("No groups found");
+            noGroupsLabel.setStyle(
+                    "-fx-text-fill: #6b9e9e; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-padding: 20;"
+            );
+            conversationListContainer.getChildren().add(noGroupsLabel);
+        }
+
+
+
+    }
 }
+

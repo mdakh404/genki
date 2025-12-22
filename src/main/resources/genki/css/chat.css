@@ -34,7 +34,7 @@
 
 /* Remove the default scrollbar background to match the sidebar */
 .scroll-pane {
-    -fx-background-color: transparent;
+    -fx-background-color: #f3f4f6;
 }
 
 .scroll-pane > .viewport {
@@ -61,7 +61,6 @@
 .avatar:focused, .avatar:hover {
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0.5, 0, 2);
 }
-
 
 /* Sender's name label (Applies to both received and sent) */
 .sender-name {

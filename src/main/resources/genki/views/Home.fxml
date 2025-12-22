@@ -11,67 +11,85 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
+<?import javafx.scene.layout.Region?>
 
 <StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.HomeController">
-    <HBox style="-fx-background-color: #f3f4f6;">
+    <HBox style="-fx-background-color: #f8fefe;">
 
-        <VBox prefWidth="347.0" spacing="0" style="-fx-background-color: #1e2936;">
+        <!-- LEFT SIDEBAR - Anthracite gradient with cyan accents -->
+        <VBox prefWidth="347.0" spacing="0" style="-fx-background-color: linear-gradient(to bottom, #232e2e, #1a2222);">
 
-            <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #1e2936; -fx-padding: 16;">
-            <ImageView fx:id="UserProfil" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true" />
+            <!-- Top header section -->
+            <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #232e2e; -fx-padding: 16;">
+                <ImageView fx:id="UserProfil" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true" />
                 <VBox fx:id="UserNameStatus" spacing="2.0" HBox.hgrow="ALWAYS">
-                    <Label fx:id="CurrentUsername" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" text="Alex Johnson" />
-                    <Label style="-fx-text-fill: #4ade80; -fx-font-size: 12px;" text="Online" />
+                    <Label fx:id="CurrentUsername" style="-fx-text-fill: #2bfbfb; -fx-font-size: 16px; -fx-font-weight: bold;" text="Alex Johnson" />
+                    <Label style="-fx-text-fill: lightgreen; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
                 </VBox>
-                <Button fx:id="btnNotifications" layoutX="260.0" layoutY="27.0" onAction="#openNotifications" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 18px;" text="🔔" />
-            	<Button fx:id="btnAdd" layoutX="302.0" layoutY="27.0" onAction="#AddUserOrGroup" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;-fx-font-size: 20px;" text="+" />
-                <Button fx:id="btnSettings" onAction="#handleSettingsBtnClick" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 22px; -fx-cursor: hand;" text="⚙" />
-
-
+                <Button fx:id="btnNotifications" layoutX="260.0" layoutY="27.0" onAction="#openNotifications" style="-fx-background-color: transparent; -fx-text-fill: #2bfbfb; -fx-cursor: hand; -fx-font-size: 18px;" text="🔔" />
+                <Button fx:id="btnAdd" layoutX="302.0" layoutY="27.0" onAction="#AddUserOrGroup" style="-fx-background-color: transparent; -fx-text-fill: #2bfbfb; -fx-cursor: hand; -fx-font-size: 20px;" text="+" />
+                <Button fx:id="btnSettings" onAction="#handleSettingsBtnClick" style="-fx-background-color: transparent; -fx-text-fill: #2bfbfb; -fx-font-size: 22px; -fx-cursor: hand;" text="⚙" />
             </HBox>
 
-            <HBox style="-fx-background-color: #1e2936; -fx-padding: 0 16 16 16;">
-                <TextField fx:id="searchField" prefHeight="40.0" promptText="Search conversations..." style="-fx-background-color: #2d3b4a; -fx-text-fill: white; -fx-prompt-text-fill: #6b7280; -fx-background-radius: 8; -fx-padding: 10;" HBox.hgrow="ALWAYS" />
+            <!-- Search field -->
+            <HBox style="-fx-background-color: #232e2e; -fx-padding: 0 16 16 16;">
+                <TextField fx:id="searchField" prefHeight="40.0" promptText="Search conversations..." 
+                    style="-fx-background-color: #2a3535; -fx-text-fill: #2bfbfb; -fx-prompt-text-fill: #6b9e9e; -fx-background-radius: 8; -fx-padding: 10;" 
+                    HBox.hgrow="ALWAYS" />
             </HBox>
 
-            <HBox spacing="8.0" style="-fx-background-color: #1e2936; -fx-padding: 0 16 16 16;">
-                <Button fx:id="btnAll" style="-fx-background-color: #4a5fff; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16;" text="All" />
-                <Button fx:id="btnUnread" style="-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;" text="Unread" />
-                <Button fx:id="btnGroups" style="-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;" text="Groups" />
+            <!-- Filter buttons -->
+            <HBox spacing="8.0" style="-fx-background-color: #232e2e; -fx-padding: 0 16 16 16;">
+                <Button fx:id="btnAll" style="-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;" text="Users" />
+                <Button fx:id="btnGroups" style="-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;" text="Groups" />
             </HBox>
 
-  <ScrollPane fitToWidth="true" style="-fx-background-color: #1e2936; -fx-background: #1e2936; " stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
-    <StackPane alignment="CENTER">
-        <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #1e2936;" />
-        <VBox fx:id="loadingSpinnerContainer" alignment="CENTER" managed="false" style="-fx-background-color: rgba(30, 41, 54, 0.9);" visible="false">
-            <ProgressIndicator fx:id="loadingSpinner" maxHeight="120.0" maxWidth="120.0" prefHeight="120.0" prefWidth="120.0" style="-fx-padding: 20;" />
+            <ScrollPane fx:id="usersPane" fitToWidth="true" style="-fx-background-color: #1e2936; -fx-background: #1e2936; " stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
+                <StackPane alignment="CENTER">
+                    <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #1e2936;" />
+                    <VBox fx:id="loadingSpinnerContainer" alignment="CENTER" managed="false" style="-fx-background-color: rgba(30, 41, 54, 0.9);" visible="false">
+                        <ProgressIndicator fx:id="loadingSpinner" maxHeight="120.0" maxWidth="120.0" prefHeight="120.0" prefWidth="120.0" style="-fx-padding: 20;" />
+                    </VBox>
+                </StackPane>
+            </ScrollPane>
+
+            <ScrollPane fx:id="groupsPane" fitToWidth="true" style="-fx-background-color: #232e2e; -fx-background: #232e2e;" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
+                <VBox fx:id="groupsListContainer" spacing="2" style="-fx-background-color: #232e2e;" />
+            </ScrollPane>
         </VBox>
-    </StackPane>
-</ScrollPane>
 
-        </VBox>
+        <!-- MAIN CHAT AREA -->
+        <VBox fx:id="mainChatArea" style="-fx-background-color: #f8fefe;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
 
+            <!-- Chat header -->
 
-        <VBox style="-fx-background-color: #f3f4f6;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-
-            <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: white; -fx-padding:16; -fx-border-color:#e5e7eb; -fx-border-width:0 0 1 0; -fx-cursor:hand;">
-            <ImageView fx:id="profilTrigger" fitHeight="43.0" fitWidth="43.0" pickOnBounds="true" preserveRatio="false">
-            	<clip>
-                     <Circle centerX="22.5" centerY="22.5" radius="22.5" />
-                </clip>
-                 <image>
-                     <Image url="@../img/user-default.png" />
-                 </image>
-            </ImageView>
-                <VBox fx:id="AmisNameStatus" spacing="2.0" HBox.hgrow="ALWAYS">
-                    <Label fx:id="chatContactName" style="-fx-text-fill: #111827; -fx-font-size: 16px; -fx-font-weight: bold;" text="Sarah Wilson" />
-                    <HBox alignment="CENTER_LEFT" spacing="6.0">
-                        <Circle fx:id="chatContactStatusCircle" fill="#4ade80" radius="4.0" />
-                        <Label fx:id="chatContactStatus" style="-fx-text-fill: #4ade80; -fx-font-size: 12px;" text="Online" />
-                    </HBox>
-                </VBox>
-
-            </HBox>
+			<HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: transparent; -fx-padding:16; -fx-border-color:#e0f7fa; -fx-border-width:0 0 1 0;">
+			    <ImageView fx:id="profilTrigger" fitHeight="43.0" fitWidth="43.0" pickOnBounds="true" preserveRatio="true" style="-fx-cursor: hand;">
+			        <clip>
+			            <Circle centerX="22.5" centerY="22.5" radius="22.5" />
+			        </clip>
+			        <image>
+			            <Image url="@../img/user-default.png" />
+			        </image>
+			    </ImageView>
+			    <VBox fx:id="AmisNameStatus" spacing="2.0" style="-fx-cursor: hand;" HBox.hgrow="ALWAYS">
+			        <Label fx:id="chatContactName" style="-fx-text-fill: #232e2e; -fx-font-size: 16px; -fx-font-weight: bold;" text="Sarah Wilson" />
+			        <HBox alignment="CENTER_LEFT" spacing="6.0">
+			            <Circle fx:id="chatContactStatusCircle" fill="green" radius="4.0" />
+			            <Label fx:id="chatContactStatus" style="-fx-text-fill: green; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
+			        </HBox>
+			    </VBox>
+			    <!-- BOUTON LOGOUT à la fin -->
+					<Button fx:id="btnLogout" style="-fx-background-color: transparent; -fx-cursor: hand;">
+					    <graphic>
+					        <ImageView fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true">
+					            <image>
+					                <Image url="@../img/logout.jpg" />
+					            </image>
+					        </ImageView>
+					    </graphic>
+					</Button>
+			</HBox>
 
             <ScrollPane fx:id="messagesScrollPane" fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
     <VBox fx:id="messagesContainer" prefHeight="400" prefWidth="700" spacing="16">
@@ -80,75 +98,54 @@
     
 </ScrollPane>
 
-
-
-
-            <HBox alignment="CENTER" spacing="12.0" style="-fx-background-color: white; -fx-padding: 16; -fx-border-color: #e5e7eb; -fx-border-width: 1 0 0 0;">
-
-
-
-                <TextField fx:id="messageInput" prefHeight="48.0" promptText="Type a message..." style="-fx-background-color: #f3f4f6; -fx-text-fill: #111827; -fx-prompt-text-fill: #9ca3af; -fx-background-radius: 24; -fx-padding: 12 20; -fx-font-size: 14px;" HBox.hgrow="ALWAYS" />
-
-
-                <Button fx:id="btnSend" style="-fx-background-color: #6366f1; -fx-text-fill: white; -fx-background-radius: 24; -fx-padding: 12; -fx-cursor: hand; -fx-pref-width: 48; -fx-pref-height: 48;">
+            <!-- Message input area -->
+            <HBox  fx:id="messageInputArea"  alignment="CENTER" spacing="12.0" style="-fx-background-color: white; -fx-padding: 16; -fx-border-color: #e0f7fa; -fx-border-width: 1 0 0 0;">
+                <TextField fx:id="messageInput" prefHeight="48.0" promptText="Type a message..." 
+                    style="-fx-background-color: white; -fx-border-color: #6366f1; -fx-border-width: 1; -fx-border-radius: 24; -fx-background-radius: 24; -fx-text-fill: #232e2e; -fx-prompt-text-fill: #6b9e9e; -fx-padding: 12 20; -fx-font-size: 14px;" 
+                    HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnSend" style="-fx-background-color: #6366f1; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 24; -fx-padding: 12; -fx-cursor: hand; -fx-pref-width: 48; -fx-pref-height: 48;">
                     <graphic>
                         <Label fx:id="sendMessageBtn" style="-fx-text-fill: white; -fx-font-size: 18px;" text="➤" />
                     </graphic>
                 </Button>
-
             </HBox>
-
         </VBox>
 
-
-        <VBox fx:id="rightSideContainer" maxWidth="320" minWidth="320" prefWidth="320" style="-fx-background-color: white; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 0 1;">
-
-
-                <VBox fx:id="rightSidePanel" alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">
-
+        <!-- RIGHT SIDEBAR -->
+        <VBox fx:id="rightSideContainer" maxWidth="320" minWidth="320" prefWidth="320" style="-fx-background-color: #f8fefe; -fx-border-color: #e0f7fa; -fx-border-width: 0 0 0 1;">
+            <VBox fx:id="rightSidePanel" alignment="CENTER" spacing="12.0" style="-fx-padding: 32 24 24 24;">
                 <ImageView fx:id="rightProfileImage" fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" styleClass="avatar">
-                    
                     <clip>
-                     <Circle centerX="42.5" centerY="42.5" radius="52.5" />
-                </clip>
-                 <image>
-                     <Image url="@../img/user-default.png" />
-                 </image>
+                        <Circle centerX="42.5" centerY="42.5" radius="52.5" />
+                    </clip>
+                    <image>
+                        <Image url="@../img/user-default.png" />
+                    </image>
                 </ImageView>
-
-                <Label fx:id="rightContactName" style="-fx-text-fill: #111827; -fx-font-size: 20px; -fx-font-weight: bold;" text="Sarah Wilson" />
-
+                <Label fx:id="rightContactName" style="-fx-text-fill: #232e2e; -fx-font-size: 20px; -fx-font-weight: bold;" text="Sarah Wilson" />
                 <Label fx:id="rightContactTitle" style="-fx-text-fill: #6b7280; -fx-font-size: 14px;" text="Product Designer" />
-
                 <Label fx:id="rightContactBio" maxWidth="240" style="-fx-text-fill: #6b7280; -fx-font-size: 13px; -fx-wrap-text: true;" text="Short bio goes here. This will wrap if longer." />
-
                 <HBox alignment="CENTER" spacing="6.0">
-                    <Circle fill="#4ade80" radius="4.0" />
-                    <Label fx:id="rightContactStatus" style="-fx-text-fill: #4ade80; -fx-font-size: 13px; -fx-font-weight: bold;" text="Online" />
+                    <Circle fill="green" radius="4.0" />
+                    <Label fx:id="rightContactStatus" style="-fx-text-fill: green; -fx-font-size: 13px; -fx-font-weight: bold;" text="Online" />
                 </HBox>
             </VBox>
-
         </VBox>
-
     </HBox>
 
-    <VBox managed="false" style="-fx-background-color: rgba(0,0,0,0.5);" visible="false">
-
-        <VBox alignment="TOP_CENTER" spacing="0" style="-fx-background-color: white; -fx-max-width: 600; -fx-max-height: 500; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);">
-
-
-            <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: #f9fafb; -fx-padding: 16; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0;">
-                <Label style="-fx-font-size: 20px;" text="🔍" />
-                <TextField promptText="Rechercher partout..." style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 10 16; -fx-font-size: 14px;" HBox.hgrow="ALWAYS" />
-
-                <Button style="-fx-background-color: transparent; -fx-text-fill: #6b7280; -fx-font-size: 18px;" />
+    <!-- MODAL SEARCH OVERLAY (Hidden by default) -->
+    <VBox managed="false" style="-fx-background-color: rgba(35, 46, 46, 0.7);" visible="false">
+        <VBox alignment="TOP_CENTER" spacing="0" style="-fx-background-color: white; -fx-max-width: 600; -fx-max-height: 500; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(43, 251, 251, 0.2), 10, 0, 0, 2);">
+            <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: #f8fefe; -fx-padding: 16; -fx-border-color: #e0f7fa; -fx-border-width: 0 0 1 0;">
+                <Label style="-fx-font-size: 20px; -fx-text-fill: #2bfbfb;" text="🔍" />
+                <TextField promptText="Rechercher partout..." 
+                    style="-fx-background-color: white; -fx-border-color: #2bfbfb; -fx-border-width: 1; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 10 16; -fx-font-size: 14px;" 
+                    HBox.hgrow="ALWAYS" />
+                <Button style="-fx-background-color: transparent; -fx-text-fill: #2bfbfb; -fx-font-size: 18px;" text="✕" />
             </HBox>
-
-
             <ScrollPane fitToWidth="true" style="-fx-background-color: white; -fx-background: white;" VBox.vgrow="ALWAYS">
                 <VBox spacing="0" style="-fx-background-color: white;" />
             </ScrollPane>
-
         </VBox>
     </VBox>
 </StackPane>

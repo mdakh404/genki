@@ -1,18 +1,19 @@
 package genki.controllers;
 
+import genki.models.AuthModel;
 import genki.models.Group;
 import genki.models.GroupsModel;
-import genki.models.AuthModel;
 import genki.utils.AuthResult;
 import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
-
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -29,9 +30,8 @@ public class LoginController implements Initializable {
 	private clientSocketController client;
 
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
-
-     private static final AuthModel authModel = new AuthModel();
      private static final GroupsModel groupsModel = new GroupsModel();
+     private static final AuthModel authModel = new AuthModel();
 
      @FXML
      private TextField userName;
@@ -40,7 +40,7 @@ public class LoginController implements Initializable {
 
      @FXML
      private Button loginButton;
-
+     
 
      @FXML
      public void redirectToRegister() {
@@ -98,10 +98,13 @@ public class LoginController implements Initializable {
                      try {
 
                          logger.log(Level.INFO, "Login successful by " + user);
-                         
+                         groupsModel.loadGroups(loginResult.getUsername());
+                         logger.info("groups are: " + UserSession.getGroups());
+
+
                          //Creating Client Socket
                          
-
+                         client = new clientSocketController(loginResult.getUsername());
 
                          UserSession.startSession(
                                loginResult.getUsername(),
@@ -109,20 +112,6 @@ public class LoginController implements Initializable {
                                loginResult.getUserRole(),
                                loginResult.getImageUrl()
                          );
-                         
-                         
-
-                         groupsModel.loadGroups(loginResult.getUsername());
-
-                         if (groupsModel.getGroups().isEmpty()) {
-                             logger.warning("Empty groups list for user " + user);
-                         }
-
-                         else {
-                             for (Group group: groupsModel.getGroups()) {
-                                 UserSession.addGroup(group);
-                             }
-                         }
 
 
 
@@ -181,6 +170,7 @@ public class LoginController implements Initializable {
 
      @Override
      public void initialize(URL location, ResourceBundle resources) {
+         // Listeners pour les styles des champs
          userName.focusedProperty().addListener((obs, oldVal, newVal) -> {
                if (newVal) {
                    userName.setStyle("-fx-border-color: #374151");
@@ -200,9 +190,20 @@ public class LoginController implements Initializable {
                  password.setStyle("-fx-border-color: #F2F2F2");
              }
          });
+         
+         // Ajouter le listener pour la touche Entrée sur le champ username
+         userName.setOnKeyPressed(event -> {
+             if (event.getCode() == KeyCode.ENTER) {
+                 onLogin();
+             }
+         });
+         
+         // Ajouter le listener pour la touche Entrée sur le champ password
+         password.setOnKeyPressed(event -> {
+             if (event.getCode() == KeyCode.ENTER) {
+                 onLogin();
+             }
+         });
      }
-
-
-
 
 }

@@ -1,6 +1,7 @@
 package genki.models;
 
-import genki.models.Group;
+
+import genki.utils.UserSession;
 import genki.utils.DBConnection;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.MongoException;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 public class GroupsModel {
 
@@ -40,7 +42,7 @@ public class GroupsModel {
 
                          MongoCollection<Document> groupsCollection = GroupsModelDBConnection.getCollection("groups");
                          Document groupDoc = groupsCollection.find(
-                                 Filters.eq("_id", groupId)
+                                 Filters.eq("_id", new ObjectId(groupId))
                          ).first();
 
                          if (groupDoc != null) {
@@ -54,7 +56,7 @@ public class GroupsModel {
                                      groupDoc.getString("group_admin")
                              );
 
-                             this.listGroups.add(nvGroup);
+                             UserSession.addGroup(nvGroup);
                          }
                      }
                  }
@@ -67,8 +69,5 @@ public class GroupsModel {
 
      }
 
-     public ArrayList<Group> getGroups() {
-         return this.listGroups;
-     }
 
 }

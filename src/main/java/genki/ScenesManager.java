@@ -7,6 +7,7 @@ import javafx.application.Application;
 import javafx.scene.image.Image;
 import javafx.scene.text.Font;
 
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
@@ -19,8 +20,7 @@ public class ScenesManager extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-    	
-    	
+
    	try {
    	server.startServer();}
    	catch(Exception e) {
