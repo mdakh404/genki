@@ -47,8 +47,9 @@
             <ScrollPane fx:id="usersPane" fitToWidth="true" style="-fx-background-color: #232e2e; -fx-background: #1e2936; " stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
                 <StackPane alignment="CENTER">
                     <VBox fx:id="conversationListContainer" spacing="2" style="-fx-background-color: #232e2e;" />
-                    <VBox fx:id="loadingSpinnerContainer" alignment="CENTER" managed="false" style="-fx-background-color: #232e2e;" visible="false">
-                        <ProgressIndicator fx:id="loadingSpinner" maxHeight="120.0" maxWidth="120.0" prefHeight="120.0" prefWidth="120.0" style="-fx-padding: 20;" />
+                    <VBox fx:id="loadingSpinnerContainer" alignment="CENTER" managed="false" style="-fx-background-color: rgba(35, 46, 46, 0.7); -fx-padding: 20;" visible="false">
+                        <ProgressIndicator fx:id="loadingSpinner" maxHeight="100.0" maxWidth="100.0" prefHeight="100.0" prefWidth="100.0" style="-fx-padding: 20; -fx-font-size: 14px;" />
+                        <Label style="-fx-text-fill: #2bfbfb; -fx-font-size: 13px; -fx-padding: 10 0 0 0;" text="Loading conversations..." />
                     </VBox>
                 </StackPane>
             </ScrollPane>

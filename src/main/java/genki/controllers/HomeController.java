@@ -90,6 +90,7 @@ public class HomeController {
     private VBox loadingSpinnerContainer;
     @FXML
     private javafx.scene.control.ProgressIndicator loadingSpinner;
+    @FXML
     private VBox groupsListContainer;
     @FXML
     private HBox messageInputArea;
@@ -145,6 +146,19 @@ public class HomeController {
 
         groupsPane.setVisible(!switchToUsers);
         groupsPane.setManaged(!switchToUsers);
+        
+        // Update button styles to show which view is active
+        Platform.runLater(() -> {
+            if (switchToUsers) {
+                // Users button active (cyan)
+                btnAll.setStyle("-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;");
+                btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;");
+            } else {
+                // Groups button active (cyan)
+                btnAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;");
+                btnGroups.setStyle("-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;");
+            }
+        });
     }
 
 
@@ -329,6 +343,15 @@ public class HomeController {
             }
         }).start();
 
+        // Load groups in background thread
+        new Thread(() -> {
+            try {
+                loadGroups();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error loading groups in background", e);
+            }
+        }).start();
+
         if (messagesContainer != null) {
         // Show some example messages dynamically
         /*if (messagesContainer != null) {
@@ -346,14 +369,13 @@ public class HomeController {
         }
 
         }*/
-        // Configuration des filtres
+        // Configuration des filtres - Switch between users and groups with proper button styling
+        // Just toggles visibility - data is already loaded during initialize()
         if (btnAll != null) {
-            btnAll.setOnMouseClicked(e -> showUserConversations());
+            btnAll.setOnMouseClicked(e -> switchUsers(true));
         }
         if (btnGroups != null) {
-
-            btnGroups.setOnMouseClicked(e -> showGroupConversations());
-
+            btnGroups.setOnMouseClicked(e -> switchUsers(false));
         }
         
 
@@ -1390,38 +1412,28 @@ public class HomeController {
 
 
     public void loadGroups() {
+        ArrayList<Group> userGroups = UserSession.getGroups();
 
-           ArrayList<Group> userGroups = UserSession.getGroups();
-
-
-           if (userGroups != null) {
-
-               for (Group group : userGroups) {
-                   HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
-                           group.getGroupProfilePicture(),
-                           group.getGroupName(),
-                           "",
-                           "",
-                           2
-                   );
-
-                   conversationListContainer.getChildren().add(nvGroupContainer);
-               }
-
-           }
-
-        if (conversationListContainer.getChildren().isEmpty()) {
+        if (userGroups != null && !userGroups.isEmpty()) {
+            for (Group group : userGroups) {
+                HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
+                        group.getGroupProfilePicture(),
+                        group.getGroupName(),
+                        "",
+                        "",
+                        2
+                );
+                groupsListContainer.getChildren().add(nvGroupContainer);
+            }
+        } else {
             Label noGroupsLabel = new Label("No groups found");
             noGroupsLabel.setStyle(
                     "-fx-text-fill: #6b9e9e; " +
                             "-fx-font-size: 14px; " +
                             "-fx-padding: 20;"
             );
-            conversationListContainer.getChildren().add(noGroupsLabel);
+            groupsListContainer.getChildren().add(noGroupsLabel);
         }
-
-
-
     }
 }
 
