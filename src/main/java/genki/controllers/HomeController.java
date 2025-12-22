@@ -2,6 +2,7 @@ package genki.controllers;
 
 import genki.models.Group;
 
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
@@ -17,8 +18,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
 import javafx.stage.Popup;
 import javafx.geometry.Insets;
 import javafx.scene.layout.Background;
@@ -26,6 +27,8 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.scene.effect.DropShadow;
+
+import java.util.Objects;
 import java.util.logging.Logger;
 import genki.utils.UserSession;
 import genki.utils.ConversationItemBuilder;
@@ -40,7 +43,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 import genki.utils.MessageDAO;
-import genki.models.Message;
 import org.bson.types.ObjectId;
 import genki.utils.ConversationDAO;
 
@@ -56,6 +58,10 @@ public class HomeController {
     @FXML
     private VBox AmisNameStatus;
     @FXML
+    private VBox mainChatArea;
+    @FXML
+    private HBox chatHeader;
+    @FXML
     private ScrollPane usersPane;
     @FXML
     private ScrollPane groupsPane;
@@ -63,6 +69,8 @@ public class HomeController {
     private VBox conversationListContainer;
     @FXML
     private VBox groupsListContainer;
+    @FXML
+    private HBox messageInputArea;
     @FXML
     private VBox messagesContainer;
     @FXML
@@ -92,6 +100,8 @@ public class HomeController {
     @FXML private Button btnAll;
     @FXML private Button btnGroups;
 
+
+
     // handle toggling between users and groups panes
     private void switchUsers(boolean switchToUsers) {
         usersPane.setVisible(switchToUsers);
@@ -100,11 +110,70 @@ public class HomeController {
         groupsPane.setVisible(!switchToUsers);
         groupsPane.setManaged(!switchToUsers);
     }
+
+
       
     @FXML
     public void initialize() {
 
         switchUsers(true);
+
+        if (UserSession.getGroups().isEmpty() || UserSession.getConversations().isEmpty()) {
+
+                     chatHeader.getChildren().clear();
+                     messageInputArea.getChildren().clear();
+                     messagesContainer.getChildren().clear();
+
+                     ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.png")));
+                     startConversationImageView.setPreserveRatio(true);
+                     startConversationImageView.setSmooth(true);
+                     startConversationImageView.setFitWidth(700);
+                     startConversationImageView.setFitHeight(700);
+
+                     HBox buttonsContainer = new HBox();
+                     buttonsContainer.setAlignment(Pos.CENTER);
+                     buttonsContainer.setSpacing(10);
+
+                     Button addFriendBtn = new Button();
+                     ImageView addFriendIcon = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/add_friend.png")));
+                     addFriendBtn.setGraphic(addFriendIcon);
+                     addFriendBtn.setText("Add a Friend");
+                     addFriendBtn.setStyle("""
+                            -fx-background-color: #746996;
+                            -fx-text-fill: white;
+                            -fx-background-radius: 20;
+                            -fx-padding: 8 16;
+                            -fx-font-size: 14px;
+                            -fx-cursor: hand;
+                        """);
+
+                        Button joinGroupBtn = new Button();
+                        ImageView joinGroupIcon = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/join_group.png")));
+                        joinGroupBtn.setGraphic(joinGroupIcon);
+                        joinGroupBtn.setText("Join a Group");
+                        joinGroupBtn.setStyle("""
+                                        -fx-background-color: #76B885;
+                                        -fx-text-fill: white;
+                                        -fx-background-radius: 20;
+                                        -fx-padding: 8 16;
+                                        -fx-font-size: 14px;
+                                        -fx-cursor: hand
+                                    """);
+
+                     buttonsContainer.getChildren().addAll(addFriendBtn, joinGroupBtn);
+
+                     messagesContainer.getChildren().addAll(startConversationImageView, buttonsContainer);
+                     messagesContainer.setAlignment(Pos.CENTER);
+
+                     addFriendBtn.setOnAction(e-> {
+                         openAddUserDialog();
+                     });
+
+                     joinGroupBtn.setOnAction(e-> {
+                         openJoinGroupDialog();
+                     });
+
+        }
 
 
         if (profilTrigger != null) {
@@ -117,17 +186,29 @@ public class HomeController {
             rightSideContainer.setVisible(rightSideVisibilite);
             rightSideContainer.setManaged(rightSideVisibilite);
         }
-        try {
-            Image image = new Image(UserSession.getImageUrl(), 40, 40, false, true);
-            UserProfil.setImage(image);
-            UserProfil.setFitWidth(40);
-            UserProfil.setFitHeight(40);
-            UserProfil.setPreserveRatio(false);
-            javafx.scene.shape.Circle userClip = new javafx.scene.shape.Circle(20, 20, 20);
-            UserProfil.setClip(userClip);
-            UserProfil.getStyleClass().add("avatar");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+
+        if (UserSession.getImageUrl().isEmpty()) {
+               UserProfil.setImage(new Image(Objects.requireNonNull(HomeController.class.getResourceAsStream("/genki/img/user-default.png"))));
+               UserProfil.setFitWidth(40);
+               UserProfil.setFitHeight(40);
+               UserProfil.setPreserveRatio(false);
+               javafx.scene.shape.Circle userClip = new javafx.scene.shape.Circle(20, 20, 20);
+               UserProfil.setClip(userClip);
+               UserProfil.getStyleClass().add("avatar");
+        }
+        else {
+            try {
+                Image image = new Image(UserSession.getImageUrl(), 40, 40, false, true);
+                UserProfil.setImage(image);
+                UserProfil.setFitWidth(40);
+                UserProfil.setFitHeight(40);
+                UserProfil.setPreserveRatio(false);
+                javafx.scene.shape.Circle userClip = new javafx.scene.shape.Circle(20, 20, 20);
+                UserProfil.setClip(userClip);
+                UserProfil.getStyleClass().add("avatar");
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
         }
         CurrentUsername.setText(UserSession.getUsername());
 
@@ -154,7 +235,7 @@ public class HomeController {
         loadConversations();
 
         // Show some example messages dynamically
-        if (messagesContainer != null) {
+        /*if (messagesContainer != null) {
             messagesContainer.getChildren().clear();
             messagesContainer.getChildren().add(
                     MessageItemBuilder.createReceivedMessage(
@@ -166,7 +247,7 @@ public class HomeController {
                             "genki/img/user-default.png",
                             "You",
                             "hhhhhhhhhhhhhh salam"));
-        }
+        }*/
         // Configuration des filtres
         if (btnAll != null) {
             btnAll.setOnMouseClicked(e -> showUserConversations());

@@ -53,7 +53,7 @@
         </VBox>
 
         <!-- MAIN CHAT AREA -->
-        <VBox style="-fx-background-color: #f8fefe;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+        <VBox fx:id="mainChatArea" style="-fx-background-color: #f8fefe;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
 
             <!-- Chat header -->
             <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: transparent; -fx-padding:16; -fx-border-color:#e0f7fa; -fx-border-width:0 0 1 0; -fx-cursor:hand;">
@@ -80,7 +80,7 @@
             </ScrollPane>
 
             <!-- Message input area -->
-            <HBox alignment="CENTER" spacing="12.0" style="-fx-background-color: white; -fx-padding: 16; -fx-border-color: #e0f7fa; -fx-border-width: 1 0 0 0;">
+            <HBox  fx:id="messageInputArea"  alignment="CENTER" spacing="12.0" style="-fx-background-color: white; -fx-padding: 16; -fx-border-color: #e0f7fa; -fx-border-width: 1 0 0 0;">
                 <TextField fx:id="messageInput" prefHeight="48.0" promptText="Type a message..." 
                     style="-fx-background-color: white; -fx-border-color: #6366f1; -fx-border-width: 1; -fx-border-radius: 24; -fx-background-radius: 24; -fx-text-fill: #232e2e; -fx-prompt-text-fill: #6b9e9e; -fx-padding: 12 20; -fx-font-size: 14px;" 
                     HBox.hgrow="ALWAYS" />
