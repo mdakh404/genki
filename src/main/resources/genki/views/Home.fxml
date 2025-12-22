@@ -75,7 +75,7 @@
 			        </HBox>
 			    </VBox>
 			    <!-- BOUTON LOGOUT à la fin -->
-					<Button fx:id="btnLogout" style="-fx-background-color: transparent; -fx-cursor: hand;">
+					<Button fx:id="btnLogout" style="-fx-background-color: transparent; -fx-cursor: hand;" onAction="#handleLogout">
 					    <graphic>
 					        <ImageView fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true">
 					            <image>
