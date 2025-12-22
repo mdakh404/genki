@@ -75,6 +75,7 @@ public class clientSocketController implements t2{
 				System.out.println("Skipping system message");
 				return;
 			}
+
 			
 			// Check if this is a users list message
 			if (message.startsWith("Server: USERS_LIST:")) {

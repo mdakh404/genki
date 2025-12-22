@@ -171,10 +171,11 @@ public class HomeController {
             }
             String senderId = UserSession.getUserId();
             String senderName = UserSession.getUsername();
+            String senderImageUrl = UserSession.getImageUrl();
 
             // Add to UI immediately
             messagesContainer.getChildren().add(
-                    MessageItemBuilder.createSentMessage("genki/img/user-default.png", senderName, messageText));
+                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, messageText));
             messageInput.clear();
             // Auto-scroll to bottom
             scrollToBottom();
@@ -185,7 +186,7 @@ public class HomeController {
                 senderId,
                 senderName,
                 messageText,
-                UserSession.getImageUrl(),
+                senderImageUrl,
                 System.currentTimeMillis(),
                 currentRecipientId,  // Include recipient ID
                 currentRecipientName  // Include recipient name for fallback
@@ -199,7 +200,7 @@ public class HomeController {
             // Save to DB in background thread and update UI safely if needed
             new Thread(() -> {
                 MessageDAO messageDAO = new MessageDAO();
-                messageDAO.sendMessage(currentConversationId, senderId, senderName, messageText);
+                messageDAO.sendMessage(currentConversationId, senderId, senderName, senderImageUrl, messageText);
                 
                 // If you need to update UI after save (e.g., show success icon), use Platform.runLater()
                 // Platform.runLater(() -> {
@@ -382,13 +383,17 @@ public class HomeController {
                 String senderId = doc.getString("senderId");
                 String senderName = doc.getString("senderName");
                 String content = doc.getString("content");
-                String photoUrl = "genki/img/user-default.png"; // Optionally fetch real photo
+                String senderImageUrl = doc.getString("senderImageUrl");
+                if (senderImageUrl == null) {
+                    senderImageUrl = doc.getString("photo_url"); // Fallback for legacy data
+                }
+                System.out.println("Image message url : " + senderImageUrl);
                 if (senderId != null && senderId.equals(currentUserId)) {
                     messagesContainer.getChildren().add(
-                            MessageItemBuilder.createSentMessage(photoUrl, senderName, content));
+                            MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content));
                 } else {
                     messagesContainer.getChildren().add(
-                            MessageItemBuilder.createReceivedMessage(photoUrl, senderName, content));
+                            MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content));
                 }
             }
             // Auto-scroll to bottom after loading messages
@@ -808,14 +813,7 @@ public class HomeController {
 
                 int unreadCount = 0;
                 boolean isOnline = false;
-                // UserDAO usrMethods = new UserDAO();
-                // genki.models.User usr = usrMethods.documentToUser(friendDoc);
-                // boolean isOnline;
-                // if(UserSession.getConnectedUsers().contains(usr)){
-                //     isOnline = true;
-                // }else{
-                //     isOnline = false;
-                // }
+                
                  
 
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(

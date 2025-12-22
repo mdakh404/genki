@@ -26,6 +26,7 @@ public class MessageDAO {
                     .append("conversationId", message.getConversationId())
                     .append("senderId", message.getSenderId())
                     .append("senderName", message.getSenderName())
+                    .append("senderImageUrl", message.getSenderImageUrl())
                     .append("content", message.getContent())
                     .append("timestamp", message.getTimestamp())
                     .append("isRead", message.isRead());
@@ -44,12 +45,13 @@ public class MessageDAO {
      * @param conversationId The ID of the conversation
      * @param senderId The ID of the sender
      * @param senderName The name of the sender
+     * @param senderImageUrl The image URL of the sender
      * @param content The message content
      * @return The ObjectId of the created message
      */
-    public ObjectId sendMessage(ObjectId conversationId, String senderId, String senderName, String content) {
+    public ObjectId sendMessage(ObjectId conversationId, String senderId, String senderName, String senderImageUrl, String content) {
         try {
-            Message message = new Message(conversationId, senderId, senderName, content);
+            Message message = new Message(conversationId, senderId, senderName, senderImageUrl, content);
             ObjectId messageId = insertMessage(message);
             
             // Update the conversation's last message
