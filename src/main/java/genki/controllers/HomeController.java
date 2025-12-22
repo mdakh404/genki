@@ -128,7 +128,15 @@ public class HomeController {
 
 
 
-
+    // handle logout of user
+    public void handleLogout() {
+        UserSession.logout();
+        try {
+            ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");
+        } catch (IOException ex) {
+            logger.info("Error loading Login.fxml " + ex.getMessage());
+        }
+    }
 
     // handle toggling between users and groups panes
     private void switchUsers(boolean switchToUsers) {
@@ -140,11 +148,9 @@ public class HomeController {
     }
 
 
-      
+
 
     private Popup addMenuPopup;
-    
-    @FXML private Button btnLogout;
 
     // CSS Style Constants - centralized styles to avoid hardcoding
     private static final String MENU_BUTTON_STYLE_DEFAULT = 

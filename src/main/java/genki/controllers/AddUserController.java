@@ -1,5 +1,18 @@
 package genki.controllers;
 
+import genki.utils.UserSession;
+import genki.utils.AlertConstruct;
+import genki.utils.DBConnection;
+import genki.utils.NotificationDAO;
+import genki.models.User;
+
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.MongoException;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -15,7 +28,9 @@ import java.util.logging.Level;
 public class AddUserController implements Initializable {
     
     private static final Logger logger = Logger.getLogger(AddUserController.class.getName());
-    
+    private static final DBConnection AddUserControllerDBConnection = new DBConnection("genki_testing");
+    private static final NotificationDAO notificationDAO = new NotificationDAO();
+
     @FXML
     private TextField txtUsername;
     
@@ -70,13 +85,77 @@ public class AddUserController implements Initializable {
             homeController.handleAddUserFromDialog(username);
         }
         //---
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Success");
-        alert.setHeaderText("User Added");
-        alert.setContentText("User '" + username + "' has been added successfully!");
-        alert.showAndWait();
-        
-        closeWindow();
+
+        for (User user : UserSession.getFriends()) {
+
+            if (user.getUsername().equals(username)) {
+                 AlertConstruct.alertConstructor(
+                         "Add User Error",
+                         "",
+                         "This user is already on your friends' list",
+                         Alert.AlertType.ERROR
+                 );
+                 closeWindow();
+            }
+        }
+
+        try {
+
+            MongoCollection<Document> usersCollection = AddUserControllerDBConnection.getCollection("users");
+            Document recipientUserDoc = usersCollection.find(
+                    Filters.eq("username", username)
+            ).first();
+
+            if (recipientUserDoc == null) {
+                AlertConstruct.alertConstructor(
+                            "Add User Error",
+                            "",
+                            "This user does not exist",
+                            Alert.AlertType.ERROR
+                 );
+
+                closeWindow();
+
+            }
+
+            logger.info("Sending friend request to " +  recipientUserDoc.getString("username"));
+
+            ObjectId sendFriendRequestNotificationId = notificationDAO.sendFriendRequestNotification(
+                    recipientUserDoc.getObjectId("_id"),
+                    UserSession.getUserId(),
+                    UserSession.getUsername()
+            );
+
+            if (sendFriendRequestNotificationId != null) {
+                logger.info("A friend request has been sent");
+                AlertConstruct.alertConstructor(
+                       "Add User Success",
+                       "",
+                       "A friend request has been sent to " + username,
+                       Alert.AlertType.INFORMATION
+                );
+                closeWindow();
+            }
+
+            // TODO Check if a friend request has been sent before to the same user
+
+        } catch (MongoException ex) {
+             logger.warning(ex.getMessage());
+             AlertConstruct.alertConstructor(
+                  "Add User Error",
+                  "",
+                  "Error while sending a friend request to " + username + ", please try again in a few minutes",
+                  Alert.AlertType.ERROR
+             );
+        } catch (NullPointerException ex) {
+            logger.warning(ex.getMessage());
+        }
+
+
+
+
+
+
     }
     
     @FXML
@@ -95,6 +174,8 @@ public class AddUserController implements Initializable {
         } else {
             closeWindow();
         }
+
+
     }
     
     private void closeWindow() {
