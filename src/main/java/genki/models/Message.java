@@ -7,6 +7,7 @@ public class Message {
     private ObjectId conversationId;
     private String senderId;
     private String senderName;
+    private String senderImageUrl;
     private String content;
     private LocalDateTime timestamp;
     private boolean isRead;
@@ -18,6 +19,16 @@ public class Message {
         this.conversationId = conversationId;
         this.senderId = senderId;
         this.senderName = senderName;
+        this.content = content;
+        this.timestamp = LocalDateTime.now();
+        this.isRead = false;
+    }
+
+    public Message(ObjectId conversationId, String senderId, String senderName, String senderImageUrl, String content) {
+        this.conversationId = conversationId;
+        this.senderId = senderId;
+        this.senderName = senderName;
+        this.senderImageUrl = senderImageUrl;
         this.content = content;
         this.timestamp = LocalDateTime.now();
         this.isRead = false;
@@ -46,6 +57,14 @@ public class Message {
 
     public void setSenderName(String senderName) {
         this.senderName = senderName;
+    }
+
+    public String getSenderImageUrl() {
+        return senderImageUrl;
+    }
+
+    public void setSenderImageUrl(String senderImageUrl) {
+        this.senderImageUrl = senderImageUrl;
     }
 
     public String getContent() {
