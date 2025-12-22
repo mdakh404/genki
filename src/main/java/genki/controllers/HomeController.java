@@ -57,15 +57,24 @@ public class HomeController {
     private Button btnUnread;
     @FXML
     private Button btnGroups;
+    
+    @FXML
+    private Label chatContactStatus;
 
     @FXML
     private Label chatContactName;
+    @FXML
+    private javafx.scene.shape.Circle chatContactStatusCircle;
     @FXML
     private ImageView UserProfil;
     @FXML
     private VBox AmisNameStatus;
     @FXML
     private VBox conversationListContainer;
+    @FXML
+    private VBox loadingSpinnerContainer;
+    @FXML
+    private javafx.scene.control.ProgressIndicator loadingSpinner;
     @FXML
     private VBox messagesContainer;
     @FXML
@@ -89,6 +98,11 @@ public class HomeController {
     private ObjectId currentConversationId = null;
     private String currentRecipientId = null;  // Track recipient for message sending
     private String currentRecipientName = null;  // Track recipient name for fallback matching
+    
+    // Track conversation loading progress
+    private int totalConversations = 0;
+    private int loadedConversations = 0;
+    private Object loadingLock = new Object();
 
     @FXML
     private Button btnAdd;
@@ -210,8 +224,15 @@ public class HomeController {
                 // });
             }).start();
         });
-        // Load conversations
-        loadConversations();
+        
+        // Load conversations in background thread for fast UI response
+        new Thread(() -> {
+            try {
+                loadConversations();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error loading conversations in background", e);
+            }
+        }).start();
 
         // Show some example messages dynamically
         if (messagesContainer != null) {
@@ -277,7 +298,7 @@ public class HomeController {
     /**
      * Set the current conversation and show its messages
      */
-    public void setCurrentConversation(ObjectId conversationId) {
+    public void setCurrentConversation(ObjectId conversationId, Boolean isOnligne) {
         System.out.println("The Set method...");
         this.currentConversationId = conversationId;
         // Update chat header with friend's info using conversation participants
@@ -322,13 +343,23 @@ public class HomeController {
                             String role = friendDoc.getString("role");
 
                             if (chatContactName != null)
-                                chatContactName.setText(friendName != null ? friendName : "");
+                            chatContactName.setText(friendName != null ? friendName : "");
                             rightContactName.setText(friendName != null ? friendName : "");
                             rightContactBio.setText(bio != null ? bio : "");
                             rightContactTitle.setText(role != null ? role : "");
                             if (profilTrigger != null && photoUrl != null) {
                                 try {
                                     // Load at 180x180 for better clarity when displaying at 43x43
+                                    chatContactStatus.setText(isOnligne ? "Online" : "Offline");
+                                    // Style the status based on online status
+                                    javafx.scene.paint.Color statusColor = isOnligne ? 
+                                        javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
+                                    String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80" : "-fx-text-fill: #9ca3af";
+                                    chatContactStatus.setStyle(statusTextColor + "; -fx-font-size: 12px;");
+                                    if (chatContactStatusCircle != null) {
+                                        chatContactStatusCircle.setFill(statusColor);
+                                    }
+                                    
                                     Image friendImg = new Image(photoUrl, 180, 180, false, true);
                                     profilTrigger.setImage(friendImg);
                                     profilTrigger.setFitWidth(43);
@@ -689,6 +720,11 @@ public class HomeController {
      * IMPROVEMENT 3: Data Access Objects (DAO)
      * This method orchestrates the loading of conversations by delegating
      * data transformation to DAO classes where appropriate.
+     * 
+     * IMPROVEMENT 5: Background Threading & Parallel Processing
+     * - Each friend's conversation loads on a separate thread
+     * - All conversions load in parallel for faster performance
+     * - UI updates wrapped with Platform.runLater() for thread safety
      */
     private void loadConversations() {
         try {
@@ -697,6 +733,14 @@ public class HomeController {
 
             // Get all friends for the current user
             List<Document> friends = userDAO.getFriendsForUser(currentUsername);
+
+            // Show loading spinner
+            Platform.runLater(() -> {
+                if (loadingSpinnerContainer != null) {
+                    loadingSpinnerContainer.setVisible(true);
+                    loadingSpinnerContainer.setManaged(true);
+                }
+            });
 
             // Convert Document friends to List<User>
             ArrayList<genki.models.User> userFriends = new ArrayList<>();
@@ -749,103 +793,154 @@ public class HomeController {
             UserSession.loadConversations(userFriends, conversations);
             System.out.println("Conversations : "+ UserSession.getConversations());
             System.out.println("Friends : " + UserSession.getFriends());
+            
             if (UserSession.getFriends() == null || UserSession.getFriends().isEmpty()) {
                 logger.log(Level.INFO, "No friends found for user: " + currentUsername);
+                // Hide spinner if no conversations
+                Platform.runLater(() -> {
+                    if (loadingSpinnerContainer != null) {
+                        loadingSpinnerContainer.setVisible(false);
+                        loadingSpinnerContainer.setManaged(false);
+                    }
+                });
                 return;
             }
 
-            // For each friend, create a conversation item
-            for (Document friendDoc : friends) {
-                String friendName = friendDoc.getString("username");
-                String photoUrl = friendDoc.getString("photo_url");
-                String friendId;
-                // Try to get the friend's user ID as a string (MongoDB _id is usually ObjectId)
-                Object objId = friendDoc.get("_id");
-                if (objId instanceof org.bson.types.ObjectId) {
-                    friendId = ((org.bson.types.ObjectId) objId).toHexString();
-                } else {
-                    friendId = String.valueOf(objId);
-                }
-                String currentUserId = UserSession.getUserId();
-                ConversationDAO conversationDAO = new ConversationDAO();
-                ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+            // Set total conversations count for progress tracking
+            synchronized (loadingLock) {
+                totalConversations = friends.size();
+                loadedConversations = 0;
+            }
 
-                // Fetch last message from Conversation collection
-                String lastMessage = "";
-                String time = "";
-                try {
-                    // IMPROVEMENT 1: Resource Management - Use singleton DBConnection
-                    DBConnection dbConnection = getDBConnection();
-                    org.bson.Document conversationDoc = dbConnection
-                            .getDatabase()
-                            .getCollection("Conversation")
-                            .find(new org.bson.Document("_id", conversationId))
-                            .first();
-                    if (conversationDoc != null) {
-                        lastMessage = conversationDoc.getString("lastMessageContent");
-                        Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
-                        if (lastMsgTimeObj != null) {
-                            // Try to format time as HH:mm if today, else show date
-                            java.time.LocalDateTime msgTime = null;
-                            if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
-                                msgTime = (java.time.LocalDateTime) lastMsgTimeObj;
-                            } else if (lastMsgTimeObj instanceof java.util.Date) {
-                                java.util.Date date = (java.util.Date) lastMsgTimeObj;
-                                msgTime = java.time.LocalDateTime.ofInstant(date.toInstant(),
-                                        java.time.ZoneId.systemDefault());
-                            } else if (lastMsgTimeObj instanceof String) {
-                                try {
-                                    msgTime = java.time.LocalDateTime.parse((String) lastMsgTimeObj);
-                                } catch (Exception ignore) {
-                                }
-                            }
-                            if (msgTime != null) {
-                                java.time.LocalDate today = java.time.LocalDate.now();
-                                if (msgTime.toLocalDate().equals(today)) {
-                                    time = String.format("%02d:%02d", msgTime.getHour(), msgTime.getMinute());
-                                } else {
-                                    time = String.format("%02d/%02d/%02d", msgTime.getDayOfMonth(),
-                                            msgTime.getMonthValue(), msgTime.getYear() % 100);
-                                }
+            // Load each friend's conversation on a separate thread for parallel processing
+            if (friends != null) {
+                String currentUserId = UserSession.getUserId();
+                for (Document friendDoc : friends) {
+                    new Thread(() -> {
+                        try {
+                            String friendName = friendDoc.getString("username");
+                            String photoUrl = friendDoc.getString("photo_url");
+                            String friendId;
+                            Object objId = friendDoc.get("_id");
+                            if (objId instanceof org.bson.types.ObjectId) {
+                                friendId = ((org.bson.types.ObjectId) objId).toHexString();
                             } else {
-                                time = lastMsgTimeObj.toString();
+                                friendId = String.valueOf(objId);
+                            }
+                            
+                            ConversationDAO conversationDAO = new ConversationDAO();
+                            ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+
+                            // Fetch last message from Conversation collection
+                            String lastMessage = "";
+                            String time = "";
+                            try {
+                                DBConnection dbConnection = getDBConnection();
+                                org.bson.Document conversationDoc = dbConnection
+                                        .getDatabase()
+                                        .getCollection("Conversation")
+                                        .find(new org.bson.Document("_id", conversationId))
+                                        .first();
+                                if (conversationDoc != null) {
+                                    lastMessage = conversationDoc.getString("lastMessageContent");
+                                    Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+                                    if (lastMsgTimeObj != null) {
+                                        java.time.LocalDateTime msgTime = null;
+                                        if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
+                                            msgTime = (java.time.LocalDateTime) lastMsgTimeObj;
+                                        } else if (lastMsgTimeObj instanceof java.util.Date) {
+                                            java.util.Date date = (java.util.Date) lastMsgTimeObj;
+                                            msgTime = java.time.LocalDateTime.ofInstant(date.toInstant(),
+                                                    java.time.ZoneId.systemDefault());
+                                        } else if (lastMsgTimeObj instanceof String) {
+                                            try {
+                                                msgTime = java.time.LocalDateTime.parse((String) lastMsgTimeObj);
+                                            } catch (Exception ignore) {
+                                            }
+                                        }
+                                        if (msgTime != null) {
+                                            java.time.LocalDate today = java.time.LocalDate.now();
+                                            if (msgTime.toLocalDate().equals(today)) {
+                                                time = String.format("%02d:%02d", msgTime.getHour(), msgTime.getMinute());
+                                            } else {
+                                                time = String.format("%02d/%02d/%02d", msgTime.getDayOfMonth(),
+                                                        msgTime.getMonthValue(), msgTime.getYear() % 100);
+                                            }
+                                        } else {
+                                            time = lastMsgTimeObj.toString();
+                                        }
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                System.out.println("Error fetching last message: " + ex.getMessage());
+                            }
+
+                            int unreadCount = 0;
+                            boolean isOnline = false;
+
+                            HBox conversationItem = ConversationItemBuilder.createConversationItem(
+                                    photoUrl != null ? photoUrl : "genki/img/user-default.png",
+                                    friendName,
+                                    lastMessage != null ? lastMessage : "",
+                                    time != null ? time : "",
+                                    unreadCount,
+                                    isOnline);
+
+                            // Store the friend User object in the HBox for later reference
+                            genki.models.User friendUser = new genki.models.User();
+                            friendUser.setId(friendId);
+                            friendUser.setUsername(friendName);
+                            friendUser.setPhotoUrl(photoUrl);
+                            conversationItem.setUserData(friendUser);
+
+                            // Add click handler to set current conversation
+                            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
+
+                            // Store in UserSession for easy access from other files
+                            UserSession.addConversationItem(conversationItem);
+                            
+                            // Update UI on JavaFX thread - Thread Safe!
+                            Platform.runLater(() -> {
+                                conversationListContainer.getChildren().add(conversationItem);
+                                
+                                // Update loading progress
+                                synchronized (loadingLock) {
+                                    loadedConversations++;
+                                    System.out.println("Loaded " + loadedConversations + "/" + totalConversations + " conversations");
+                                    
+                                    // Hide spinner when all conversations are loaded
+                                    if (loadedConversations >= totalConversations && loadingSpinnerContainer != null) {
+                                        loadingSpinnerContainer.setVisible(false);
+                                        loadingSpinnerContainer.setManaged(false);
+                                    }
+                                }
+                            });
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "Error loading conversation for friend", e);
+                            // Update counter even on error
+                            synchronized (loadingLock) {
+                                loadedConversations++;
+                                if (loadedConversations >= totalConversations && loadingSpinnerContainer != null) {
+                                    Platform.runLater(() -> {
+                                        loadingSpinnerContainer.setVisible(false);
+                                        loadingSpinnerContainer.setManaged(false);
+                                    });
+                                }
                             }
                         }
-                    }
-                } catch (Exception ex) {
-                    System.out.println("Error fetching last message: " + ex.getMessage());
+                    }).start();
                 }
-
-                int unreadCount = 0;
-                boolean isOnline = false;
-                
-                 
-
-                HBox conversationItem = ConversationItemBuilder.createConversationItem(
-                        photoUrl != null ? photoUrl : "genki/img/user-default.png",
-                        friendName,
-                        lastMessage != null ? lastMessage : "",
-                        time != null ? time : "",
-                        unreadCount,
-                        isOnline);
-
-                // Store the friend User object in the HBox for later reference
-                genki.models.User friendUser = new genki.models.User();
-                friendUser.setId(friendId);
-                friendUser.setUsername(friendName);
-                friendUser.setPhotoUrl(photoUrl);
-                conversationItem.setUserData(friendUser);
-
-                // Add click handler to set current conversation
-                conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId));
-
-                // Store in UserSession for easy access from other files
-                UserSession.addConversationItem(conversationItem);
-                conversationListContainer.getChildren().add(conversationItem);
             }
 
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error loading conversations", e);
+            // Hide spinner on error
+            Platform.runLater(() -> {
+                if (loadingSpinnerContainer != null) {
+                    loadingSpinnerContainer.setVisible(false);
+                    loadingSpinnerContainer.setManaged(false);
+                }
+            });
         }
     }
 }
