@@ -76,14 +76,14 @@ public class NotificationDAO {
      * @param groupName The name of the group
      * @return The ObjectId of the created notification
      */
-    public ObjectId sendGroupInviteNotification(ObjectId recipientUserId, ObjectId groupId, String senderId, String senderName, String groupName) {
+    public ObjectId sendGroupJoinReq(ObjectId recipientUserId, ObjectId groupId, String senderId, String senderName, String groupName) {
         try {
             Notification notification = new Notification(
                 recipientUserId,
-                "group_invite",
+                "group_join_request",
                 senderId,
                 senderName,
-                senderName + " invited you to join " + groupName
+                senderName + " wants to join " + groupName
             );
             notification.setRequestType("group_" + groupId);
             return insertNotification(notification);
@@ -238,4 +238,5 @@ public class NotificationDAO {
             doc.getDate("readAt").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null);
         return notification;
     }
+
 }

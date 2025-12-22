@@ -1,8 +1,8 @@
 package genki.controllers;
 
+import genki.models.AuthModel;
 import genki.models.Group;
 import genki.models.GroupsModel;
-import genki.models.AuthModel;
 import genki.utils.AuthResult;
 import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
@@ -30,9 +30,8 @@ public class LoginController implements Initializable {
 	private clientSocketController client;
 
      private static final Logger logger = Logger.getLogger(LoginController.class.getName());
-
-     private static final AuthModel authModel = new AuthModel();
      private static final GroupsModel groupsModel = new GroupsModel();
+     private static final AuthModel authModel = new AuthModel();
 
      @FXML
      private TextField userName;
@@ -41,7 +40,7 @@ public class LoginController implements Initializable {
 
      @FXML
      private Button loginButton;
-
+     
 
      @FXML
      public void redirectToRegister() {
@@ -99,9 +98,13 @@ public class LoginController implements Initializable {
                      try {
 
                          logger.log(Level.INFO, "Login successful by " + user);
+                         groupsModel.loadGroups(loginResult.getUsername());
+                         logger.info("groups are: " + UserSession.getGroups());
+
 
                          //Creating Client Socket
                          
+                         client = new clientSocketController(loginResult.getUsername());
 
                          UserSession.startSession(
                                loginResult.getUsername(),
@@ -109,20 +112,6 @@ public class LoginController implements Initializable {
                                loginResult.getUserRole(),
                                loginResult.getImageUrl()
                          );
-                         
-                         
-
-                         groupsModel.loadGroups(loginResult.getUsername());
-
-                         if (groupsModel.getGroups().isEmpty()) {
-                             logger.warning("Empty groups list for user " + user);
-                         }
-
-                         else {
-                             for (Group group: groupsModel.getGroups()) {
-                                 UserSession.addGroup(group);
-                             }
-                         }
 
 
 

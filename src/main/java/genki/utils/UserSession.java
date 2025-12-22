@@ -83,11 +83,16 @@ public class UserSession {
         UserSession.username = null;
         UserSession.userId = null;
         UserSession.userRole = null;
+        UserSession.imageUrl = null;
+        UserSession.listGroups.clear();
+        UserSession.listFriends.clear();
+        UserSession.listConversations.clear();
     }
 
     public static ArrayList<User> getFriends() {
         return UserSession.listFriends;
     }
+
 
     public static ArrayList<Group> getGroups() {
         return UserSession.listGroups;
