@@ -1,5 +1,21 @@
 package genki.controllers;
 
+import genki.models.Notification;
+import genki.models.User;
+import genki.utils.AlertConstruct;
+import genki.utils.DBConnection;
+import genki.utils.UserSession;
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
+import com.mongodb.MongoException;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -7,6 +23,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
@@ -19,8 +36,18 @@ import javafx.stage.Stage;
 import genki.models.NotificationRequest;
 import genki.models.NotificationRequest.NotificationType;
 
+import java.util.logging.Logger;
+
 public class NotificationsController {
-    
+
+    private static DBConnection notificationsDBConnection = new DBConnection("genki_testing");
+    private static Logger logger = Logger.getLogger(NotificationsController.class.getName());
+
+    private static MongoCollection<Document> usersCollection = notificationsDBConnection.getCollection("username");
+    private static MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
+    private static MongoCollection<Document> groupsCollection = notificationsDBConnection.getCollection("groups");
+
+
     @FXML
     private ListView<NotificationRequest> notificationsList;
     
@@ -52,34 +79,44 @@ public class NotificationsController {
      * Charge les notifications (simulées pour l'instant)
      * TODO: Remplacer par un appel à votre base de données
      */
+
+    private String getSenderImageUrl(String senderId) {
+
+        try {
+
+
+            Document senderUserDoc = usersCollection.find(
+                     Filters.eq("_id", new ObjectId(senderId))
+            ).first();
+
+            return senderUserDoc.getString("photo_url");
+
+        } catch (MongoException e) {
+            logger.warning("Failed to get sender image url " + e.getMessage());
+        }
+
+        return "";
+    }
+
     private void loadNotifications() {
-        // Données de test - Remplacez par vos vraies données
-        notifications.addAll(
-            new NotificationRequest(
-                "Sarah Wilson",
-                "wants to add you as a friend",
-                NotificationType.FRIEND_REQUEST,
-                "/genki/img/user-default.png"
-            ),
-            new NotificationRequest(
-                "Alex Johnson",
-                "wants to add you as a friend",
-                NotificationType.FRIEND_REQUEST,
-                "/genki/img/user-default.png"
-            ),
-            new NotificationRequest(
-                "Design Team",
-                "invited you to join the group",
-                NotificationType.GROUP_INVITATION,
-                "/genki/img/user-default.png"
-            ),
-            new NotificationRequest(
-                "Mike Chen",
-                "wants to add you as a friend",
-                NotificationType.FRIEND_REQUEST,
-                "/genki/img/user-default.png"
-            )
-        );
+
+         for (Notification notification : UserSession.getNotifications()) {
+
+                notifications.add(
+                        new NotificationRequest(
+                             notification.getNotificationId(),
+                             notification.getRequestType(),
+                             notification.getSenderName(),
+                             notification.getContent(),
+                             notification.getType().equals("friend_request") ?
+                                     NotificationType.FRIEND_REQUEST : NotificationType.GROUP_JOIN_REQUEST,
+                             getSenderImageUrl(notification.getSenderId())
+                        )
+                );
+
+         }
+
+
     }
     
     /**
@@ -97,15 +134,104 @@ public class NotificationsController {
      * Accepte une demande
      */
     private void handleAccept(NotificationRequest request) {
-        System.out.println("✅ Accepted: " + request.getUsername());
-        
-        // TODO: Ajouter la logique pour accepter dans votre base de données
+
+
         if (request.getType() == NotificationType.FRIEND_REQUEST) {
-            // Logique d'ajout d'ami
-            System.out.println("Adding friend: " + request.getUsername());
-        } else {
-            // Logique de rejoindre un groupe
-            System.out.println("Joining group: " + request.getUsername());
+            logger.info(UserSession.getUsername() + " accepted " + request.getUsername() + "'s friend request");
+
+
+            DeleteResult userNotificationDeleteresult = notificationsCollection.deleteOne(
+                        Filters.eq("_id", request.getNotificationId())
+            );
+
+            if (userNotificationDeleteresult.getDeletedCount() > 0) {
+
+                   logger.info("Deleted notification " + request.getNotificationId().toHexString() + " from database");
+
+                    Document senderUserDoc = usersCollection.find(
+                            Filters.eq("username", request.getUsername())
+                    ).first();
+
+                   UpdateResult recipientUpdate = usersCollection.updateOne(
+                              Filters.eq("username", UserSession.getUsername()),
+                              Updates.addToSet("friends", senderUserDoc.getObjectId("_id"))
+                   );
+
+                   UpdateResult senderUpdate = usersCollection.updateOne(
+                           Filters.eq("username", request.getUsername()),
+                           Updates.addToSet("friends", new ObjectId(UserSession.getUserId()))
+                   );
+
+                   if (senderUpdate.getModifiedCount() > 0 && recipientUpdate.getModifiedCount() > 0 ) {
+                       logger.info("Updated friends array field for " + UserSession.getUsername()
+                                       + " and " + request.getUsername()
+                       );
+
+                   }
+
+
+            } else {
+
+                  logger.warning("An error occurred while adding " + request.getUsername() + " as a friend");
+                  AlertConstruct.alertConstructor(
+                             "Unexpected Error",
+                          "",
+                          "Unexpected error occurred while accepting your friend, please try again in a few minutes",
+                          Alert.AlertType.ERROR
+                  );
+
+            }
+
+        } else if (request.getType() == NotificationType.GROUP_JOIN_REQUEST) {
+            logger.info(UserSession.getUsername() + " accepted " + request.getUsername() + "'s Group join request.");
+
+            String groupId = request.getNotificationSubType().split("_")[1];
+            Document groupDoc = groupsCollection.find(
+                     Filters.eq("_id", new ObjectId(groupId))
+            ).first();
+
+            Document senderUserDoc = usersCollection.find(
+                      Filters.eq("username", request.getUsername())
+            ).first();
+
+            DeleteResult groupNotificationDeleteresult = notificationsCollection.deleteOne(
+                    Filters.eq("_id", request.getNotificationId())
+            );
+
+            if (groupNotificationDeleteresult.getDeletedCount() > 0) {
+
+                logger.info("Deleted notification " + request.getNotificationId().toHexString() + " from database");
+
+                UpdateResult groupUpdateResult = groupsCollection.updateOne(
+                        Filters.eq("_id", groupDoc.getObjectId("_id")),
+                        Updates.addToSet("users", senderUserDoc.getObjectId("_id").toHexString())
+                );
+
+                UpdateResult userUpdateResult = usersCollection.updateOne(
+                        Filters.eq("username", request.getUsername()),
+                        Updates.addToSet("groups", groupDoc.getObjectId("_id").toHexString())
+                );
+
+                if (groupUpdateResult.getModifiedCount() > 0 && userUpdateResult.getModifiedCount() > 0 ) {
+                    logger.info("Updated groups array field for " + request.getUsername()
+                            + " and users array field for " + groupDoc.getString("group_name")
+                    );
+
+                }
+
+
+            } else {
+
+                logger.warning("An error occurred while adding " + request.getUsername() + " as a friend");
+                AlertConstruct.alertConstructor(
+                        "Unexpected Error",
+                        "",
+                        "Unexpected error occurred while accepting your friend, please try again in a few minutes",
+                        Alert.AlertType.ERROR
+                );
+
+            }
+
         }
         
         // Supprimer la notification de la liste
@@ -172,10 +298,10 @@ public class NotificationsController {
             avatar.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
             
             try {
-                Image image = new Image(getClass().getResourceAsStream(request.getImageUrl()));
+                Image image = new Image(request.getImageUrl());
                 avatar.setImage(image);
             } catch (Exception e) {
-                System.out.println("Failed to load image: " + e.getMessage());
+                System.out.println("Failed to load image: " + e.getMessage() + request.getImageUrl());
             }
             
             // VBox pour le nom et le message

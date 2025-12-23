@@ -4,6 +4,7 @@ import org.bson.types.ObjectId;
 import java.time.LocalDateTime;
 
 public class Notification {
+    private ObjectId notificationId;
     private ObjectId recipientUserId;
     private String type; // "friend_request", "group_invite", "message", etc.
     private String senderId;
@@ -17,15 +18,22 @@ public class Notification {
     public Notification() {
     }
 
-    public Notification(ObjectId recipientUserId, String type, String senderId, String senderName, String content) {
+    public Notification(ObjectId notificationId, ObjectId recipientUserId, String type, String requestType, String senderId, String senderName, String content) {
+        this.notificationId = notificationId;
         this.recipientUserId = recipientUserId;
         this.type = type;
+        this.requestType = requestType;
         this.senderId = senderId;
         this.senderName = senderName;
         this.content = content;
         this.status = "pending";
         this.createdAt = LocalDateTime.now();
         this.readAt = null;
+    }
+
+
+    public ObjectId getNotificationId() {
+        return this.notificationId;
     }
 
     public ObjectId getRecipientUserId() {

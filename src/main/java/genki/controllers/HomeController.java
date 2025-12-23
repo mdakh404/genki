@@ -1,13 +1,19 @@
 package genki.controllers;
 
+import genki.models.Notification;
 import genki.models.Group;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.MongoException;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.application.Platform;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.Scene;
@@ -128,6 +134,49 @@ public class HomeController {
 
 
 
+    // load notifications for this UserSession
+    public void loadNotifications() {
+
+        try {
+
+             DBConnection notificationsDBConnection = getDBConnection();
+
+             MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
+
+             long notificationsCount = notificationsCollection.countDocuments(
+                     Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+             );
+
+             if (notificationsCount > 0) {
+
+                 notificationsCollection.find(
+                         Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+                 ).forEach(notificationDoc -> {
+
+                      Notification nvNotification = new Notification(
+                              notificationDoc.getObjectId("_id"),
+                              notificationDoc.getObjectId("recipientUserId"),
+                              notificationDoc.getString("type"),
+                              notificationDoc.getString("requestType"),
+                              notificationDoc.getString("senderId"),
+                              notificationDoc.getString("senderName"),
+                              notificationDoc.getString("content")
+                      );
+
+                      UserSession.addNotification(nvNotification);
+
+                 });
+
+
+             } else {
+                 UserSession.setNotificationsEmpty();
+             }
+
+        } catch (MongoException ex) {
+            logger.warning("Failed to load notifications " + ex.getMessage());
+        }
+    }
+
     // handle logout of user
     public void handleLogout() {
         UserSession.logout();
@@ -187,6 +236,7 @@ public class HomeController {
     @FXML
     public void initialize() {
 
+        loadNotifications();
         switchUsers(true);
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
