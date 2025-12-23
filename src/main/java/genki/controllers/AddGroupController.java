@@ -5,13 +5,11 @@ import genki.utils.AddGroupResult;
 import genki.utils.AddGroupStatus;
 import genki.utils.AlertConstruct;
 import genki.models.GroupModel;
-
+import genki.models.Group;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -22,6 +20,7 @@ import javafx.stage.Stage;
 
 public class AddGroupController {
 
+    private HomeController homeController;
 
     @FXML
     private TextField txtGroupName;
@@ -51,6 +50,10 @@ public class AddGroupController {
         
         // Sélectionner "Public" par défaut
         rbPublic.setSelected(true);
+    }
+
+    public void setHomeController(HomeController homeController) {
+        this.homeController = homeController;
     }
     
     @FXML
@@ -82,6 +85,13 @@ public class AddGroupController {
                               "Your group has been successfully created !",
                          AlertType.INFORMATION
                  );
+                 
+                 // Get the newly created group from UserSession and notify HomeController
+                 Group newGroup = UserSession.getGroups().get(UserSession.getGroups().size() - 1);
+                 if (homeController != null) {
+                     homeController.handleAddGroupFromDialog(newGroup);
+                 }
+                 
                  closeWindow();
                  break;
 

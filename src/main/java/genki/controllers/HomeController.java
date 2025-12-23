@@ -455,33 +455,56 @@ public class HomeController {
                             String bio = friendDoc.getString("bio");
                             String role = friendDoc.getString("role");
 
-                            if (chatContactName != null)
-                            chatContactName.setText(friendName != null ? friendName : "");
-                            rightContactName.setText(friendName != null ? friendName : "");
-                            rightContactBio.setText(bio != null ? bio : "");
-                            rightContactTitle.setText(role != null ? role : "");
-                            if (profilTrigger != null && photoUrl != null) {
-                                try {
-                                    // Load at 180x180 for better clarity when displaying at 43x43
+                            // Update UI on JavaFX thread - Thread Safe!
+                            Platform.runLater(() -> {
+                                // Update text labels
+                                if (chatContactName != null) {
+                                    chatContactName.setText(friendName != null ? friendName : "");
+                                }
+                                if (rightContactName != null) {
+                                    rightContactName.setText(friendName != null ? friendName : "");
+                                }
+                                if (rightContactBio != null) {
+                                    rightContactBio.setText(bio != null ? bio : "");
+                                }
+                                if (rightContactTitle != null) {
+                                    rightContactTitle.setText(role != null ? role : "");
+                                }
+                                
+                                // Update status and color
+                                if (chatContactStatus != null) {
                                     chatContactStatus.setText(isOnligne ? "Online" : "Offline");
-                                    // Style the status based on online status
-                                    javafx.scene.paint.Color statusColor = isOnligne ? 
-                                        javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
                                     String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80" : "-fx-text-fill: #9ca3af";
                                     chatContactStatus.setStyle(statusTextColor + "; -fx-font-size: 12px;");
-                                    if (chatContactStatusCircle != null) {
-                                        chatContactStatusCircle.setFill(statusColor);
+                                }
+                                
+                                if (chatContactStatusCircle != null) {
+                                    javafx.scene.paint.Color statusColor = isOnligne ? 
+                                        javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
+                                    chatContactStatusCircle.setFill(statusColor);
+                                }
+                                
+                                // Update profile images
+                                if (profilTrigger != null && photoUrl != null) {
+                                    try {
+                                        // Load at 180x180 for better clarity when displaying at 43x43
+                                        Image friendImg = new Image(photoUrl, 180, 180, false, true);
+                                        profilTrigger.setImage(friendImg);
+                                        profilTrigger.setFitWidth(43);
+                                        profilTrigger.setFitHeight(43);
+                                        profilTrigger.setPreserveRatio(false);
+                                        javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
+                                        profilTrigger.setClip(friendClip);
+                                        profilTrigger.getStyleClass().add("avatar");
+                                    } catch (Exception e) {
+                                        System.out.println("Error loading profile image: " + e.getMessage());
+                                        profilTrigger.setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
                                     }
-                                    
-                                    Image friendImg = new Image(photoUrl, 180, 180, false, true);
-                                    profilTrigger.setImage(friendImg);
-                                    profilTrigger.setFitWidth(43);
-                                    profilTrigger.setFitHeight(43);
-                                    profilTrigger.setPreserveRatio(false);
-                                    javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
-                                    profilTrigger.setClip(friendClip);
-                                    profilTrigger.getStyleClass().add("avatar");
-                                    if (rightProfileImage != null) {
+                                }
+                                
+                                // Update right panel profile image
+                                if (rightProfileImage != null && photoUrl != null) {
+                                    try {
                                         // Load at 400x400 for the larger right panel image (100x100 display)
                                         Image rightImg = new Image(photoUrl, 400, 400, false, true);
                                         rightProfileImage.setImage(rightImg);
@@ -491,18 +514,18 @@ public class HomeController {
                                         javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
                                         rightProfileImage.setClip(rightClip);
                                         rightProfileImage.getStyleClass().add("avatar");
+                                    } catch (Exception e) {
+                                        System.out.println("Error loading right profile image: " + e.getMessage());
+                                        rightProfileImage.setImage(new Image("genki/img/user-default.png", 400, 400, false, true));
                                     }
-                                } catch (Exception e) {
-                                    System.out.println(e.getMessage());
-                                    profilTrigger
-                                            .setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
                                 }
-                            }
+                            });
+                            
+                            System.out.println("Conversation set for: " + friendName + ", Online: " + isOnligne);
                         }
                     }
                 }
             }
-            System.out.println(chatContactName.getText() + profilTrigger.getImage());
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error updating chat header", e);
         }
@@ -751,6 +774,10 @@ public class HomeController {
             logger.log(Level.INFO, "Loading AddGroup.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddGroup.fxml"));
             Parent root = loader.load();
+            
+            // Get the AddGroupController and set the HomeController reference
+            AddGroupController controller = loader.getController();
+            controller.setHomeController(this);
 
             Stage dialogStage = new Stage();
             try {
@@ -1434,6 +1461,32 @@ public class HomeController {
             );
             groupsListContainer.getChildren().add(noGroupsLabel);
         }
+    }
+
+    public void handleAddGroupFromDialog(Group newGroup) {
+        Platform.runLater(() -> {
+            if (groupsListContainer.getChildren().isEmpty()) {
+                groupsListContainer.getChildren().clear();
+            } else {
+                // Remove "No groups found" message if it exists
+                groupsListContainer.getChildren().removeIf(node -> 
+                    node instanceof Label && ((Label)node).getText().equals("No groups found")
+                );
+            }
+
+            HBox newGroupContainer = ConversationItemBuilder.createGroupConversationItem(
+                    newGroup.getGroupProfilePicture(),
+                    newGroup.getGroupName(),
+                    "",
+                    "",
+                    2
+            );
+            groupsListContainer.getChildren().add(0, newGroupContainer);
+
+            if (!usersPane.isVisible()) {
+                switchUsers(false); // Switch to groups view if not already there
+            }
+        });
     }
 }
 

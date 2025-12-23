@@ -76,8 +76,8 @@
 			    <VBox fx:id="AmisNameStatus" spacing="2.0" style="-fx-cursor: hand;" HBox.hgrow="ALWAYS">
 			        <Label fx:id="chatContactName" style="-fx-text-fill: #232e2e; -fx-font-size: 16px; -fx-font-weight: bold;" text="Sarah Wilson" />
 			        <HBox alignment="CENTER_LEFT" spacing="6.0">
-			            <Circle  fill="green" radius="4.0" />
-			            <Label  style="-fx-text-fill: green; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
+		            <Circle fx:id="chatContactStatusCircle" fill="green" radius="4.0" />
+		            <Label fx:id="chatContactStatus" style="-fx-text-fill: green; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
 			        </HBox>
 			    </VBox>
 			    <!-- BOUTON LOGOUT à la fin -->
