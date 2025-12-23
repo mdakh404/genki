@@ -32,7 +32,7 @@
 
         <Button fx:id="btnCancel" onAction="#handleCancel" prefHeight="45" prefWidth="120" style="-fx-background-color: #ecf0f1; -fx-text-fill: #34495e; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 14; -fx-font-weight: bold;" text="Cancel" />
 
-        <Button fx:id="btnAddUser" onAction="#handleAddUser" prefHeight="45" prefWidth="120" style="-fx-background-color: #4A5CFF; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 14; -fx-font-weight: bold;" text="Add User" />
+        <Button fx:id="btnAddUser" onAction="#handleAddUser" prefHeight="45" prefWidth="120" style="-fx-background-color: #4A5CFF; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 14; -fx-font-weight: bold;" text="Add Friend" />
     </HBox>
 
 </VBox>

@@ -131,6 +131,9 @@ public class HomeController {
     @FXML private Label CurrentUsername;
     @FXML private Button btnNotifications;
     
+ // Ajouter après les constantes existantes (ligne ~160)
+    private static final String HOVER_COLOR = "rgb(61, 178, 197)";
+    private static final String BUTTON_HOVER_STYLE = "-fx-background-color: " + HOVER_COLOR + "; -fx-cursor: hand;";
 
 
 
@@ -156,7 +159,7 @@ public class HomeController {
         Platform.runLater(() -> {
             if (switchToUsers) {
                 // Users button active (cyan)
-                btnAll.setStyle("-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;");
+                btnAll.setStyle("-fx-background-co lor: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;");
                 btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;");
             } else {
                 // Groups button active (cyan)
@@ -214,11 +217,11 @@ public class HomeController {
                      messageInputArea.getChildren().clear();
                      messagesContainer.getChildren().clear();
 
-                     ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.png")));
+                     ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.jpg")));
                      startConversationImageView.setPreserveRatio(true);
                      startConversationImageView.setSmooth(true);
                      startConversationImageView.setFitWidth(700);
-                     startConversationImageView.setFitHeight(700);
+                     startConversationImageView.setFitHeight(400);
 
                      HBox buttonsContainer = new HBox();
                      buttonsContainer.setAlignment(Pos.CENTER);
@@ -680,7 +683,7 @@ public class HomeController {
         menuContainer.setPadding(new Insets(10));
         menuContainer.setMaxWidth(100);
         menuContainer.setBackground(new Background(new BackgroundFill(
-            Color.rgb(51, 213, 214),
+            Color.rgb(71, 82, 87),
             new CornerRadii(8), 
             Insets.EMPTY
         )));
@@ -693,7 +696,7 @@ public class HomeController {
         menuContainer.setEffect(dropShadow);
         
         // Créer le bouton "Add User"
-        Button addUserBtn = new Button("Add User");
+        Button addUserBtn = new Button("Add Friend");
         addUserBtn.setPrefWidth(150);
         // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded strings
         addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
@@ -701,7 +704,7 @@ public class HomeController {
         addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         addUserBtn.setStyle(
             "-fx-background-color: transparent; " +
-            "-fx-text-fill: black; " +
+            "-fx-text-fill: white; " +
             "-fx-cursor: hand; " +
             "-fx-padding: 5; " +
             "-fx-alignment: CENTER-LEFT; " +
@@ -728,7 +731,7 @@ public class HomeController {
         addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         addGroupBtn.setStyle(
             "-fx-background-color: transparent; " +
-            "-fx-text-fill: black; " +
+            "-fx-text-fill: white; " +
             "-fx-cursor: hand; " +
             "-fx-padding: 5; " +
             "-fx-alignment: CENTER-LEFT; " +
@@ -756,7 +759,7 @@ public class HomeController {
         joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         joinGroupBtn.setStyle(
             "-fx-background-color: transparent;" +
-            "-fx-text-fill: black; " +
+            "-fx-text-fill: white; " +
             "-fx-cursor: hand; " +
             "-fx-padding: 5; " +
             "-fx-alignment: CENTER-LEFT; " +
