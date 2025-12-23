@@ -40,6 +40,7 @@ import genki.utils.DBConnection;
 import genki.utils.UserDAO;
 import genki.utils.MessageItemBuilder;
 import org.bson.Document;
+import java.util.function.Consumer;
 
 import java.util.logging.Level;
 import java.io.IOException;
@@ -98,6 +99,10 @@ public class HomeController {
     private VBox messagesContainer;
     @FXML
     private ScrollPane messagesScrollPane;
+    @FXML
+    private VBox messagesLoadingSpinnerContainer;
+    @FXML
+    private javafx.scene.control.ProgressIndicator messagesLoadingSpinner;
     @FXML
     private TextField messageInput;
     @FXML
@@ -414,122 +419,200 @@ public class HomeController {
     public void setCurrentConversation(ObjectId conversationId, Boolean isOnligne) {
         System.out.println("The Set method...");
         this.currentConversationId = conversationId;
-        // Update chat header with friend's info using conversation participants
-        try {
-            String currentUserId = UserSession.getUserId();
-            // IMPROVEMENT 1: Resource Management - Use singleton DBConnection instead of creating new instance
-            DBConnection dbConnection = getDBConnection();
-            org.bson.Document conversationDoc = dbConnection
-                .getDatabase()
-                .getCollection("Conversation")
-                .find(new org.bson.Document("_id", conversationId))
-                .first();
-            if (conversationDoc != null && conversationDoc.containsKey("participantIds")) {
-                java.util.List<?> participants = conversationDoc.getList("participantIds", Object.class);
-                String friendIdStr = null;
-                for (Object pid : participants) {
-                    String pidStr = pid.toString();
-                    if (!pidStr.equals(currentUserId)) {
-                        friendIdStr = pidStr;
-                        break;
+        
+        // Show loading spinner immediately
+        Platform.runLater(() -> {
+            if (messagesLoadingSpinnerContainer != null) {
+                messagesLoadingSpinnerContainer.setVisible(true);
+                messagesLoadingSpinnerContainer.setManaged(true);
+            }
+            messagesContainer.getChildren().clear();
+        });
+        
+        // Thread 1: Update chat header with friend's info in background
+        new Thread(() -> {
+            try {
+                String currentUserId = UserSession.getUserId();
+                // IMPROVEMENT 1: Resource Management - Use singleton DBConnection instead of creating new instance
+                DBConnection dbConnection = getDBConnection();
+                org.bson.Document conversationDoc = dbConnection
+                    .getDatabase()
+                    .getCollection("Conversation")
+                    .find(new org.bson.Document("_id", conversationId))
+                    .first();
+                if (conversationDoc != null && conversationDoc.containsKey("participantIds")) {
+                    java.util.List<?> participants = conversationDoc.getList("participantIds", Object.class);
+                    String friendIdStr = null;
+                    for (Object pid : participants) {
+                        String pidStr = pid.toString();
+                        if (!pidStr.equals(currentUserId)) {
+                            friendIdStr = pidStr;
+                            break;
+                        }
                     }
-                }
-                // Store the recipient ID for message sending
-                this.currentRecipientId = friendIdStr;
-                
-                if (friendIdStr != null) {
-                    org.bson.types.ObjectId friendId = null;
-                    try {
-                        friendId = new org.bson.types.ObjectId(friendIdStr);
-                    } catch (Exception e) {
-                        System.out.println("Invalid ObjectId for friend: " + friendIdStr);
-                    }
-                    if (friendId != null) {
-                        UserDAO userDAO = new UserDAO();
-                        Document friendDoc = userDAO.getUserById(friendId);
-                        if (friendDoc != null) {
-                            String friendName = friendDoc.getString("username");
-                            // Store the recipient name as well for fallback matching
-                            this.currentRecipientName = friendName;
-                            String photoUrl = friendDoc.getString("photo_url");
-                            String bio = friendDoc.getString("bio");
-                            String role = friendDoc.getString("role");
+                    // Store the recipient ID for message sending
+                    this.currentRecipientId = friendIdStr;
+                    
+                    if (friendIdStr != null) {
+                        org.bson.types.ObjectId friendId = null;
+                        try {
+                            friendId = new org.bson.types.ObjectId(friendIdStr);
+                        } catch (Exception e) {
+                            System.out.println("Invalid ObjectId for friend: " + friendIdStr);
+                        }
+                        if (friendId != null) {
+                            UserDAO userDAO = new UserDAO();
+                            Document friendDoc = userDAO.getUserById(friendId);
+                            if (friendDoc != null) {
+                                String friendName = friendDoc.getString("username");
+                                // Store the recipient name as well for fallback matching
+                                this.currentRecipientName = friendName;
+                                String photoUrl = friendDoc.getString("photo_url");
+                                String bio = friendDoc.getString("bio");
+                                String role = friendDoc.getString("role");
 
-                            // Update UI on JavaFX thread - Thread Safe!
-                            Platform.runLater(() -> {
-                                // Update text labels
-                                if (chatContactName != null) {
-                                    chatContactName.setText(friendName != null ? friendName : "");
-                                }
-                                if (rightContactName != null) {
-                                    rightContactName.setText(friendName != null ? friendName : "");
-                                }
-                                if (rightContactBio != null) {
-                                    rightContactBio.setText(bio != null ? bio : "");
-                                }
-                                if (rightContactTitle != null) {
-                                    rightContactTitle.setText(role != null ? role : "");
-                                }
-                                
-                                // Update status and color
-                                if (chatContactStatus != null) {
-                                    chatContactStatus.setText(isOnligne ? "Online" : "Offline");
-                                    String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80" : "-fx-text-fill: #9ca3af";
-                                    chatContactStatus.setStyle(statusTextColor + "; -fx-font-size: 12px;");
-                                }
-                                
-                                if (chatContactStatusCircle != null) {
-                                    javafx.scene.paint.Color statusColor = isOnligne ? 
-                                        javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
-                                    chatContactStatusCircle.setFill(statusColor);
-                                }
-                                
-                                // Update profile images
-                                if (profilTrigger != null && photoUrl != null) {
-                                    try {
-                                        // Load at 180x180 for better clarity when displaying at 43x43
-                                        Image friendImg = new Image(photoUrl, 180, 180, false, true);
-                                        profilTrigger.setImage(friendImg);
-                                        profilTrigger.setFitWidth(43);
-                                        profilTrigger.setFitHeight(43);
-                                        profilTrigger.setPreserveRatio(false);
-                                        javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
-                                        profilTrigger.setClip(friendClip);
-                                        profilTrigger.getStyleClass().add("avatar");
-                                    } catch (Exception e) {
-                                        System.out.println("Error loading profile image: " + e.getMessage());
-                                        profilTrigger.setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
+                                // Update UI on JavaFX thread - Thread Safe!
+                                Platform.runLater(() -> {
+                                    // Update text labels
+                                    if (chatContactName != null) {
+                                        chatContactName.setText(friendName != null ? friendName : "");
                                     }
-                                }
-                                
-                                // Update right panel profile image
-                                if (rightProfileImage != null && photoUrl != null) {
-                                    try {
-                                        // Load at 400x400 for the larger right panel image (100x100 display)
-                                        Image rightImg = new Image(photoUrl, 400, 400, false, true);
-                                        rightProfileImage.setImage(rightImg);
-                                        rightProfileImage.setFitWidth(100);
-                                        rightProfileImage.setFitHeight(100);
-                                        rightProfileImage.setPreserveRatio(false);
-                                        javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
-                                        rightProfileImage.setClip(rightClip);
-                                        rightProfileImage.getStyleClass().add("avatar");
-                                    } catch (Exception e) {
-                                        System.out.println("Error loading right profile image: " + e.getMessage());
-                                        rightProfileImage.setImage(new Image("genki/img/user-default.png", 400, 400, false, true));
+                                    if (rightContactName != null) {
+                                        rightContactName.setText(friendName != null ? friendName : "");
                                     }
-                                }
-                            });
-                            
-                            System.out.println("Conversation set for: " + friendName + ", Online: " + isOnligne);
+                                    if (rightContactBio != null) {
+                                        rightContactBio.setText(bio != null ? bio : "");
+                                    }
+                                    if (rightContactTitle != null) {
+                                        rightContactTitle.setText(role != null ? role : "");
+                                    }
+                                    
+                                    // Update status and color
+                                    if (chatContactStatus != null) {
+                                        chatContactStatus.setText(isOnligne ? "Online" : "Offline");
+                                        String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80" : "-fx-text-fill: #9ca3af";
+                                        chatContactStatus.setStyle(statusTextColor + "; -fx-font-size: 12px;");
+                                    }
+                                    
+                                    if (chatContactStatusCircle != null) {
+                                        javafx.scene.paint.Color statusColor = isOnligne ? 
+                                            javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
+                                        chatContactStatusCircle.setFill(statusColor);
+                                    }
+                                    
+                                    // Update profile images
+                                    if (profilTrigger != null && photoUrl != null) {
+                                        try {
+                                            // Load at 180x180 for better clarity when displaying at 43x43
+                                            Image friendImg = new Image(photoUrl, 180, 180, false, true);
+                                            profilTrigger.setImage(friendImg);
+                                            profilTrigger.setFitWidth(43);
+                                            profilTrigger.setFitHeight(43);
+                                            profilTrigger.setPreserveRatio(false);
+                                            javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
+                                            profilTrigger.setClip(friendClip);
+                                            profilTrigger.getStyleClass().add("avatar");
+                                        } catch (Exception e) {
+                                            System.out.println("Error loading profile image: " + e.getMessage());
+                                            profilTrigger.setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
+                                        }
+                                    }
+                                    
+                                    // Update right panel profile image
+                                    if (rightProfileImage != null && photoUrl != null) {
+                                        try {
+                                            // Load at 400x400 for the larger right panel image (100x100 display)
+                                            Image rightImg = new Image(photoUrl, 400, 400, false, true);
+                                            rightProfileImage.setImage(rightImg);
+                                            rightProfileImage.setFitWidth(100);
+                                            rightProfileImage.setFitHeight(100);
+                                            rightProfileImage.setPreserveRatio(false);
+                                            javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
+                                            rightProfileImage.setClip(rightClip);
+                                            rightProfileImage.getStyleClass().add("avatar");
+                                        } catch (Exception e) {
+                                            System.out.println("Error loading right profile image: " + e.getMessage());
+                                            rightProfileImage.setImage(new Image("genki/img/user-default.png", 400, 400, false, true));
+                                        }
+                                    }
+                                });
+                                
+                                System.out.println("Conversation set for: " + friendName + ", Online: " + isOnligne);
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error updating chat header", e);
             }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error updating chat header", e);
-        }
-        showConversationMessages(conversationId);
+        }).start();
+        
+        // Thread 2: Load messages in parallel - runs at the same time as header update
+        loadMessagesInBackground(conversationId);
+    }
+    
+    /**
+     * Load messages in a separate background thread (parallel to header update)
+     */
+    private void loadMessagesInBackground(ObjectId conversationId) {
+        new Thread(() -> {
+            try {
+                MessageDAO messageDAO = new MessageDAO();
+                String currentUserId = genki.utils.UserSession.getUserId();
+                
+                // Fetch only the latest 50 messages for better performance
+                List<org.bson.Document> messagesList = new ArrayList<>();
+                messageDAO.getDatabase().getCollection("Message")
+                        .find(new org.bson.Document("conversationId", conversationId))
+                        .sort(new org.bson.Document("timestamp", -1))  // Latest first
+                        .limit(50)  // Only get last 50 messages
+                        .forEach((java.util.function.Consumer<org.bson.Document>) messagesList::add);
+                
+                // Reverse to get chronological order (oldest to newest)
+                java.util.Collections.reverse(messagesList);
+                
+                // Update UI on JavaFX thread
+                Platform.runLater(() -> {
+                    messagesContainer.getChildren().clear();
+                    
+                    for (org.bson.Document doc : messagesList) {
+                        String senderId = doc.getString("senderId");
+                        String senderName = doc.getString("senderName");
+                        String content = doc.getString("content");
+                        String senderImageUrl = doc.getString("senderImageUrl");
+                        if (senderImageUrl == null) {
+                            senderImageUrl = doc.getString("photo_url"); // Fallback for legacy data
+                        }
+                        
+                        if (senderId != null && senderId.equals(currentUserId)) {
+                            messagesContainer.getChildren().add(
+                                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content));
+                        } else {
+                            messagesContainer.getChildren().add(
+                                    MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content));
+                        }
+                    }
+                    
+                    // Hide loading spinner
+                    if (messagesLoadingSpinnerContainer != null) {
+                        messagesLoadingSpinnerContainer.setVisible(false);
+                        messagesLoadingSpinnerContainer.setManaged(false);
+                    }
+                    
+                    // Auto-scroll to bottom after loading messages
+                    scrollToBottom();
+                });
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error loading messages for conversation", e);
+                // Hide spinner on error too
+                Platform.runLater(() -> {
+                    if (messagesLoadingSpinnerContainer != null) {
+                        messagesLoadingSpinnerContainer.setVisible(false);
+                        messagesLoadingSpinnerContainer.setManaged(false);
+                    }
+                });
+            }
+        }).start();
     }
 
     // Sending Messages
@@ -539,42 +622,8 @@ public class HomeController {
      * 
      * @param conversationId The ObjectId of the conversation
      */
-    public void showConversationMessages(ObjectId conversationId) {
-        if (messagesContainer == null || conversationId == null)
-            return;
-        messagesContainer.getChildren().clear();
-        try {
-            MessageDAO messageDAO = new MessageDAO();
-            // Fetch all messages for the conversation, sorted by timestamp ascending
-            com.mongodb.client.FindIterable<org.bson.Document> docs = messageDAO.getDatabase().getCollection("Message")
-                    .find(new org.bson.Document("conversationId", conversationId))
-                    .sort(new org.bson.Document("timestamp", 1));
 
-            String currentUserId = genki.utils.UserSession.getUserId();
-            for (org.bson.Document doc : docs) {
-                String senderId = doc.getString("senderId");
-                String senderName = doc.getString("senderName");
-                String content = doc.getString("content");
-                String senderImageUrl = doc.getString("senderImageUrl");
-                if (senderImageUrl == null) {
-                    senderImageUrl = doc.getString("photo_url"); // Fallback for legacy data
-                }
-                System.out.println("Image message url : " + senderImageUrl);
-                if (senderId != null && senderId.equals(currentUserId)) {
-                    messagesContainer.getChildren().add(
-                            MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content));
-                } else {
-                    messagesContainer.getChildren().add(
-                            MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content));
-                }
-            }
-            // Auto-scroll to bottom after loading messages
-            scrollToBottom();
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error loading messages for conversation", e);
-        }
-    }
-
+    
     /**
      * Scroll the messages container to the bottom to show the latest messages
      */
