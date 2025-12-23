@@ -210,9 +210,26 @@ public class HomeController {
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
 
-                     chatHeader.getChildren().clear();
-                     messageInputArea.getChildren().clear();
-                     messagesContainer.getChildren().clear();
+        	// Au lieu de clear(), cachez les éléments
+            if (chatHeader != null) {
+                chatHeader.setVisible(false);
+                chatHeader.setManaged(false);
+            }
+            if (messageInputArea != null) {
+                messageInputArea.setVisible(false);
+                messageInputArea.setManaged(false);
+            }
+         // Ajoutez ces lignes pour éliminer les paddings/margins
+            if (messagesContainer != null) {
+                messagesContainer.setPadding(new Insets(10, 10, 10, 10)); // top, right, bottom, left
+                messagesContainer.setSpacing(10);
+            }
+            
+            if (messagesScrollPane != null) {
+                messagesScrollPane.setPadding(Insets.EMPTY);
+                messagesScrollPane.setFitToWidth(true);
+            }
+            messagesContainer.getChildren().clear();
 
                      ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.jpg")));
                      startConversationImageView.setPreserveRatio(true);
@@ -425,6 +442,19 @@ public class HomeController {
             if (messagesLoadingSpinnerContainer != null) {
                 messagesLoadingSpinnerContainer.setVisible(true);
                 messagesLoadingSpinnerContainer.setManaged(true);
+            }
+            if (chatHeader != null) {
+                chatHeader.setVisible(true);
+                chatHeader.setManaged(true);
+            }
+            if (messageInputArea != null) {
+                messageInputArea.setVisible(true);
+                messageInputArea.setManaged(true);
+            }
+         // Réinitialisez le padding/spacing
+            if (messagesContainer != null) {
+                messagesContainer.setPadding(new Insets(10));
+                messagesContainer.setSpacing(10);
             }
             messagesContainer.getChildren().clear();
         });

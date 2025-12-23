@@ -93,7 +93,7 @@
 
             <StackPane VBox.vgrow="ALWAYS">
                 <ScrollPane fx:id="messagesScrollPane" fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
-                    <VBox fx:id="messagesContainer" prefHeight="400" prefWidth="700" spacing="16">
+                    <VBox fx:id="messagesContainer" spacing="10" style="-fx-padding: 10;">
                         <!-- Messages will be added dynamically from the controller -->
                     </VBox>
                 </ScrollPane>
