@@ -131,9 +131,6 @@ public class HomeController {
     @FXML private Label CurrentUsername;
     @FXML private Button btnNotifications;
     
- // Ajouter après les constantes existantes (ligne ~160)
-    private static final String HOVER_COLOR = "rgb(61, 178, 197)";
-    private static final String BUTTON_HOVER_STYLE = "-fx-background-color: " + HOVER_COLOR + "; -fx-cursor: hand;";
 
 
 
@@ -159,7 +156,7 @@ public class HomeController {
         Platform.runLater(() -> {
             if (switchToUsers) {
                 // Users button active (cyan)
-                btnAll.setStyle("-fx-background-co lor: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;");
+                btnAll.setStyle("-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;");
                 btnGroups.setStyle("-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;");
             } else {
                 // Groups button active (cyan)
@@ -1541,4 +1538,3 @@ public class HomeController {
         });
     }
 }
-
