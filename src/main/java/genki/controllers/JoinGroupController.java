@@ -6,6 +6,8 @@ import genki.utils.DBConnection;
 import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
 import genki.utils.NotificationDAO;
+import genki.utils.ConversationItemBuilder;
+import genki.utils.ConversationDAO;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -47,6 +49,11 @@ public class JoinGroupController {
     
     // Liste de tous les groupes disponibles
     private ObservableList<String> allGroups = FXCollections.observableArrayList();
+    private HomeController homeController;
+    
+    public void setHomeController(HomeController homeController) {
+        this.homeController = homeController;
+    }
     
     @FXML
     public void initialize() {
@@ -137,6 +144,18 @@ public class JoinGroupController {
             Document groupDoc = groupsCollection.find(
                     Filters.eq("group_name", nameGroup)
             ).first();
+            
+            // Check if group was found
+            if (groupDoc == null) {
+                AlertConstruct.alertConstructor(
+                        "Group Not Found",
+                        "",
+                        "No group found with the name: " + nameGroup,
+                        Alert.AlertType.ERROR
+                );
+                logger.warning("Group not found: " + nameGroup);
+                return;
+            }
 
 
             if (groupDoc.getBoolean("is_public")) {
@@ -163,6 +182,44 @@ public class JoinGroupController {
                 );
 
                 UserSession.addGroup(nvGroup);
+                
+                // 🔥 Create Conversation and cache it for instant display
+                java.util.ArrayList<String> participantIds = new java.util.ArrayList<>();
+                participantIds.add(UserSession.getUserId());
+                
+                // Add all group members to participants
+                if (groupDoc.getList("users", String.class) != null) {
+                    participantIds.addAll(groupDoc.getList("users", String.class));
+                }
+                
+                ConversationDAO conversationDAO = new ConversationDAO();
+                ObjectId conversationId = conversationDAO.createGroupConversation(
+                    participantIds,
+                    groupDoc.getString("group_name"),
+                    groupDoc.getString("profile_picture")
+                );
+                
+                // Create UI item and cache it
+                if (conversationId != null && homeController != null) {
+                    javafx.scene.layout.HBox newGroupItem = ConversationItemBuilder.createConversationItem(
+                        groupDoc.getString("profile_picture") != null ? groupDoc.getString("profile_picture") : "genki/img/group-default.png",
+                        groupDoc.getString("group_name"),
+                        "",
+                        "",
+                        0,
+                        false
+                    );
+                    
+                    newGroupItem.setOnMouseClicked(e -> homeController.setCurrentConversation(conversationId, false));
+                    
+                    // 🔥 Cache the new group conversation
+                    UserSession.addGroupConversationItem(newGroupItem);
+                    
+                    // 🔥 Display immediately in UI
+                    homeController.addNewGroupToUI(newGroupItem);
+                    
+                    System.out.println("✅ Joined group cached and displayed: " + nameGroup);
+                }
 
                 AlertConstruct.alertConstructor(
                            "Success",
@@ -170,6 +227,10 @@ public class JoinGroupController {
                         "You have joined " + nameGroup,
                         Alert.AlertType.INFORMATION
                 );
+                
+                // Close dialog
+                Stage stage = (Stage) btnJoinGroup.getScene().getWindow();
+                stage.close();
 
             } else {
 

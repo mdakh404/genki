@@ -20,6 +20,7 @@ public class UserSession {
     private static ArrayList<Conversation> listConversations = new ArrayList<>();
     public  static ArrayList<User> ConnectedUsers = new ArrayList<>();
     public  static ArrayList<HBox> conversationItems = new ArrayList<>();
+    public  static ArrayList<HBox> groupConversationItems = new ArrayList<>();
     private static clientSocketController ClientSocket; 
 
     private UserSession() {}
@@ -116,6 +117,22 @@ public class UserSession {
 
     public static void removeConversationItem(HBox item) {
         conversationItems.remove(item);
+    }
+
+    public static ArrayList<HBox> getGroupConversationItems() {
+        return groupConversationItems;
+    }
+
+    public static void setGroupConversationItems(ArrayList<HBox> items) {
+        groupConversationItems = items;
+    }
+
+    public static void addGroupConversationItem(HBox item) {
+        groupConversationItems.add(item);
+    }
+
+    public static void removeGroupConversationItem(HBox item) {
+        groupConversationItems.remove(item);
     }
 
     public static void addFriend(User friend){

@@ -339,12 +339,12 @@ public class HomeController {
             }
         }).start();
 
-        // Load groups in background thread
+        // Load group conversations in background thread with caching
         new Thread(() -> {
             try {
-                loadGroups();
+                loadGroupConversations();
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Error loading groups in background", e);
+                logger.log(Level.SEVERE, "Error loading group conversations in background", e);
             }
         }).start();
 
@@ -928,9 +928,13 @@ public class HomeController {
     // ajouter ca : 
     private void openJoinGroupDialog() {
         try {
-            logger.log(Level.INFO, "Loading AddGroup.fxml");
+            logger.log(Level.INFO, "Loading JoinGroup.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/JoinGroup.fxml"));
             Parent root = loader.load();
+            
+            // Get the JoinGroupController and set the HomeController reference
+            JoinGroupController controller = loader.getController();
+            controller.setHomeController(this);
             
             Stage dialogStage = new Stage();
             try {
@@ -947,8 +951,8 @@ public class HomeController {
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error loading AddGroup dialog", e);
-            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load AddGroup dialog.");
+            logger.log(Level.SEVERE, "Error loading JoinGroup dialog", e);
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to load JoinGroup dialog.");
             errorAlert.showAndWait();
         }
     }
@@ -1252,6 +1256,82 @@ public class HomeController {
             });
         }
     }
+    
+    /**
+     * Load group conversations and cache HBox items for fast switching
+     */
+    private void loadGroupConversations() {
+        try {
+            String currentUserId = UserSession.getUserId();
+            
+            // Ensure dbConnection is initialized
+            if (this.dbConnection == null) {
+                this.dbConnection = new DBConnection("genki_testing");
+                logger.log(Level.INFO, "DBConnection was null, reinitializing...");
+            }
+            
+            DBConnection dbConnection = this.dbConnection;
+            
+            System.out.println("Loading group conversations for user: " + currentUserId);
+            
+            // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
+            var groupConversations = dbConnection
+                .getDatabase()
+                .getCollection("Conversation")
+                .find(new org.bson.Document("type", "group")
+                    .append("participantIds", new org.bson.Document("$in", List.of(currentUserId))));
+            
+            int groupCount = 0;
+            for (org.bson.Document conversationDoc : groupConversations) {
+                groupCount++;
+                ObjectId conversationId = conversationDoc.getObjectId("_id");
+                String groupName = conversationDoc.getString("groupName");
+                if (groupName == null || groupName.isEmpty()) {
+                    groupName = "Group Chat";
+                }
+                
+                String lastMessage = conversationDoc.getString("lastMessageContent");
+                if (lastMessage == null || lastMessage.isEmpty()) {
+                    lastMessage = "No messages yet";
+                }
+                
+                String time = "";
+                Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+                if (lastMsgTimeObj != null) {
+                    time = formatMessageTime(lastMsgTimeObj);
+                }
+                
+                int unreadCount = 0;
+                boolean isOnline = false;
+                
+                String groupPhotoUrl = conversationDoc.getString("photo_url");
+                if (groupPhotoUrl == null) {
+                    groupPhotoUrl = "genki/img/group-default.png";
+                }
+                
+                HBox conversationItem = ConversationItemBuilder.createConversationItem(
+                    groupPhotoUrl,
+                    groupName,
+                    lastMessage,
+                    time,
+                    unreadCount,
+                    isOnline
+                );
+
+                conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
+                
+                // Cache the group conversation item
+                UserSession.addGroupConversationItem(conversationItem);
+                System.out.println("Cached group: " + groupName);
+            }
+            
+            System.out.println("Total groups loaded: " + groupCount);
+            
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error loading group conversations", e);
+            e.printStackTrace();
+        }
+    }
     //hamza ajoute ca
     public void handleAddUserFromDialog(String username) {
 
@@ -1339,62 +1419,10 @@ public class HomeController {
 	        // Effacer la liste actuelle
 	        groupsListContainer.getChildren().clear();
 	        
-	        String currentUserId = UserSession.getUserId();
-            DBConnection dbConnection = this.dbConnection;
+	        // Simply re-display the cached group conversation items
+	        List<HBox> groupItems = UserSession.getGroupConversationItems();
 	        
-	        // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
-	        var groupConversations = dbConnection
-	            .getDatabase()
-	            .getCollection("Conversation")
-	            .find(new org.bson.Document("type", "group")
-	                .append("participantIds", new org.bson.Document("$in", List.of(currentUserId))));
-	        
-	        boolean hasGroupConversations = false;
-	        for (org.bson.Document conversationDoc : groupConversations) {
-	            hasGroupConversations = true;
-	            ObjectId conversationId = conversationDoc.getObjectId("_id");
-	            String groupName = conversationDoc.getString("groupName");
-	            if (groupName == null || groupName.isEmpty()) {
-	                groupName = "Group Chat";
-	            }
-	            
-	            String lastMessage = conversationDoc.getString("lastMessageContent");
-	            if (lastMessage == null || lastMessage.isEmpty()) {
-	                lastMessage = "No messages yet";
-	            }
-	            
-	            String time = "";
-	            Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
-	            if (lastMsgTimeObj != null) {
-	                time = formatMessageTime(lastMsgTimeObj);
-	            }
-	            
-	            int unreadCount = 0;
-	            
-	            // Pour les groupes, pas de statut "online"
-	            boolean isOnline = false;
-	            
-	            // Image par défaut pour les groupes
-	            String groupPhotoUrl = conversationDoc.getString("photo_url");
-	            if (groupPhotoUrl == null) {
-	                groupPhotoUrl = "genki/img/group-default.png";
-	            }
-	            
-	            HBox conversationItem = ConversationItemBuilder.createConversationItem(
-	                groupPhotoUrl,
-	                groupName,
-	                lastMessage,
-	                time,
-	                unreadCount,
-	                isOnline
-	            );
-
-	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
-	            groupsListContainer.getChildren().add(conversationItem);
-	        }
-	        
-	        // If no group conversations found, show message
-	        if (!hasGroupConversations) {
+	        if (groupItems == null || groupItems.isEmpty()) {
 	            Label noGroupsLabel = new Label("No groups found");
 	            noGroupsLabel.setStyle(
 	                "-fx-text-fill: #6b9e9e; " +
@@ -1402,10 +1430,16 @@ public class HomeController {
 	                "-fx-padding: 20;"
 	            );
 	            groupsListContainer.getChildren().add(noGroupsLabel);
+	            return;
+	        }
+	        
+	        // Add all cached group conversation items back to the container
+	        for (HBox item : groupItems) {
+	            groupsListContainer.getChildren().add(item);
 	        }
 	        
 	    } catch (Exception e) {
-	        logger.log(Level.WARNING, "Error loading group conversations", e);
+	        logger.log(Level.WARNING, "Error displaying group conversations", e);
 	    }
 	}
 
@@ -1515,6 +1549,22 @@ public class HomeController {
         }
     }
 
+    /**
+     * Called when user joins a group to immediately display it
+     */
+    public void addNewGroupToUI(HBox groupItem) {
+        Platform.runLater(() -> {
+            // Remove "No groups found" label if exists
+            groupsListContainer.getChildren().removeIf(node -> 
+                node instanceof Label && ((Label)node).getText().equals("No groups found")
+            );
+            
+            // Add new group to top of list
+            groupsListContainer.getChildren().add(0, groupItem);
+            System.out.println("✅ New group displayed in UI");
+        });
+    }
+
     public void handleAddGroupFromDialog(Group newGroup) {
         Platform.runLater(() -> {
             String currentUserId = UserSession.getUserId();
@@ -1555,11 +1605,18 @@ public class HomeController {
                 
                 // Add click handler to open group conversation
                 newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
+                
+                // 🔥 CRITICAL: Add to cache so it persists when switching views
+                UserSession.addGroupConversationItem(newGroupContainer);
+                
+                // Display immediately in UI
                 groupsListContainer.getChildren().add(0, newGroupContainer);
 
                 if (!usersPane.isVisible()) {
                     switchUsers(false); // Switch to groups view if not already there
                 }
+                
+                System.out.println("✅ New group added and cached: " + newGroup.getGroupName());
             }
         });
     }
