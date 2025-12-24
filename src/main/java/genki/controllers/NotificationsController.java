@@ -43,7 +43,7 @@ public class NotificationsController {
     private static DBConnection notificationsDBConnection = new DBConnection("genki_testing");
     private static Logger logger = Logger.getLogger(NotificationsController.class.getName());
 
-    private static MongoCollection<Document> usersCollection = notificationsDBConnection.getCollection("username");
+    private static MongoCollection<Document> usersCollection = notificationsDBConnection.getCollection("users");
     private static MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
     private static MongoCollection<Document> groupsCollection = notificationsDBConnection.getCollection("groups");
 
