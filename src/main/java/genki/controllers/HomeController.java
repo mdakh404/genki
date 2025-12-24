@@ -366,12 +366,17 @@ public class HomeController {
 
         }*/
         // Configuration des filtres - Switch between users and groups with proper button styling
-        // Just toggles visibility - data is already loaded during initialize()
         if (btnAll != null) {
-            btnAll.setOnMouseClicked(e -> switchUsers(true));
+            btnAll.setOnMouseClicked(e -> {
+                switchUsers(true);
+                showUserConversations();
+            });
         }
         if (btnGroups != null) {
-            btnGroups.setOnMouseClicked(e -> switchUsers(false));
+            btnGroups.setOnMouseClicked(e -> {
+                switchUsers(false);
+                showGroupConversations();
+            });
         }
         
 
@@ -408,7 +413,10 @@ public class HomeController {
      * Set the current conversation and show its messages
      */
     public void setCurrentConversation(ObjectId conversationId, Boolean isOnligne) {
-        System.out.println("The Set method...");
+        System.out.println("╔═══════════════════════════════════════════════════╗");
+        System.out.println("║ CONVERSATION OPENED - DEBUG INFO                  ║");
+        System.out.println("╚═══════════════════════════════════════════════════╝");
+        System.out.println("Conversation ID: " + conversationId);
         this.currentConversationId = conversationId;
         
         // Show loading spinner immediately
@@ -420,116 +428,192 @@ public class HomeController {
             messagesContainer.getChildren().clear();
         });
         
-        // Thread 1: Update chat header with friend's info in background
+        // Thread 1: Update chat header with friend's or group info in background
         new Thread(() -> {
             try {
                 String currentUserId = UserSession.getUserId();
-                // IMPROVEMENT 1: Resource Management - Use singleton DBConnection instead of creating new instance
-                // Use the controller's dbConnection instance
                 DBConnection dbConnection = this.dbConnection;
                 org.bson.Document conversationDoc = dbConnection
                     .getDatabase()
                     .getCollection("Conversation")
                     .find(new org.bson.Document("_id", conversationId))
                     .first();
-                if (conversationDoc != null && conversationDoc.containsKey("participantIds")) {
-                    java.util.List<?> participants = conversationDoc.getList("participantIds", Object.class);
-                    String friendIdStr = null;
-                    for (Object pid : participants) {
-                        String pidStr = pid.toString();
-                        if (!pidStr.equals(currentUserId)) {
-                            friendIdStr = pidStr;
-                            break;
-                        }
-                    }
-                    // Store the recipient ID for message sending
-                    this.currentRecipientId = friendIdStr;
                     
-                    if (friendIdStr != null) {
-                        org.bson.types.ObjectId friendId = null;
-                        try {
-                            friendId = new org.bson.types.ObjectId(friendIdStr);
-                        } catch (Exception e) {
-                            System.out.println("Invalid ObjectId for friend: " + friendIdStr);
+                if (conversationDoc != null) {
+                    String conversationType = conversationDoc.getString("type");
+                    System.out.println("Conversation Type: " + conversationType);
+                    
+                    if ("group".equals(conversationType)) {
+                        // ========== GROUP CONVERSATION ==========
+                        String groupName = conversationDoc.getString("groupName");
+                        String groupPhotoUrl = conversationDoc.getString("photo_url");
+                        System.out.println("Group Name: " + groupName);
+                        System.out.println("Group Conversation Loaded ✓");
+                        
+                        this.currentRecipientId = null; // No single recipient for groups
+                        this.currentRecipientName = null;
+                        
+                        Platform.runLater(() -> {
+                            // Update header
+                            if (chatContactName != null) {
+                                chatContactName.setText(groupName != null ? groupName : "Group Chat");
+                            }
+                            
+                            // For groups, don't show online/offline status
+                            if (chatContactStatus != null) {
+                                chatContactStatus.setText("Group");
+                                chatContactStatus.setStyle("-fx-text-fill: #6b9e9e; -fx-font-size: 12px;");
+                            }
+                            
+                            if (chatContactStatusCircle != null) {
+                                chatContactStatusCircle.setFill(javafx.scene.paint.Color.web("#6b9e9e"));
+                            }
+                            
+                            // Update right panel
+                            if (rightContactName != null) {
+                                rightContactName.setText(groupName != null ? groupName : "Group Chat");
+                            }
+                            if (rightContactTitle != null) {
+                                rightContactTitle.setText("Group");
+                            }
+                            if (rightContactBio != null) {
+                                rightContactBio.setText("");
+                            }
+                            
+                            // Update group images
+                            String photoUrl = groupPhotoUrl != null ? groupPhotoUrl : "genki/img/group-default.png";
+                            
+                            if (profilTrigger != null) {
+                                try {
+                                    Image groupImg = new Image(photoUrl, 180, 180, false, true);
+                                    profilTrigger.setImage(groupImg);
+                                    profilTrigger.setFitWidth(43);
+                                    profilTrigger.setFitHeight(43);
+                                    profilTrigger.setPreserveRatio(false);
+                                    javafx.scene.shape.Circle groupClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
+                                    profilTrigger.setClip(groupClip);
+                                    profilTrigger.getStyleClass().add("avatar");
+                                } catch (Exception e) {
+                                    System.out.println("Error loading group image: " + e.getMessage());
+                                    profilTrigger.setImage(new Image("genki/img/group-default.png", 180, 180, false, true));
+                                }
+                            }
+                            
+                            if (rightProfileImage != null) {
+                                try {
+                                    Image rightImg = new Image(photoUrl, 400, 400, false, true);
+                                    rightProfileImage.setImage(rightImg);
+                                    rightProfileImage.setFitWidth(100);
+                                    rightProfileImage.setFitHeight(100);
+                                    rightProfileImage.setPreserveRatio(false);
+                                    javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
+                                    rightProfileImage.setClip(rightClip);
+                                    rightProfileImage.getStyleClass().add("avatar");
+                                } catch (Exception e) {
+                                    System.out.println("Error loading right group image: " + e.getMessage());
+                                    rightProfileImage.setImage(new Image("genki/img/group-default.png", 400, 400, false, true));
+                                }
+                            }
+                            
+                            System.out.println("Group conversation set for: " + groupName);
+                        });
+                        
+                    } else {
+                        // ========== DIRECT USER CONVERSATION ==========
+                        java.util.List<?> participants = conversationDoc.getList("participantIds", Object.class);
+                        String friendIdStr = null;
+                        for (Object pid : participants) {
+                            String pidStr = pid.toString();
+                            if (!pidStr.equals(currentUserId)) {
+                                friendIdStr = pidStr;
+                                break;
+                            }
                         }
-                        if (friendId != null) {
-                            UserDAO userDAO = new UserDAO();
-                            Document friendDoc = userDAO.getUserById(friendId);
-                            if (friendDoc != null) {
-                                String friendName = friendDoc.getString("username");
-                                // Store the recipient name as well for fallback matching
-                                this.currentRecipientName = friendName;
-                                String photoUrl = friendDoc.getString("photo_url");
-                                String bio = friendDoc.getString("bio");
-                                String role = friendDoc.getString("role");
+                        
+                        this.currentRecipientId = friendIdStr;
+                        
+                        if (friendIdStr != null) {
+                            org.bson.types.ObjectId friendId = null;
+                            try {
+                                friendId = new org.bson.types.ObjectId(friendIdStr);
+                            } catch (Exception e) {
+                                System.out.println("Invalid ObjectId for friend: " + friendIdStr);
+                            }
+                            if (friendId != null) {
+                                UserDAO userDAO = new UserDAO();
+                                Document friendDoc = userDAO.getUserById(friendId);
+                                if (friendDoc != null) {
+                                    String friendName = friendDoc.getString("username");
+                                    this.currentRecipientName = friendName;
+                                    String photoUrl = friendDoc.getString("photo_url");
+                                    String bio = friendDoc.getString("bio");
+                                    String role = friendDoc.getString("role");
 
-                                // Update UI on JavaFX thread - Thread Safe!
-                                Platform.runLater(() -> {
-                                    // Update text labels
-                                    if (chatContactName != null) {
-                                        chatContactName.setText(friendName != null ? friendName : "");
-                                    }
-                                    if (rightContactName != null) {
-                                        rightContactName.setText(friendName != null ? friendName : "");
-                                    }
-                                    if (rightContactBio != null) {
-                                        rightContactBio.setText(bio != null ? bio : "");
-                                    }
-                                    if (rightContactTitle != null) {
-                                        rightContactTitle.setText(role != null ? role : "");
-                                    }
-                                    
-                                    // Update status and color
-                                    if (chatContactStatus != null) {
-                                        chatContactStatus.setText(isOnligne ? "Online" : "Offline");
-                                        String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80" : "-fx-text-fill: #9ca3af";
-                                        chatContactStatus.setStyle(statusTextColor + "; -fx-font-size: 12px;");
-                                    }
-                                    
-                                    if (chatContactStatusCircle != null) {
-                                        javafx.scene.paint.Color statusColor = isOnligne ? 
-                                            javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
-                                        chatContactStatusCircle.setFill(statusColor);
-                                    }
-                                    
-                                    // Update profile images
-                                    if (profilTrigger != null && photoUrl != null) {
-                                        try {
-                                            // Load at 180x180 for better clarity when displaying at 43x43
-                                            Image friendImg = new Image(photoUrl, 180, 180, false, true);
-                                            profilTrigger.setImage(friendImg);
-                                            profilTrigger.setFitWidth(43);
-                                            profilTrigger.setFitHeight(43);
-                                            profilTrigger.setPreserveRatio(false);
-                                            javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
-                                            profilTrigger.setClip(friendClip);
-                                            profilTrigger.getStyleClass().add("avatar");
-                                        } catch (Exception e) {
-                                            System.out.println("Error loading profile image: " + e.getMessage());
-                                            profilTrigger.setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
+                                    Platform.runLater(() -> {
+                                        // Update text labels
+                                        if (chatContactName != null) {
+                                            chatContactName.setText(friendName != null ? friendName : "");
                                         }
-                                    }
-                                    
-                                    // Update right panel profile image
-                                    if (rightProfileImage != null && photoUrl != null) {
-                                        try {
-                                            // Load at 400x400 for the larger right panel image (100x100 display)
-                                            Image rightImg = new Image(photoUrl, 400, 400, false, true);
-                                            rightProfileImage.setImage(rightImg);
-                                            rightProfileImage.setFitWidth(100);
-                                            rightProfileImage.setFitHeight(100);
-                                            rightProfileImage.setPreserveRatio(false);
-                                            javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
-                                            rightProfileImage.setClip(rightClip);
-                                            rightProfileImage.getStyleClass().add("avatar");
-                                        } catch (Exception e) {
-                                            System.out.println("Error loading right profile image: " + e.getMessage());
-                                            rightProfileImage.setImage(new Image("genki/img/user-default.png", 400, 400, false, true));
+                                        if (rightContactName != null) {
+                                            rightContactName.setText(friendName != null ? friendName : "");
                                         }
-                                    }
-                                });
-                                
-                                System.out.println("Conversation set for: " + friendName + ", Online: " + isOnligne);
+                                        if (rightContactBio != null) {
+                                            rightContactBio.setText(bio != null ? bio : "");
+                                        }
+                                        if (rightContactTitle != null) {
+                                            rightContactTitle.setText(role != null ? role : "");
+                                        }
+                                        
+                                        // Update status and color
+                                        if (chatContactStatus != null) {
+                                            chatContactStatus.setText(isOnligne ? "Online" : "Offline");
+                                            String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80" : "-fx-text-fill: #9ca3af";
+                                            chatContactStatus.setStyle(statusTextColor + "; -fx-font-size: 12px;");
+                                        }
+                                        
+                                        if (chatContactStatusCircle != null) {
+                                            javafx.scene.paint.Color statusColor = isOnligne ? 
+                                                javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af");
+                                            chatContactStatusCircle.setFill(statusColor);
+                                        }
+                                        
+                                        // Update profile images
+                                        if (profilTrigger != null && photoUrl != null) {
+                                            try {
+                                                Image friendImg = new Image(photoUrl, 180, 180, false, true);
+                                                profilTrigger.setImage(friendImg);
+                                                profilTrigger.setFitWidth(43);
+                                                profilTrigger.setFitHeight(43);
+                                                profilTrigger.setPreserveRatio(false);
+                                                javafx.scene.shape.Circle friendClip = new javafx.scene.shape.Circle(21.5, 21.5, 21.5);
+                                                profilTrigger.setClip(friendClip);
+                                                profilTrigger.getStyleClass().add("avatar");
+                                            } catch (Exception e) {
+                                                System.out.println("Error loading profile image: " + e.getMessage());
+                                                profilTrigger.setImage(new Image("genki/img/user-default.png", 180, 180, false, true));
+                                            }
+                                        }
+                                        
+                                        // Update right panel profile image
+                                        if (rightProfileImage != null && photoUrl != null) {
+                                            try {
+                                                Image rightImg = new Image(photoUrl, 400, 400, false, true);
+                                                rightProfileImage.setImage(rightImg);
+                                                rightProfileImage.setFitWidth(100);
+                                                rightProfileImage.setFitHeight(100);
+                                                rightProfileImage.setPreserveRatio(false);
+                                                javafx.scene.shape.Circle rightClip = new javafx.scene.shape.Circle(50, 50, 50);
+                                                rightProfileImage.setClip(rightClip);
+                                                rightProfileImage.getStyleClass().add("avatar");
+                                            } catch (Exception e) {
+                                                System.out.println("Error loading right profile image: " + e.getMessage());
+                                                rightProfileImage.setImage(new Image("genki/img/user-default.png", 400, 400, false, true));
+                                            }
+                                        }
+                                    });
+                                    
+                                    System.out.println("User conversation set for: " + friendName + ", Online: " + isOnligne);
+                                }
                             }
                         }
                     }
@@ -1211,94 +1295,36 @@ public class HomeController {
 	}
 // aussi ca par hamza
 	/**
-	 * Affiche uniquement les conversations directes (users)
+	 * Affiche uniquement les conversations directes (users) - from cached UserSession data
 	 */
 	private void showUserConversations() {
 	    try {
-	        // Mettre à jour les styles des boutons
 	        updateFilterButtonStyles(true);
-	        
-	        // Effacer la liste actuelle
 	        conversationListContainer.getChildren().clear();
 	        
-	        UserDAO userDAO = new UserDAO();
-	        String currentUsername = UserSession.getUsername();
+	        // Simply re-display the items that were already loaded in loadConversations()
+	        // UserSession stores the HBox conversation items directly
+	        List<HBox> conversationItems = UserSession.getConversationItems();
 	        
-	        // Récupérer tous les amis
-	        List<Document> friends = userDAO.getFriendsForUser(currentUsername);
-	        
-	        if (friends == null || friends.isEmpty()) {
-	        	Label noUsersLabel = new Label("No users found");
+	        if (conversationItems == null || conversationItems.isEmpty()) {
+	            Label noUsersLabel = new Label("No users found");
 	            noUsersLabel.setStyle(
 	                "-fx-text-fill: white; " +
 	                "-fx-font-size: 14px; " +
 	                "-fx-padding: 20;"
 	            );
 	            conversationListContainer.getChildren().add(noUsersLabel);
-	            logger.log(Level.INFO, "No friends found for user: " + currentUsername);
+	            logger.log(Level.INFO, "No conversations found");
 	            return;
 	        }
 	        
-	        String currentUserId = UserSession.getUserId();
-	        ConversationDAO conversationDAO = new ConversationDAO();
-	        
-	        // Pour chaque ami, créer un item de conversation
-	        for (Document friendDoc : friends) {
-	            String friendName = friendDoc.getString("username");
-	            String photoUrl = friendDoc.getString("photo_url");
-	            
-	            String friendId;
-	            Object objId = friendDoc.get("_id");
-	            if (objId instanceof org.bson.types.ObjectId) {
-	                friendId = ((org.bson.types.ObjectId) objId).toHexString();
-	            } else {
-	                friendId = String.valueOf(objId);
-	            }
-	            
-	            ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
-	            
-	            // Récupérer le dernier message
-	            String lastMessage = "";
-	            String time = "";
-	            try {
-                    DBConnection dbConnection = this.dbConnection;
-	                org.bson.Document conversationDoc = dbConnection
-	                    .getDatabase()
-	                    .getCollection("Conversation")
-	                    .find(new org.bson.Document("_id", conversationId)
-	                        .append("type", "direct")) // Filtre pour type "direct"
-	                    .first();
-	                    
-	                if (conversationDoc != null) {
-	                    lastMessage = conversationDoc.getString("lastMessageContent");
-	                    Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
-	                    
-	                    if (lastMsgTimeObj != null) {
-	                        time = formatMessageTime(lastMsgTimeObj);
-	                    }
-	                }
-	            } catch (Exception ex) {
-	                logger.log(Level.WARNING, "Error fetching last message: " + ex.getMessage());
-	            }
-	            
-	            int unreadCount = 0;
-	            boolean isOnline = true;
-	            
-	            HBox conversationItem = ConversationItemBuilder.createConversationItem(
-	                photoUrl != null ? photoUrl : "genki/img/user-default.png",
-	                friendName,
-	                lastMessage != null ? lastMessage : "",
-	                time != null ? time : "",
-	                unreadCount,
-	                isOnline
-	            );
-	            
-	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
-	            conversationListContainer.getChildren().add(conversationItem);
+	        // Add all cached conversation items back to the container
+	        for (HBox item : conversationItems) {
+	            conversationListContainer.getChildren().add(item);
 	        }
 	        
 	    } catch (Exception e) {
-	        logger.log(Level.WARNING, "Error loading user conversations", e);
+	        logger.log(Level.WARNING, "Error displaying user conversations", e);
 	    }
 	}
 
@@ -1311,7 +1337,7 @@ public class HomeController {
 	        updateFilterButtonStyles(false);
 	        
 	        // Effacer la liste actuelle
-	        conversationListContainer.getChildren().clear();
+	        groupsListContainer.getChildren().clear();
 	        
 	        String currentUserId = UserSession.getUserId();
             DBConnection dbConnection = this.dbConnection;
@@ -1321,9 +1347,11 @@ public class HomeController {
 	            .getDatabase()
 	            .getCollection("Conversation")
 	            .find(new org.bson.Document("type", "group")
-	                .append("participantIds", currentUserId));
+	                .append("participantIds", new org.bson.Document("$in", List.of(currentUserId))));
 	        
+	        boolean hasGroupConversations = false;
 	        for (org.bson.Document conversationDoc : groupConversations) {
+	            hasGroupConversations = true;
 	            ObjectId conversationId = conversationDoc.getObjectId("_id");
 	            String groupName = conversationDoc.getString("groupName");
 	            if (groupName == null || groupName.isEmpty()) {
@@ -1331,7 +1359,7 @@ public class HomeController {
 	            }
 	            
 	            String lastMessage = conversationDoc.getString("lastMessageContent");
-	            if (lastMessage == null) {
+	            if (lastMessage == null || lastMessage.isEmpty()) {
 	                lastMessage = "No messages yet";
 	            }
 	            
@@ -1362,40 +1390,23 @@ public class HomeController {
 	            );
 
 	            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
-	            conversationListContainer.getChildren().add(conversationItem);
+	            groupsListContainer.getChildren().add(conversationItem);
+	        }
+	        
+	        // If no group conversations found, show message
+	        if (!hasGroupConversations) {
+	            Label noGroupsLabel = new Label("No groups found");
+	            noGroupsLabel.setStyle(
+	                "-fx-text-fill: #6b9e9e; " +
+	                "-fx-font-size: 14px; " +
+	                "-fx-padding: 20;"
+	            );
+	            groupsListContainer.getChildren().add(noGroupsLabel);
 	        }
 	        
 	    } catch (Exception e) {
 	        logger.log(Level.WARNING, "Error loading group conversations", e);
 	    }
-	    
-	// Ajouter ces lignes après la boucle :
-	if (conversationListContainer.getChildren().isEmpty()) {
-
-        if (UserSession.getGroups().isEmpty()) {
-            Label noGroupsLabel = new Label("No groups found");
-            noGroupsLabel.setStyle(
-                    "-fx-text-fill: #6b9e9e; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-padding: 20;"
-            );
-            conversationListContainer.getChildren().add(noGroupsLabel);
-        } else {
-
-                for (Group group : UserSession.getGroups()) {
-                    HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
-                            group.getGroupProfilePicture(),
-                            group.getGroupName(),
-                            "",
-                            "",
-                            2
-                    );
-
-                    conversationListContainer.getChildren().add(nvGroupContainer);
-                }
-
-        }
-	}
 	}
 
 	// aussi ca par hamza
@@ -1506,26 +1517,49 @@ public class HomeController {
 
     public void handleAddGroupFromDialog(Group newGroup) {
         Platform.runLater(() -> {
-            if (groupsListContainer.getChildren().isEmpty()) {
-                groupsListContainer.getChildren().clear();
-            } else {
-                // Remove "No groups found" message if it exists
-                groupsListContainer.getChildren().removeIf(node -> 
-                    node instanceof Label && ((Label)node).getText().equals("No groups found")
-                );
+            String currentUserId = UserSession.getUserId();
+            
+            // Get the group's user list and add current user if not already there
+            ArrayList<String> participantIds = new ArrayList<>(newGroup.getListUsers() != null ? newGroup.getListUsers() : new ArrayList<>());
+            if (!participantIds.contains(currentUserId)) {
+                participantIds.add(currentUserId);
             }
-
-            HBox newGroupContainer = ConversationItemBuilder.createGroupConversationItem(
-                    newGroup.getGroupProfilePicture(),
-                    newGroup.getGroupName(),
-                    "",
-                    "",
-                    2
+            
+            // Create Conversation object for this group in the database
+            ConversationDAO conversationDAO = new ConversationDAO();
+            ObjectId conversationId = conversationDAO.createGroupConversation(
+                participantIds,
+                newGroup.getGroupName(),
+                newGroup.getGroupProfilePicture()
             );
-            groupsListContainer.getChildren().add(0, newGroupContainer);
+            
+            if (conversationId != null) {
+                // Clear "No groups found" message if exists
+                if (groupsListContainer.getChildren().isEmpty()) {
+                    groupsListContainer.getChildren().clear();
+                } else {
+                    groupsListContainer.getChildren().removeIf(node -> 
+                        node instanceof Label && ((Label)node).getText().equals("No groups found")
+                    );
+                }
 
-            if (!usersPane.isVisible()) {
-                switchUsers(false); // Switch to groups view if not already there
+                // Create UI item using standard conversation builder
+                HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
+                        newGroup.getGroupProfilePicture(),
+                        newGroup.getGroupName(),
+                        "",
+                        "",
+                        0,
+                        false
+                );
+                
+                // Add click handler to open group conversation
+                newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
+                groupsListContainer.getChildren().add(0, newGroupContainer);
+
+                if (!usersPane.isVisible()) {
+                    switchUsers(false); // Switch to groups view if not already there
+                }
             }
         });
     }

@@ -2,8 +2,10 @@ package genki.models;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.bson.types.ObjectId;
 
 public class Conversation {
+    private ObjectId id; // MongoDB document ID
     private String type; // "direct" or "group"
     private List<String> participantIds; // List of user IDs
     private String lastMessageContent;
@@ -11,6 +13,9 @@ public class Conversation {
     private LocalDateTime lastMessageTime;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String groupName; // For group conversations
+    private String photo_url; // For group conversations
+    private Boolean isOnline; // Track if user is online (for direct conversations)
 
     public Conversation() {
     }
@@ -23,6 +28,14 @@ public class Conversation {
     }
 
     // Getters and Setters
+
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
 
     public String getType() {
         return type;
@@ -78,6 +91,30 @@ public class Conversation {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public String getPhotoUrl() {
+        return photo_url;
+    }
+
+    public void setPhotoUrl(String photo_url) {
+        this.photo_url = photo_url;
+    }
+
+    public Boolean isOnline() {
+        return isOnline;
+    }
+
+    public void setOnline(Boolean isOnline) {
+        this.isOnline = isOnline;
     }
 
 	@Override
