@@ -54,7 +54,6 @@ import org.bson.types.ObjectId;
 import genki.utils.ConversationDAO;
 
 public class HomeController {
-
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
     @FXML
     private Button btnSettings;
@@ -190,34 +189,26 @@ public class HomeController {
         "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;";
 
     /**
-     * 
-     * IMPROVEMENT 1: Resource Management
-     * Using DBConnection singleton pattern to avoid connection leaks
+     * Holds the single DBConnection instance for this controller
      */
-    private static DBConnection dbConnectionInstance = null;
-
-    private static synchronized DBConnection getDBConnection() {
-        if (dbConnectionInstance == null) {
-            dbConnectionInstance = new DBConnection("genki_testing");
-        }
-        return dbConnectionInstance;
-    }
+    private DBConnection dbConnection;
 
     @FXML
     public void initialize() {
+        // Initialize the DB connection ONCE for this controller
+        dbConnection = new DBConnection("genki_testing");
 
         switchUsers(true);
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
+            chatHeader.getChildren().clear();
+            messageInputArea.getChildren().clear();
+            messagesContainer.getChildren().clear();
 
-                     chatHeader.getChildren().clear();
-                     messageInputArea.getChildren().clear();
-                     messagesContainer.getChildren().clear();
-
-                     ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.png")));
-                     startConversationImageView.setPreserveRatio(true);
-                     startConversationImageView.setSmooth(true);
-                     startConversationImageView.setFitWidth(700);
+            ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.png")));
+            startConversationImageView.setPreserveRatio(true);
+            startConversationImageView.setSmooth(true);
+            startConversationImageView.setFitWidth(700);
                      startConversationImageView.setFitHeight(700);
 
                      HBox buttonsContainer = new HBox();
@@ -434,7 +425,8 @@ public class HomeController {
             try {
                 String currentUserId = UserSession.getUserId();
                 // IMPROVEMENT 1: Resource Management - Use singleton DBConnection instead of creating new instance
-                DBConnection dbConnection = getDBConnection();
+                // Use the controller's dbConnection instance
+                DBConnection dbConnection = this.dbConnection;
                 org.bson.Document conversationDoc = dbConnection
                     .getDatabase()
                     .getCollection("Conversation")
@@ -1068,7 +1060,7 @@ public class HomeController {
                             String lastMessage = "";
                             String time = "";
                             try {
-                                DBConnection dbConnection = getDBConnection();
+                                DBConnection dbConnection = this.dbConnection;
                                 org.bson.Document conversationDoc = dbConnection
                                         .getDatabase()
                                         .getCollection("Conversation")
@@ -1269,7 +1261,7 @@ public class HomeController {
 	            String lastMessage = "";
 	            String time = "";
 	            try {
-	                DBConnection dbConnection = new DBConnection("genki_testing");
+                    DBConnection dbConnection = this.dbConnection;
 	                org.bson.Document conversationDoc = dbConnection
 	                    .getDatabase()
 	                    .getCollection("Conversation")
@@ -1322,7 +1314,7 @@ public class HomeController {
 	        conversationListContainer.getChildren().clear();
 	        
 	        String currentUserId = UserSession.getUserId();
-	        DBConnection dbConnection = new DBConnection("genki_testing");
+            DBConnection dbConnection = this.dbConnection;
 	        
 	        // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
 	        var groupConversations = dbConnection
