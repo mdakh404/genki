@@ -1,9 +1,13 @@
 package genki.models;
 
+import org.bson.types.ObjectId;
+
 /**
  * Modèle représentant une demande de notification (ami/groupe)
  */
 public class NotificationRequest {
+    private ObjectId notificationId;
+    private String notificationSubType;
     private String username;
     private String message;
     private NotificationType type;
@@ -11,10 +15,12 @@ public class NotificationRequest {
     
     public enum NotificationType {
         FRIEND_REQUEST,
-        GROUP_INVITATION
+        GROUP_JOIN_REQUEST
     }
     
-    public NotificationRequest(String username, String message, NotificationType type, String imageUrl) {
+    public NotificationRequest(ObjectId notificationId, String notificationSubType, String username, String message, NotificationType type, String imageUrl) {
+        this.notificationId = notificationId;
+        this.notificationSubType = notificationSubType;
         this.username = username;
         this.message = message;
         this.type = type;
@@ -22,6 +28,15 @@ public class NotificationRequest {
     }
     
     // Getters
+
+    public ObjectId getNotificationId() {
+        return this.notificationId;
+    }
+
+    public String getNotificationSubType() {
+        return this.notificationSubType;
+    }
+
     public String getUsername() {
         return username;
     }
