@@ -89,7 +89,10 @@ public class NotificationsController {
                      Filters.eq("_id", new ObjectId(senderId))
             ).first();
 
-            return senderUserDoc.getString("photo_url");
+            if (senderUserDoc != null) {
+                return senderUserDoc.getString("photo_url");
+            }
+
 
         } catch (MongoException e) {
             logger.warning("Failed to get sender image url " + e.getMessage());
