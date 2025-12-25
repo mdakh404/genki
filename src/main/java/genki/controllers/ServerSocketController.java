@@ -106,52 +106,77 @@ public class ServerSocketController implements MessageListener {
 
 	@Override
 	public void onMessageReceived(String message, User user) {
-		System.out.println("Server received: " + message);
-		
-		// Strip the [clientInfo] prefix that ClientHandler adds
-		String cleanMessage = message;
-		int bracketIndex = message.indexOf("] ");
-		if (bracketIndex != -1) {
-			cleanMessage = message.substring(bracketIndex + 2);
-		}
-		
-		// Skip USERS_LIST broadcasts - they're handled separately
-		if (cleanMessage.startsWith("USERS_LIST:")) {
-			System.out.println("Ignoring USERS_LIST broadcast");
-			return;
-		}
-		
-		try {
-			// Try to parse as MessageData (regular message)
-			MessageData msgData = GsonUtility.getGson().fromJson(cleanMessage, MessageData.class);
-			System.out.println("Looking for recipient: " + msgData.recipientId + " (or name: " + msgData.recipientName + ")");
-			
-			// Find the recipient and send the message to them
-			if (msgData.recipientId != null) {
-				System.out.println("Connected users count: " + ConnectedUsers.size());
-				for (ClientHandler handler : ConnectedUsers) {
-					User handlerUser = handler.getUser();
-					if (handlerUser != null) {
-						String userId = handlerUser.getId() != null ? handlerUser.getId().toString() : null;
-						String username = handlerUser.getUsername();
-						System.out.println("  Checking user: id=" + userId + ", username=" + username);
-						
-						// Try to match by ID first, then fall back to username
-						if ((userId != null && userId.equals(msgData.recipientId)) ||
-							(username != null && username.equals(msgData.recipientId)) ||
-							(username != null && username.equals(msgData.recipientName))) {
-							System.out.println("MATCH FOUND! Routing message from " + user.getUsername() + " to " + username);
-							handler.sendMessage(cleanMessage);  // Send the clean JSON without the prefix
-							break;
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			// If it's not a valid MessageData, it might be another type of message
-			System.err.println("Error parsing message as MessageData: " + e.getMessage());
-			e.printStackTrace();
-		}
+	    System.out.println("Server received: " + message);
+	    
+	    // Nettoyage du message (suppression du préfixe [clientInfo])
+	    String cleanMessage = message;
+	    int bracketIndex = message.indexOf("] ");
+	    if (bracketIndex != -1) {
+	        cleanMessage = message.substring(bracketIndex + 2);
+	    }
+	    
+	    // ---------------------------------------------------------
+	    // 1. DÉTECTION DU MESSAGE GLOBAL (BROADCAST)
+	    // ---------------------------------------------------------
+	 // Dans ServerSocketController.java, remplacez la boucle de broadcast :
+	    if (cleanMessage.startsWith("BROADCAST_MSG:")) {
+	        String content = cleanMessage.substring("BROADCAST_MSG:".length());
+	        
+	        // On crée un objet MessageData formatté en JSON
+	        MessageData broadcastData = new MessageData();
+	        broadcastData.senderName = "ADMIN";
+	        broadcastData.messageText = content;
+	        broadcastData.recipientId = "ALL"; // Pour indiquer que c'est global
+	        
+	        String jsonMessage = GsonUtility.getGson().toJson(broadcastData);
+	        
+	        for (ClientHandler handler : ConnectedUsers) {
+	            // On envoie le JSON avec un préfixe reconnaissable
+	            handler.sendMessage("SERVER_BROADCAST:" + jsonMessage);
+	        }
+	        return;
+	    }
+
+	    // ---------------------------------------------------------
+	    // 2. FILTRE DE SÉCURITÉ (USERS_LIST)
+	    // ---------------------------------------------------------
+	    if (cleanMessage.startsWith("USERS_LIST:")) {
+	        System.out.println("Ignoring USERS_LIST broadcast (internal system)");
+	        return;
+	    }
+	    
+	    // ---------------------------------------------------------
+	    // 3. ROUTAGE DES MESSAGES PRIVÉS (JSON MessageData)
+	    // ---------------------------------------------------------
+	    try {
+	        // Tentative de parsing en MessageData (objet Gson)
+	        MessageData msgData = GsonUtility.getGson().fromJson(cleanMessage, MessageData.class);
+	        
+	        if (msgData.recipientId != null || msgData.recipientName != null) {
+	            System.out.println("Routing private message to: " + msgData.recipientName);
+	            
+	            for (ClientHandler handler : ConnectedUsers) {
+	                User handlerUser = handler.getUser();
+	                if (handlerUser != null) {
+	                    String userId = handlerUser.getId() != null ? handlerUser.getId().toString() : null;
+	                    String username = handlerUser.getUsername();
+	                    
+	                    // Match par ID, Username ou recipientName
+	                    if ((userId != null && userId.equals(msgData.recipientId)) ||
+	                        (username != null && username.equals(msgData.recipientId)) ||
+	                        (username != null && username.equals(msgData.recipientName))) {
+	                        
+	                        handler.sendMessage(cleanMessage); 
+	                        System.out.println("Message routed successfully.");
+	                        break; 
+	                    }
+	                }
+	            }
+	        }
+	    } catch (Exception e) {
+	        // Si ce n'est ni un broadcast, ni un message privé valide
+	        System.err.println("Unrecognized message format or parsing error: " + e.getMessage());
+	    }
 	}
 
 	@Override

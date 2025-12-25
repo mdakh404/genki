@@ -1,6 +1,7 @@
 package genki.controllers;
 
 import genki.models.AdminModel;
+import genki.utils.UserSession;
 //import genki.utils.ScenesController;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -65,12 +66,18 @@ public class AdminController {
     public void sendGlobalMessage() {
         String content = globalMessageField.getText();
         if (content != null && !content.trim().isEmpty()) {
-            adminModel.broadcastMessage(content); // Envoi à la BD
-            globalMessageField.clear();           // Vide le champ
-            loadMessagesHistory();                // Rafraîchit l'historique
             
-            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Message diffusé avec succès !");
-            alert.show();
+            // On envoie via le socket de la session admin
+            if (UserSession.getClientSocket() != null) {
+                // Le serveur va détecter "BROADCAST_MSG:"
+                UserSession.getClientSocket().sendMessages("BROADCAST_MSG:" + content);
+                
+                // On garde une trace en base de données
+                adminModel.broadcastMessage(content);
+
+                globalMessageField.clear();
+                loadMessagesHistory();
+            }
         }
     }
 

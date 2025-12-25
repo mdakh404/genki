@@ -5,169 +5,149 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.bson.codecs.pojo.Convention;
-
 import genki.models.Conversation;
 import genki.models.User;
 import genki.models.MessageData;
 import genki.network.ClientHandler;
 import genki.network.ClientsThreads;
-import genki.network.MessageListener;
 import genki.network.t2;
 import genki.utils.GsonUtility;
 import genki.utils.UserSession;
 import javafx.application.Platform;
-import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 
+public class clientSocketController implements t2 {
 
-public class clientSocketController implements t2{
+    private ClientsThreads ClientThread;
+    private String username;
+    private List<User> connectedUsers = new ArrayList<>();
+    private Consumer<MessageData> onNewMessageCallback;
 
-	
-	private ClientsThreads ClientThread;
-	private String username;
-	private List<User> connectedUsers = new ArrayList<>();
-	private Consumer<MessageData> onNewMessageCallback;
-	
-	
-	public clientSocketController(String username) {
-		ClientThread = new ClientsThreads("127.0.0.1", 5001, this);
-		this.username = username;
-		ClientThread.connect();
+    public clientSocketController(String username) {
+        ClientThread = new ClientsThreads("127.0.0.1", 5001, this);
+        this.username = username;
+        ClientThread.connect();
+        ClientThread.sendMessage(this.username);
+    }
 
-		ClientThread.sendMessage(this.username);
-	}
-	
-	public String getUser() {
-		return this.username;
-	}
-	
-	public void setOnNewMessageCallback(Consumer<MessageData> callback) {
-		this.onNewMessageCallback = callback;
-	}
-	
-	
-//	public void initialiseClient() {
-//		ClientThread = new ClientsThreads("127.0.0.1", 5001, this);
-//		ClientThread.connect();
-//		
-//	}
-	
-	public void sendMessages(String message) {
-		ClientThread.sendMessage(message);
-		
-		Platform.runLater(() -> {
-			//dddd
-		});
-	}
+    public String getUser() {
+        return this.username;
+    }
 
-	@Override
-	public void onMessageReceived(String message) {
-		// TODO Auto-generated method stub
-		Platform.runLater(() -> {
-			System.out.println("Client recieved : " + message);
-			
-			// Skip system messages (connection status, etc.)
-			if (message.startsWith("---") || message.startsWith("Server: ---")) {
-				System.out.println("Skipping system message");
-				return;
-			}
-			
-			// Check if this is a users list message
-			if (message.startsWith("Server: USERS_LIST:")) {
-				// Extract JSON from message
-				String jsonPart = message.substring("Server: USERS_LIST:".length());
-				parseAndUpdateUsersList(jsonPart);
-			}
-			else {
-				// This is a regular message - parse and notify callback
-				try {
-					// Strip "Server: " prefix if present
-					String jsonMessage = message;
-					if (message.startsWith("Server: ")) {
-						jsonMessage = message.substring("Server: ".length());
-					}
-					
-					System.out.println("Attempting to parse as MessageData");
-					System.out.println("Message to parse: " + jsonMessage.substring(0, Math.min(100, jsonMessage.length())));
-					MessageData msgData = GsonUtility.getGson().fromJson(jsonMessage, MessageData.class);
-					System.out.println("Parsed MessageData: conversationId=" + msgData.conversationId + ", senderName=" + msgData.senderName);
-					if (onNewMessageCallback != null) {
-						System.out.println("Callback found, calling it");
-						onNewMessageCallback.accept(msgData);
-					} else {
-						System.out.println("WARNING: onNewMessageCallback is null!");
-					}
-				} catch (Exception e) {
-					System.err.println("Error parsing incoming message: " + e.getMessage());
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-	
-	private void parseAndUpdateUsersList(String jsonUsers) {
-		try {
-			User[] users = GsonUtility.getGson().fromJson(jsonUsers, User[].class);
-			connectedUsers = Arrays.asList(users);
-			
-			// Update the session with the connected users
-			UserSession.setConnectedUsers(new ArrayList<>(connectedUsers));
-			
-			// Update online status for all conversation items
-			for(HBox conversationItem : UserSession.getConversationItems()) {
-				// Get the user data stored in the HBox
-				Object userData = conversationItem.getUserData();
-				if (userData instanceof User) {
-					User friend = (User) userData;
-					
-					// Check if friend is in connected users list
-					boolean isOnline = connectedUsers.stream()
-						.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
-					
-					// Update the online status indicator (status circle)
-					updateConversationItemOnlineStatus(conversationItem, isOnline);
-				}
-			}
-			
-			System.out.println("Updated connected users: " + UserSession.ConnectedUsers);
-			// You can now use connectedUsers list for UI updates
-		} catch (Exception e) {
-			System.err.println("Error parsing users list: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * Update the online status indicator for a conversation item
-	 */
-	private void updateConversationItemOnlineStatus(HBox conversationItem, boolean isOnline) {
-		// Find the status circle (second child in the profile container StackPane)
-		javafx.scene.layout.StackPane profileContainer = (javafx.scene.layout.StackPane) conversationItem.getChildren().get(0);
-		if (profileContainer.getChildren().size() > 1) {
-			javafx.scene.shape.Circle statusCircle = (javafx.scene.shape.Circle) profileContainer.getChildren().get(1);
-			statusCircle.setFill(isOnline ? javafx.scene.paint.Color.web("#4ade80") : javafx.scene.paint.Color.web("#9ca3af"));
-		}
-	}
-	
-	public List<User> getConnectedUsers() {
-		return new ArrayList<>(connectedUsers);
-	}
+    public void setOnNewMessageCallback(Consumer<MessageData> callback) {
+        this.onNewMessageCallback = callback;
+    }
 
-	@Override
-	public void onConnectionClosed(String reason) {
-		// TODO Auto-generated method stub
-		
-	}
+    public void sendMessages(String message) {
+        ClientThread.sendMessage(message);
+    }
 
-	@Override
-	public void onClientConnected(ClientHandler handler) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'onClientConnected'");
-	}
-	
-	
+    @Override
+    public void onMessageReceived(String message) {
+        Platform.runLater(() -> {
+            System.out.println("Client received raw: " + message);
+
+            // 1. GESTION DU BROADCAST ADMIN (Reçu en JSON via SERVER_BROADCAST)
+            if (message.contains("SERVER_BROADCAST:")) {
+                try {
+                    String jsonPart = message.substring(message.indexOf("SERVER_BROADCAST:") + 17);
+                    MessageData msgData = GsonUtility.getGson().fromJson(jsonPart, MessageData.class);
+
+                    System.out.println("DEBUG: Broadcast Admin reçu -> " + msgData.messageText);
+
+                    // Mise à jour de la session pour inclure la conversation ADMIN si elle n'existe pas
+                    boolean exists = UserSession.getConversations().stream()
+                            .anyMatch(c -> "ADMIN_SYSTEM".equals(c.getLastMessageSenderId()));
+
+                    if (!exists) {
+                        Conversation adminConv = new Conversation();
+                        adminConv.setLastMessageSenderId("ADMIN_SYSTEM");
+                        adminConv.setLastMessageContent(msgData.messageText);
+                        UserSession.addConversation(adminConv);
+                    }
+
+                    // On envoie le message au callback pour qu'il s'affiche dans le chat
+                    if (onNewMessageCallback != null) {
+                        onNewMessageCallback.accept(msgData);
+                    }
+                    return; // Fin du traitement pour ce message
+                } catch (Exception e) {
+                    System.err.println("Erreur parsing Broadcast: " + e.getMessage());
+                }
+            }
+
+            // 2. NETTOYAGE DU MESSAGE POUR LES AUTRES FLUX (USERS_LIST ou PRIVÉ)
+            String payload = message.startsWith("Server: ") ? message.substring(8).trim() : message.trim();
+
+            if (payload.startsWith("---")) return;
+
+            // 3. MISE À JOUR DE LA LISTE DES UTILISATEURS CONNECTÉS
+            if (payload.startsWith("USERS_LIST:")) {
+                String jsonPart = payload.substring("USERS_LIST:".length());
+                parseAndUpdateUsersList(jsonPart);
+                return;
+            }
+
+            // 4. RÉCEPTION DES MESSAGES PRIVÉS STANDARDS
+            try {
+                if (payload.startsWith("{")) {
+                    MessageData msgData = GsonUtility.getGson().fromJson(payload, MessageData.class);
+                    if (msgData != null && onNewMessageCallback != null) {
+                        onNewMessageCallback.accept(msgData);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Erreur parsing JSON message: " + e.getMessage());
+            }
+        });
+    }
+
+    private void parseAndUpdateUsersList(String jsonUsers) {
+        try {
+            User[] users = GsonUtility.getGson().fromJson(jsonUsers, User[].class);
+            connectedUsers = Arrays.asList(users);
+            
+            // Mise à jour de la session globale
+            UserSession.setConnectedUsers(new ArrayList<>(connectedUsers));
+            
+            // Mise à jour visuelle des indicateurs de statut (cercles verts/gris)
+            for (HBox conversationItem : UserSession.getConversationItems()) {
+                Object userData = conversationItem.getUserData();
+                if (userData instanceof User) {
+                    User friend = (User) userData;
+                    boolean isOnline = connectedUsers.stream()
+                        .anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
+                    updateConversationItemOnlineStatus(conversationItem, isOnline);
+                }
+            }
+            System.out.println("Updated connected users count: " + connectedUsers.size());
+        } catch (Exception e) {
+            System.err.println("Error parsing users list: " + e.getMessage());
+        }
+    }
+
+    private void updateConversationItemOnlineStatus(HBox conversationItem, boolean isOnline) {
+        try {
+            StackPane profileContainer = (StackPane) conversationItem.getChildren().get(0);
+            if (profileContainer.getChildren().size() > 1) {
+                Circle statusCircle = (Circle) profileContainer.getChildren().get(1);
+                statusCircle.setFill(isOnline ? Color.web("#4ade80") : Color.web("#9ca3af"));
+            }
+        } catch (Exception e) {
+            // Ignorer si la structure de l'interface n'est pas encore prête
+        }
+    }
+
+    @Override
+    public void onConnectionClosed(String reason) {
+        System.out.println("Connexion fermée : " + reason);
+    }
+
+    @Override
+    public void onClientConnected(ClientHandler handler) {
+        // Logique serveur non requise ici
+    }
 }

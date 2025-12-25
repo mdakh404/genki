@@ -106,12 +106,11 @@ public class LoginController implements Initializable {
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
-<<<<<<< HEAD
-                               loginResult.getUserRole()  
-=======
-                               loginResult.getUserRole(),
+
+                               loginResult.getUserRole()  ,
+
+                            //   loginResult.getUserRole(),
                                loginResult.getImageUrl()
->>>>>>> 51a5877af693044164268e81dd22a34c8872e58e
                          );
                          
                          
@@ -129,7 +128,6 @@ public class LoginController implements Initializable {
                          }
 
 
-<<<<<<< HEAD
                          AlertConstruct.alertConstructor(
                            "Login",
                            "Login Successful",
@@ -144,7 +142,7 @@ public class LoginController implements Initializable {
                              logger.log(Level.INFO, "Redirection vers l'espace UTILISATEUR");
                              ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                          }
-      
+                         // ------------------------------
 
                         // ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                      } catch (IOException ex) {
