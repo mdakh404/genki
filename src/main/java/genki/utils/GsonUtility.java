@@ -15,6 +15,7 @@ public class GsonUtility {
     static {
         gson = new GsonBuilder()
                 .excludeFieldsWithoutExposeAnnotation()
+                .serializeNulls()  // Include null values in serialization
                 // Handle ObjectId serialization
                 .registerTypeAdapter(ObjectId.class,
                         (JsonSerializer<ObjectId>) (src, typeOfSrc, context) ->

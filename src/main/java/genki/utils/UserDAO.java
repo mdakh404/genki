@@ -88,12 +88,16 @@ public class UserDAO {
     }
     
     /**
-     * Convert Document to User object (without MongoDB _id)
+     * Convert Document to User object (with MongoDB _id)
      */
     public User documentToUser(Document doc) {
         if (doc == null) return null;
         
         User user = new User();
+        // Set the ID from MongoDB _id field
+        if (doc.getObjectId("_id") != null) {
+            user.setId(doc.getObjectId("_id").toHexString());
+        }
         user.setUsername(doc.getString("username"));
         user.setPassword(doc.getString("password"));
         user.setBio(doc.getString("bio"));

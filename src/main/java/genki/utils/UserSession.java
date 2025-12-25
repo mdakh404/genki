@@ -30,7 +30,15 @@ public class UserSession {
         UserSession.userId= userId;
         UserSession.userRole = userRole;
         UserSession.imageUrl = imageUrl;
-        UserSession.ClientSocket = new clientSocketController(username);
+        // ClientSocket should already be set by LoginController
+    }
+
+    public static void startSession(String username, String userId, String userRole, String imageUrl, clientSocketController clientSocket) {
+        UserSession.username = username;
+        UserSession.userId= userId;
+        UserSession.userRole = userRole;
+        UserSession.imageUrl = imageUrl;
+        UserSession.ClientSocket = clientSocket;  // Use the existing instance from LoginController
     }
 
 

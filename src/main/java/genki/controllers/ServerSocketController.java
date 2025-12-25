@@ -95,11 +95,23 @@ public class ServerSocketController implements MessageListener {
 	public void onClientConnected(ClientHandler handler) {
 		// Called from ClientHandler background thread; update UI/state on FX thread
 		Platform.runLater(() -> {
+			// Check if this user is already connected (prevent duplicates)
+			String username = handler.getUser().getUsername();
+			boolean alreadyConnected = ConnectedUsers.stream()
+				.anyMatch(h -> h.getUser().getUsername() != null && 
+					h.getUser().getUsername().equals(username));
+			
+			if (alreadyConnected) {
+				System.out.println("⚠️ User " + username + " already connected, not adding duplicate");
+				return;
+			}
+			
 			ConnectedUsers.add(handler);
 			UserSession.getConnectedUsers().add(handler.getUser());
-			System.out.println("Registered user: " + handler.getUser().getUsername());
-			System.out.println("Connected2222 : " + UserSession.getConnectedUsers());
-			//printConnectedUsers();
+			System.out.println("✓ Registered user: " + handler.getUser().getUsername());
+			System.out.println("✓ Total connected: " + UserSession.getConnectedUsers().size());
+			
+			// Broadcast updated list to all clients (including the newly connected one)
 			broadcastConnectedUsers();
 		});
 	}

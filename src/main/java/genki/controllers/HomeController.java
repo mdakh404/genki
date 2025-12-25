@@ -50,6 +50,8 @@ import java.util.ArrayList;
 import genki.utils.MessageDAO;
 import genki.models.Message;
 import genki.models.MessageData;
+import genki.models.User;
+
 import org.bson.types.ObjectId;
 import genki.utils.ConversationDAO;
 
@@ -382,26 +384,49 @@ public class HomeController {
 
         // Register callback for incoming messages
         UserSession.getClientSocket().setOnNewMessageCallback(msgData -> {
-            System.out.println("HomeController callback triggered!");
-            System.out.println("Received message conversationId: " + msgData.conversationId);
-            System.out.println("Current conversationId: " + currentConversationId);
+            System.out.println("╔════════════════════════════════════════════════════╗");
+            System.out.println("║ MESSAGE CALLBACK TRIGGERED                          ║");
+            System.out.println("╚════════════════════════════════════════════════════╝");
+            System.out.println("📨 Message details:");
+            System.out.println("  - conversationId: " + msgData.conversationId);
+            System.out.println("  - senderName: " + msgData.senderName);
+            System.out.println("  - messageText: " + msgData.messageText);
+            System.out.println("  - senderId: " + msgData.senderId);
+            System.out.println("  - senderProfileImage: " + msgData.senderProfileImage);
+            System.out.println("  - timestamp: " + msgData.timestamp);
+            System.out.println("  - recipientId: " + msgData.recipientId);
+            System.out.println("  - recipientName: " + msgData.recipientName);
+            
+            System.out.println("🎯 Current conversation context:");
+            System.out.println("  - currentConversationId: " + currentConversationId);
+            System.out.println("  - currentRecipientId: " + currentRecipientId);
+            System.out.println("  - currentRecipientName: " + currentRecipientName);
+            
             // Only add message if it's for the current conversation
-            if (msgData.conversationId != null && 
-                currentConversationId != null && 
-                msgData.conversationId.equals(currentConversationId.toString())) {
+            if (msgData.conversationId != null && currentConversationId != null) {
+                System.out.println("✓ Conversation ID and msgData both present, comparing...");
+                String msgConvId = msgData.conversationId;
+                String currentConvId = currentConversationId.toString();
+                System.out.println("  Comparing: '" + msgConvId + "' == '" + currentConvId + "'");
                 
-                System.out.println("Match found! Adding message from " + msgData.senderName);
-                messagesContainer.getChildren().add(
-                    MessageItemBuilder.createReceivedMessage(
-                        msgData.senderProfileImage,
-                        msgData.senderName,
-                        msgData.messageText
-                    )
-                );
-                // Auto-scroll to bottom
-                scrollToBottom();
+                if (msgConvId.equals(currentConvId)) {
+                    System.out.println("✅ MATCH! Adding message to conversation");
+                    Platform.runLater(() -> {
+                        messagesContainer.getChildren().add(
+                            MessageItemBuilder.createReceivedMessage(
+                                msgData.senderProfileImage,
+                                msgData.senderName,
+                                msgData.messageText
+                            )
+                        );
+                        // Auto-scroll to bottom
+                        scrollToBottom();
+                    });
+                } else {
+                    System.out.println("❌ NO MATCH: Message is for different conversation");
+                }
             } else {
-                System.out.println("No match: conversationId=" + msgData.conversationId + ", currentConversationId=" + currentConversationId);
+                System.out.println("⚠️  Cannot compare: msgData.conversationId=" + msgData.conversationId + ", currentConversationId=" + currentConversationId);
             }
         });
 
@@ -1097,6 +1122,20 @@ public class HomeController {
                         conversation.setLastMessageTime(java.time.LocalDateTime.ofInstant(date.toInstant(),
                                 java.time.ZoneId.systemDefault()));
                     }
+                    
+                    // 🔥 Check if friend is currently online
+                    boolean isOnline = false;
+                    ArrayList<User> connectedUsers = UserSession.getConnectedUsers();
+                    if (connectedUsers != null) {
+                        for (User connectedUser : connectedUsers) {
+                            String connectedUserId = connectedUser.getId();
+                            if (connectedUserId != null && connectedUserId.equals(friendId)) {
+                                isOnline = true;
+                                break;
+                            }
+                        }
+                    }
+                    conversation.setOnline(isOnline);
 
                     conversations.add(conversation);
                 }
@@ -1225,6 +1264,10 @@ public class HomeController {
                                     if (loadedConversations >= totalConversations && loadingSpinnerContainer != null) {
                                         loadingSpinnerContainer.setVisible(false);
                                         loadingSpinnerContainer.setManaged(false);
+                                        
+                                        // Refresh online status NOW that all conversations are actually loaded
+                                        System.out.println("✓ All " + UserSession.getConversationItems().size() + " conversation items loaded, refreshing online status...");
+                                        UserSession.getClientSocket().refreshConversationOnlineStatus();
                                     }
                                 }
                             });
