@@ -31,6 +31,8 @@ public class clientSocketController implements t2{
 	private String username;
 	private List<User> connectedUsers = new ArrayList<>();
 	private Consumer<MessageData> onNewMessageCallback;
+	private HomeController homeController;  // Reference to HomeController for updating chat header
+
 	
 	
 	public clientSocketController(String username) {
@@ -49,6 +51,9 @@ public class clientSocketController implements t2{
 		this.onNewMessageCallback = callback;
 	}
 	
+	public void setHomeController(HomeController homeController) {
+		this.homeController = homeController;
+	}
 	
 //	public void initialiseClient() {
 //		ClientThread = new ClientsThreads("127.0.0.1", 5001, this);
@@ -148,6 +153,13 @@ public class clientSocketController implements t2{
 							boolean isOnline = connectedUsers.stream()
 								.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
 							updateConversationItemOnlineStatus(conversationItem, isOnline);
+							
+							// Also update chat header if this is the currently open conversation
+							if (homeController != null && friend.getId() != null) {
+								String friendId = friend.getId().toString();
+								homeController.updateChatHeaderStatusForUser(friendId, friend.getUsername(), isOnline);
+							}
+							
 							System.out.println("  - " + friend.getUsername() + ": " + (isOnline ? "ONLINE" : "OFFLINE"));
 						}
 					}
@@ -204,6 +216,13 @@ public class clientSocketController implements t2{
 						boolean isOnline = currentConnectedUsers != null && currentConnectedUsers.stream()
 							.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
 						updateConversationItemOnlineStatus(conversationItem, isOnline);
+						
+						// Also update chat header if this is the currently open conversation
+						if (homeController != null && friend.getId() != null) {
+							String friendId = friend.getId().toString();
+							homeController.updateChatHeaderStatusForUser(friendId, friend.getUsername(), isOnline);
+						}
+						
 						System.out.println("  🔵 " + friend.getUsername() + " -> " + (isOnline ? "🟢 ONLINE" : "⚫ OFFLINE"));
 					}
 				}

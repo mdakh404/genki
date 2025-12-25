@@ -430,6 +430,9 @@ public class HomeController {
             }
         });
 
+        // Set reference to this HomeController in clientSocketController so it can update chat header status
+        UserSession.getClientSocket().setHomeController(this);
+
     }
 
     }
@@ -1228,8 +1231,17 @@ public class HomeController {
                             }
 
                             int unreadCount = 0;
-                            boolean isOnline = false;
-
+                            boolean isOnlineStatus = false;
+                            
+                            // Check if friend is currently online by checking connected users list
+                            ArrayList<User> connectedUsers = UserSession.getConnectedUsers();
+                            if (connectedUsers != null && friendName != null) {
+                                isOnlineStatus = connectedUsers.stream()
+                                    .anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friendName));
+                            }
+                            
+                            // Create final variable for use in lambda
+                            final boolean isOnline = isOnlineStatus;
                             HBox conversationItem = ConversationItemBuilder.createConversationItem(
                                     photoUrl != null ? photoUrl : "genki/img/user-default.png",
                                     friendName,
@@ -1245,8 +1257,17 @@ public class HomeController {
                             friendUser.setPhotoUrl(photoUrl);
                             conversationItem.setUserData(friendUser);
 
-                            // Add click handler to set current conversation
-                            conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
+                            // Add click handler that dynamically checks current online status instead of using captured value
+                            conversationItem.setOnMouseClicked(e -> {
+                                // Dynamically check if user is currently online at click time
+                                ArrayList<User> currentConnectedUsers = UserSession.getConnectedUsers();
+                                boolean isCurrentlyOnline = currentConnectedUsers != null && friendName != null &&
+                                    currentConnectedUsers.stream()
+                                        .anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friendName));
+                                
+                                // Set conversation with the current online status, not the captured one
+                                setCurrentConversation(conversationId, isCurrentlyOnline);
+                            });
 
                             // Store in UserSession for easy access from other files
                             UserSession.addConversationItem(conversationItem);
@@ -1660,6 +1681,38 @@ public class HomeController {
                 }
                 
                 System.out.println("✅ New group added and cached: " + newGroup.getGroupName());
+            }
+        });
+    }
+
+    /**
+     * Update the chat header status circle and text when a user's online status changes
+     * Only updates if the changed user is the currently open conversation
+     * 
+     * @param userId The ID of the user whose status changed
+     * @param userName The username of the user whose status changed
+     * @param isOnline true if the user is online, false if offline
+     */
+    public void updateChatHeaderStatusForUser(String userId, String userName, boolean isOnline) {
+        Platform.runLater(() -> {
+            // Check if this is the currently open conversation
+            if ((currentRecipientId != null && currentRecipientId.equals(userId)) ||
+                (currentRecipientName != null && currentRecipientName.equals(userName))) {
+                
+                // Update the status circle color
+                if (chatContactStatusCircle != null) {
+                    chatContactStatusCircle.setFill(
+                        isOnline ? Color.web("#4ade80") : Color.web("#9ca3af")
+                    );
+                }
+                
+                // Update the status label text
+                if (chatContactStatus != null) {
+                    chatContactStatus.setText(isOnline ? "Online" : "Offline");
+                }
+                
+                System.out.println("✓ Updated chat header status for " + userName + 
+                    " to " + (isOnline ? "ONLINE" : "OFFLINE"));
             }
         });
     }
