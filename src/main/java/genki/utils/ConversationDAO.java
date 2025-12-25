@@ -156,4 +156,42 @@ public class ConversationDAO {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * Get a conversation by its ID
+     * @param conversationId The conversation ID
+     * @return The Conversation object, or null if not found
+     */
+    public Conversation getConversationById(ObjectId conversationId) {
+        try {
+            Document doc = conversations.find(new Document("_id", conversationId)).first();
+            
+            if (doc != null) {
+                Conversation conversation = new Conversation();
+                conversation.setId(doc.getObjectId("_id"));
+                conversation.setType(doc.getString("type"));
+                conversation.setParticipantIds(doc.getList("participantIds", String.class));
+                conversation.setLastMessageContent(doc.getString("lastMessageContent"));
+                conversation.setLastMessageSenderId(doc.getString("lastMessageSenderId"));
+                
+                // Handle LocalDateTime if stored as Date or string
+                Object lastMessageTime = doc.get("lastMessageTime");
+                if (lastMessageTime != null) {
+                    if (lastMessageTime instanceof LocalDateTime) {
+                        conversation.setLastMessageTime((LocalDateTime) lastMessageTime);
+                    }
+                }
+                
+                conversation.setGroupName(doc.getString("groupName"));
+                conversation.setPhotoUrl(doc.getString("photo_url"));
+                
+                return conversation;
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error getting conversation by ID: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
