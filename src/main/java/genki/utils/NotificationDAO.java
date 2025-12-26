@@ -53,7 +53,9 @@ public class NotificationDAO {
     public ObjectId sendFriendRequestNotification(ObjectId recipientUserId, String senderId, String senderName) {
         try {
             Notification notification = new Notification(
+                new ObjectId(),
                 recipientUserId,
+                "friend_request",
                 "friend_request",
                 senderId,
                 senderName,
@@ -79,7 +81,9 @@ public class NotificationDAO {
     public ObjectId sendGroupJoinReq(ObjectId recipientUserId, ObjectId groupId, String senderId, String senderName, String groupName) {
         try {
             Notification notification = new Notification(
+                new ObjectId(),
                 recipientUserId,
+                "group_join_request",
                 "group_join_request",
                 senderId,
                 senderName,

@@ -1,5 +1,6 @@
 package genki.utils;
 
+import genki.models.Notification;
 import genki.models.User;
 import genki.models.Group;
 import genki.controllers.clientSocketController;
@@ -18,6 +19,7 @@ public class UserSession {
     private static ArrayList<User> listFriends = new ArrayList<>();
     private static ArrayList<Group> listGroups = new ArrayList<>();
     private static ArrayList<Conversation> listConversations = new ArrayList<>();
+    private static ArrayList<Notification> listNotifications = new ArrayList<>();
     public  static ArrayList<User> ConnectedUsers = new ArrayList<>();
     public  static ArrayList<HBox> conversationItems = new ArrayList<>();
     public  static ArrayList<HBox> groupConversationItems = new ArrayList<>();
@@ -96,6 +98,23 @@ public class UserSession {
         UserSession.listGroups.clear();
         UserSession.listFriends.clear();
         UserSession.listConversations.clear();
+        UserSession.listNotifications.clear();
+    }
+
+    public static ArrayList<Notification> getNotifications() {
+        return UserSession.listNotifications;
+    }
+
+    public static void addNotification(Notification notification) {
+        UserSession.listNotifications.add(notification);
+    }
+
+    public static void removeNotification(Notification notification) {
+        UserSession.listNotifications.remove(notification);
+    }
+
+    public static void setNotificationsEmpty() {
+        UserSession.listNotifications.clear();
     }
 
     public static ArrayList<User> getFriends() {

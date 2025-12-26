@@ -179,9 +179,9 @@ public class LoginController implements Initializable {
                    userName.setStyle("-fx-border-color: #F2F2F2");
                }
          });
-         // TODO: aimane logging
-         userName.setText("aimane");
-         password.setText("Aimaneaboufadle@2020");
+         // TODO: hamza logging
+         userName.setText("hamza");
+         password.setText("Hamza2020!");
 
 
          

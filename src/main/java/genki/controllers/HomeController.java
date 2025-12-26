@@ -1,13 +1,19 @@
 package genki.controllers;
 
+import genki.models.Notification;
 import genki.models.Group;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.MongoException;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.application.Platform;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.Scene;
@@ -135,6 +141,49 @@ public class HomeController {
 
 
 
+    // load notifications for this UserSession
+    public void loadNotifications() {
+
+        try {
+
+             DBConnection notificationsDBConnection = new DBConnection("genki_testing");
+
+             MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
+
+             long notificationsCount = notificationsCollection.countDocuments(
+                     Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+             );
+
+             if (notificationsCount > 0) {
+
+                 notificationsCollection.find(
+                         Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+                 ).forEach(notificationDoc -> {
+
+                      Notification nvNotification = new Notification(
+                              notificationDoc.getObjectId("_id"),
+                              notificationDoc.getObjectId("recipientUserId"),
+                              notificationDoc.getString("type"),
+                              notificationDoc.getString("requestType"),
+                              notificationDoc.getString("senderId"),
+                              notificationDoc.getString("senderName"),
+                              notificationDoc.getString("content")
+                      );
+
+                      UserSession.addNotification(nvNotification);
+
+                 });
+
+
+             } else {
+                 UserSession.setNotificationsEmpty();
+             }
+
+        } catch (MongoException ex) {
+            logger.warning("Failed to load notifications " + ex.getMessage());
+        }
+    }
+
     // handle logout of user
     public void handleLogout() {
         UserSession.logout();
@@ -200,18 +249,19 @@ public class HomeController {
         // Initialize the DB connection ONCE for this controller
         dbConnection = new DBConnection("genki_testing");
 
+        loadNotifications();
         switchUsers(true);
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
-            chatHeader.getChildren().clear();
-            messageInputArea.getChildren().clear();
-            messagesContainer.getChildren().clear();
+            // chatHeader.getChildren().clear();
+            // messageInputArea.getChildren().clear();
+            // messagesContainer.getChildren().clear();
 
-            ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.png")));
+            ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.jpg")));
             startConversationImageView.setPreserveRatio(true);
             startConversationImageView.setSmooth(true);
-            startConversationImageView.setFitWidth(700);
-                     startConversationImageView.setFitHeight(700);
+            startConversationImageView.setFitWidth(300);
+                     startConversationImageView.setFitHeight(300);
 
                      HBox buttonsContainer = new HBox();
                      buttonsContainer.setAlignment(Pos.CENTER);
@@ -582,6 +632,19 @@ public class HomeController {
                 messagesLoadingSpinnerContainer.setVisible(true);
                 messagesLoadingSpinnerContainer.setManaged(true);
             }
+            if (chatHeader != null) {
+                chatHeader.setVisible(true);
+                chatHeader.setManaged(true);
+            }
+            if (messageInputArea != null) {
+                messageInputArea.setVisible(true);
+                messageInputArea.setManaged(true);
+            }
+         // Réinitialisez le padding/spacing
+            if (messagesContainer != null) {
+                messagesContainer.setPadding(new Insets(10));
+                messagesContainer.setSpacing(10);
+            }
             messagesContainer.getChildren().clear();
         });
         
@@ -913,7 +976,7 @@ public class HomeController {
         menuContainer.setPadding(new Insets(10));
         menuContainer.setMaxWidth(100);
         menuContainer.setBackground(new Background(new BackgroundFill(
-            Color.rgb(51, 213, 214),
+            Color.rgb(71, 82, 87),
             new CornerRadii(8), 
             Insets.EMPTY
         )));
@@ -926,7 +989,7 @@ public class HomeController {
         menuContainer.setEffect(dropShadow);
         
         // Créer le bouton "Add User"
-        Button addUserBtn = new Button("Add User");
+        Button addUserBtn = new Button("Add Friend");
         addUserBtn.setPrefWidth(150);
         // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded strings
         addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
@@ -934,7 +997,7 @@ public class HomeController {
         addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         addUserBtn.setStyle(
             "-fx-background-color: transparent; " +
-            "-fx-text-fill: black; " +
+            "-fx-text-fill: white; " +
             "-fx-cursor: hand; " +
             "-fx-padding: 5; " +
             "-fx-alignment: CENTER-LEFT; " +
@@ -961,7 +1024,7 @@ public class HomeController {
         addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         addGroupBtn.setStyle(
             "-fx-background-color: transparent; " +
-            "-fx-text-fill: black; " +
+            "-fx-text-fill: white; " +
             "-fx-cursor: hand; " +
             "-fx-padding: 5; " +
             "-fx-alignment: CENTER-LEFT; " +
@@ -989,7 +1052,7 @@ public class HomeController {
         joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
         joinGroupBtn.setStyle(
             "-fx-background-color: transparent;" +
-            "-fx-text-fill: black; " +
+            "-fx-text-fill: white; " +
             "-fx-cursor: hand; " +
             "-fx-padding: 5; " +
             "-fx-alignment: CENTER-LEFT; " +
@@ -1374,8 +1437,8 @@ public class HomeController {
                             HBox conversationItem = ConversationItemBuilder.createConversationItem(
                                     photoUrl != null ? photoUrl : "genki/img/user-default.png",
                                     friendName,
-                                    lastMessage != null ? lastMessage : "",
-                                    time != null ? time : "",
+                                    lastMessage != null && !lastMessage.isEmpty() ? lastMessage : "No messages yet",
+                                    time != null && !time.isEmpty() ? time : "Just now",
                                     unreadCount,
                                     isOnline);
 
@@ -1781,8 +1844,8 @@ public class HomeController {
                 HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
                         newGroup.getGroupProfilePicture(),
                         newGroup.getGroupName(),
-                        "",
-                        "",
+                        "No messages yet",
+                        "Just now",
                         0,
                         false
                 );
@@ -1837,4 +1900,3 @@ public class HomeController {
         });
     }
 }
-

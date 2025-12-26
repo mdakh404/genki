@@ -23,18 +23,18 @@
             <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #232e2e; -fx-padding: 16;">
                 <ImageView fx:id="UserProfil" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true" />
                 <VBox fx:id="UserNameStatus" spacing="2.0" HBox.hgrow="ALWAYS">
-                    <Label fx:id="CurrentUsername" style="-fx-text-fill: #2bfbfb; -fx-font-size: 16px; -fx-font-weight: bold;" text="Alex Johnson" />
+                    <Label fx:id="CurrentUsername" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" text="Alex Johnson" />
                     <Label style="-fx-text-fill: lightgreen; -fx-font-size: 12px; -fx-font-weight: bold;" text="Online" />
                 </VBox>
-                <Button fx:id="btnNotifications" layoutX="260.0" layoutY="27.0" onAction="#openNotifications" style="-fx-background-color: transparent; -fx-text-fill: #2bfbfb; -fx-cursor: hand; -fx-font-size: 18px;" text="🔔" />
-                <Button fx:id="btnAdd" layoutX="302.0" layoutY="27.0" onAction="#AddUserOrGroup" style="-fx-background-color: transparent; -fx-text-fill: #2bfbfb; -fx-cursor: hand; -fx-font-size: 20px;" text="+" />
-                <Button fx:id="btnSettings" onAction="#handleSettingsBtnClick" style="-fx-background-color: transparent; -fx-text-fill: #2bfbfb; -fx-font-size: 22px; -fx-cursor: hand;" text="⚙" />
+                <Button fx:id="btnNotifications" layoutX="260.0" layoutY="27.0" onAction="#openNotifications" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 18px;" text="🔔" />
+                <Button fx:id="btnAdd" layoutX="302.0" layoutY="27.0" onAction="#AddUserOrGroup" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 20px;" text="+" />
+                <Button fx:id="btnSettings" onAction="#handleSettingsBtnClick" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 22px; -fx-cursor: hand;" text="⚙" />
             </HBox>
 
             <!-- Search field -->
             <HBox style="-fx-background-color: #232e2e; -fx-padding: 0 16 16 16;">
                 <TextField  prefHeight="40.0" promptText="Search conversations..." 
-                    style="-fx-background-color: #2a3535; -fx-text-fill: #2bfbfb; -fx-prompt-text-fill: #6b9e9e; -fx-background-radius: 8; -fx-padding: 10;" 
+                    style="-fx-background-color: #2a3535; -fx-text-fill: white; -fx-prompt-text-fill: #6b9e9e; -fx-background-radius: 8; -fx-padding: 10;" 
                     HBox.hgrow="ALWAYS" />
             </HBox>
 
@@ -93,7 +93,7 @@
 
             <StackPane VBox.vgrow="ALWAYS">
                 <ScrollPane fx:id="messagesScrollPane" fitToWidth="true" styleClass="scroll-pane" stylesheets="@../css/chat.css" VBox.vgrow="ALWAYS">
-                    <VBox fx:id="messagesContainer" prefHeight="400" prefWidth="700" spacing="16">
+                    <VBox fx:id="messagesContainer" spacing="10" style="-fx-padding: 10;">
                         <!-- Messages will be added dynamically from the controller -->
                     </VBox>
                 </ScrollPane>
