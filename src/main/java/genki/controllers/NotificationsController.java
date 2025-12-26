@@ -206,8 +206,9 @@ public class NotificationsController {
                             Alert.AlertType.INFORMATION
                     );
                     
-                    // Remove from UI
+                    // Remove from UI and UserSession
                     notifications.remove(request);
+                    removeNotificationFromUserSession(request.getNotificationId());
                     updateEmptyState();
                     
                     // Update badge in HomeController
@@ -274,9 +275,18 @@ public class NotificationsController {
                             Alert.AlertType.INFORMATION
                     );
                     
-                    // Remove from UI
+                    // Remove from UI and UserSession
                     notifications.remove(request);
+                    removeNotificationFromUserSession(request.getNotificationId());
                     updateEmptyState();
+                    
+                    // Send socket message to notify the requester that their group join request was accepted
+                    sendGroupJoinAcceptanceNotification(
+                        request.getUsername(), 
+                        senderUserDoc.getObjectId("_id").toHexString(),  // Pass the requester's userId
+                        groupDoc.getString("group_name"), 
+                        groupDoc.getObjectId("_id").toString()
+                    );
                     
                     // Update badge in HomeController
                     if (homeController != null) {
@@ -328,8 +338,9 @@ public class NotificationsController {
                         Alert.AlertType.INFORMATION
                 );
                 
-                // Remove from UI
+                // Remove from UI and UserSession
                 notifications.remove(request);
+                removeNotificationFromUserSession(request.getNotificationId());
                 updateEmptyState();
                 
                 // Update badge in HomeController
@@ -479,6 +490,55 @@ public class NotificationsController {
             container.getChildren().addAll(avatar, textContainer, spacer, buttonBox);
             
             setGraphic(container);
+        }
+    }
+    
+    /**
+     * Remove a notification from UserSession by its ID
+     * This ensures notifications don't reappear on restart
+     * @param notificationId The ID of the notification to remove
+     */
+    private void removeNotificationFromUserSession(ObjectId notificationId) {
+        try {
+            UserSession.getNotifications().removeIf(notification -> 
+                notification.getNotificationId().equals(notificationId)
+            );
+            logger.info("✓ Notification " + notificationId.toHexString() + " removed from UserSession");
+        } catch (Exception e) {
+            logger.warning("Failed to remove notification from UserSession: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Send a socket message to notify the requester that their group join request was accepted
+     * This allows them to immediately add the group conversation to their UI
+     * @param requesterUsername The username of the person who requested to join
+     * @param requesterUserId The userId of the requester (for message routing)
+     * @param groupName The name of the group
+     * @param groupId The ID of the group
+     */
+    private void sendGroupJoinAcceptanceNotification(String requesterUsername, String requesterUserId, String groupName, String groupId) {
+        try {
+            // Create a notification message to send via socket with recipientId for proper routing
+            Document notificationMessage = new Document()
+                    .append("type", "GROUP_JOIN_ACCEPTED")
+                    .append("recipientId", requesterUserId)  // Add recipientId so server can route to the right client
+                    .append("requesterUsername", requesterUsername)
+                    .append("groupName", groupName)
+                    .append("groupId", groupId)
+                    .append("acceptedBy", UserSession.getUsername())
+                    .append("timestamp", System.currentTimeMillis());
+            
+            String jsonMessage = genki.utils.GsonUtility.getGson().toJson(notificationMessage);
+            
+            if (UserSession.getClientSocket() != null) {
+                UserSession.getClientSocket().sendGroupJoinAcceptanceNotification(jsonMessage);
+                logger.info("✓ Sent GROUP_JOIN_ACCEPTED notification for group: " + groupName + " to user: " + requesterUsername + " (ID: " + requesterUserId + ")");
+            } else {
+                logger.warning("Client socket is not initialized, cannot send group join acceptance notification");
+            }
+        } catch (Exception e) {
+            logger.warning("Failed to send group join acceptance notification: " + e.getMessage());
         }
     }
 }

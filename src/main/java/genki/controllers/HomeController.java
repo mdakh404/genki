@@ -2139,4 +2139,133 @@ public class HomeController {
             }
         });
     }
+    
+    /**
+     * Add a group conversation to the UI immediately when a group join request is accepted
+     * This is called when receiving GROUP_JOIN_ACCEPTED socket message
+     * @param groupId The ID of the group
+     * @param groupName The name of the group
+     */
+    public void addGroupConversationFromAcceptance(String groupId, String groupName) {
+        Platform.runLater(() -> {
+            try {
+                // Fetch the group conversation from the database
+                if (dbConnection == null) {
+                    dbConnection = new DBConnection("genki_testing");
+                }
+                
+                String currentUserId = UserSession.getUserId();
+                
+                // First, try to find by groupId (preferred)
+                var groupConversations = dbConnection
+                    .getDatabase()
+                    .getCollection("Conversation")
+                    .find(new org.bson.Document("groupId", groupId)
+                        .append("type", "group"));
+                
+                org.bson.Document conversationDoc = groupConversations.first();
+                
+                // If not found by groupId, try by groupName (fallback for older conversations)
+                if (conversationDoc == null) {
+                    logger.log(Level.INFO, "GroupId not found, searching by groupName: " + groupName);
+                    groupConversations = dbConnection
+                        .getDatabase()
+                        .getCollection("Conversation")
+                        .find(new org.bson.Document("groupName", groupName)
+                            .append("type", "group"));
+                    conversationDoc = groupConversations.first();
+                }
+                
+                if (conversationDoc != null) {
+                    ObjectId conversationId = conversationDoc.getObjectId("_id");
+                    
+                    // Update the conversation document to include groupId if it doesn't have it
+                    if (conversationDoc.getString("groupId") == null) {
+                        dbConnection.getDatabase()
+                            .getCollection("Conversation")
+                            .updateOne(
+                                new org.bson.Document("_id", conversationId),
+                                new org.bson.Document("$set", new org.bson.Document("groupId", groupId))
+                            );
+                        logger.log(Level.INFO, "✓ Updated conversation with groupId: " + groupId);
+                    }
+                    
+                    // Check if current user is already a participant
+                    java.util.List<?> participantIds = conversationDoc.getList("participantIds", Object.class);
+                    boolean isParticipant = participantIds != null && participantIds.stream()
+                        .anyMatch(id -> id.toString().equals(currentUserId));
+                    
+                    // If not a participant, add them
+                    if (!isParticipant) {
+                        dbConnection.getDatabase()
+                            .getCollection("Conversation")
+                            .updateOne(
+                                new org.bson.Document("_id", conversationId),
+                                new org.bson.Document("$addToSet", new org.bson.Document("participantIds", currentUserId))
+                            );
+                        logger.log(Level.INFO, "✓ Added user to group conversation participants");
+                    }
+                    
+                    String lastMessage = conversationDoc.getString("lastMessageContent");
+                    if (lastMessage == null || lastMessage.isEmpty()) {
+                        lastMessage = "No messages yet";
+                    }
+                    
+                    String time = "";
+                    Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+                    if (lastMsgTimeObj != null) {
+                        time = formatMessageTime(lastMsgTimeObj);
+                    }
+                    
+                    String groupPhotoUrl = conversationDoc.getString("photo_url");
+                    if (groupPhotoUrl == null) {
+                        groupPhotoUrl = "genki/img/group-default.png";
+                    }
+                    
+                    // Create UI item for the group conversation
+                    HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
+                        groupPhotoUrl,
+                        groupName,
+                        lastMessage,
+                        time,
+                        0,  // unread count
+                        false  // is online
+                    );
+                    
+                    // Store conversation ID and group ID in userData map
+                    java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                    userData.put("conversationId", conversationId.toString());
+                    userData.put("groupName", groupName);
+                    userData.put("groupId", groupId);
+                    newGroupContainer.setUserData(userData);
+                    
+                    // Add click handler to open group conversation
+                    newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
+                    
+                    // Cache the group conversation item
+                    UserSession.addGroupConversationItem(newGroupContainer);
+                    
+                    // Add to the groups list container in UI
+                    groupsListContainer.getChildren().add(0, newGroupContainer);
+                    
+                    // Remove "No groups found" label if present
+                    groupsListContainer.getChildren().removeIf(node -> 
+                        node instanceof Label && ((Label)node).getText().equals("No groups found")
+                    );
+                    
+                    // Switch to groups view if not already there
+                    if (!groupsPane.isVisible()) {
+                        switchUsers(false);
+                    }
+                    
+                    logger.log(Level.INFO, "✅ Group conversation added to UI from acceptance: " + groupName + " (GroupID: " + groupId + ")");
+                } else {
+                    logger.log(Level.WARNING, "⚠️ Could not find conversation for group: " + groupName + " (GroupID: " + groupId + ")");
+                }
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "❌ Error adding group conversation from acceptance", e);
+                e.printStackTrace();
+            }
+        });
+    }
 }
