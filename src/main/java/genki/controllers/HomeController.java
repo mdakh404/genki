@@ -318,6 +318,9 @@ public class HomeController {
             // Send message as JSON via socket
             String jsonMessage = genki.utils.GsonUtility.getGson().toJson(msgData);
             UserSession.getClientSocket().sendMessages(jsonMessage);
+            
+            // Update conversation list with the sent message (for both direct and group conversations)
+            updateConversationListWithMessage(msgData);
 
             // IMPROVEMENT 2: Thread Safety and UI Updates
             // Save to DB in background thread and update UI safely if needed
@@ -449,7 +452,7 @@ public class HomeController {
     private void updateConversationListWithMessage(MessageData msgData) {
         Platform.runLater(() -> {
             try {
-                // Get the conversation item from the conversation list
+                // Check direct conversations first
                 java.util.List<javafx.scene.Node> conversationItems = conversationListContainer.getChildren();
                 
                 for (javafx.scene.Node item : conversationItems) {
@@ -465,7 +468,30 @@ public class HomeController {
                             if (convId != null && convId.toString().equals(msgData.conversationId)) {
                                 // Found the conversation item - update it with new message and time
                                 updateConversationItemUI(convItem, msgData);
-                                System.out.println("✅ Updated conversation: " + msgData.conversationId);
+                                System.out.println("✅ Updated direct conversation: " + msgData.conversationId);
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                // Check group conversations if not found in direct conversations
+                java.util.List<javafx.scene.Node> groupItems = groupsListContainer.getChildren();
+                
+                for (javafx.scene.Node item : groupItems) {
+                    if (item instanceof HBox) {
+                        HBox groupItem = (HBox) item;
+                        Object userData = groupItem.getUserData();
+                        
+                        // Check if userData is a map containing conversation ID
+                        if (userData instanceof java.util.Map) {
+                            java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) userData;
+                            Object convId = dataMap.get("conversationId");
+                            
+                            if (convId != null && convId.toString().equals(msgData.conversationId)) {
+                                // Found the group item - update it with new message and time
+                                updateConversationItemUI(groupItem, msgData);
+                                System.out.println("✅ Updated group conversation: " + msgData.conversationId);
                                 return;
                             }
                         }
