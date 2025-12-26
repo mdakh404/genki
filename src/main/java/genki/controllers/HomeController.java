@@ -388,6 +388,9 @@ public class HomeController {
 
     @FXML
     public void initialize() {
+
+
+
         // Initialize the DB connection ONCE for this controller
         dbConnection = new DBConnection("genki_testing");
 
@@ -603,6 +606,8 @@ public class HomeController {
             System.out.println("  - currentConversationId: " + currentConversationId);
             System.out.println("  - currentRecipientId: " + currentRecipientId);
             System.out.println("  - currentRecipientName: " + currentRecipientName);
+
+
             
             // Update conversation list with last message and time (always, regardless of current view)
             if (msgData.conversationId != null) {
@@ -780,6 +785,7 @@ public class HomeController {
         System.out.println("╚═══════════════════════════════════════════════════╝");
         System.out.println("Conversation ID: " + conversationId);
         this.currentConversationId = conversationId;
+
         
         // Show loading spinner immediately
         Platform.runLater(() -> {
@@ -836,13 +842,16 @@ public class HomeController {
                             
                             // For groups, don't show online/offline status
                             if (chatContactStatus != null) {
-                                chatContactStatus.setText("Group");
+                                chatContactStatus.setText("Group Chat");
                                 chatContactStatus.setStyle("-fx-text-fill: #6b9e9e; -fx-font-size: 12px;");
                             }
                             
                             if (chatContactStatusCircle != null) {
                                 chatContactStatusCircle.setFill(javafx.scene.paint.Color.web("#6b9e9e"));
                             }
+
+                            // Adding group admiin settings button
+
                             
                             // Update right panel
                             if (rightContactName != null) {
