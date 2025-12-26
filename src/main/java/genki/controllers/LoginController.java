@@ -103,14 +103,14 @@ public class LoginController implements Initializable {
 
 
                          //Creating Client Socket
-                         
                          client = new clientSocketController(loginResult.getUsername());
 
                          UserSession.startSession(
                                loginResult.getUsername(),
                                loginResult.getUserId(),
                                loginResult.getUserRole(),
-                               loginResult.getImageUrl()
+                               loginResult.getImageUrl(),
+                               client  // Pass the existing clientSocketController instance
                          );
 
 

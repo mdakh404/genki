@@ -22,6 +22,7 @@ public class UserSession {
     private static ArrayList<Notification> listNotifications = new ArrayList<>();
     public  static ArrayList<User> ConnectedUsers = new ArrayList<>();
     public  static ArrayList<HBox> conversationItems = new ArrayList<>();
+    public  static ArrayList<HBox> groupConversationItems = new ArrayList<>();
     private static clientSocketController ClientSocket; 
 
     private UserSession() {}
@@ -31,7 +32,15 @@ public class UserSession {
         UserSession.userId= userId;
         UserSession.userRole = userRole;
         UserSession.imageUrl = imageUrl;
-        UserSession.ClientSocket = new clientSocketController(username);
+        // ClientSocket should already be set by LoginController
+    }
+
+    public static void startSession(String username, String userId, String userRole, String imageUrl, clientSocketController clientSocket) {
+        UserSession.username = username;
+        UserSession.userId= userId;
+        UserSession.userRole = userRole;
+        UserSession.imageUrl = imageUrl;
+        UserSession.ClientSocket = clientSocket;  // Use the existing instance from LoginController
     }
 
 
@@ -135,6 +144,22 @@ public class UserSession {
 
     public static void removeConversationItem(HBox item) {
         conversationItems.remove(item);
+    }
+
+    public static ArrayList<HBox> getGroupConversationItems() {
+        return groupConversationItems;
+    }
+
+    public static void setGroupConversationItems(ArrayList<HBox> items) {
+        groupConversationItems = items;
+    }
+
+    public static void addGroupConversationItem(HBox item) {
+        groupConversationItems.add(item);
+    }
+
+    public static void removeGroupConversationItem(HBox item) {
+        groupConversationItems.remove(item);
     }
 
     public static void addFriend(User friend){

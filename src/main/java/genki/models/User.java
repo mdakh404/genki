@@ -4,9 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 public class User {
     @Expose
+    @SerializedName("_id")
     private String id;
     @Expose
     private String username;

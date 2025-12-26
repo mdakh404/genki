@@ -89,14 +89,45 @@ public class ConversationDAO {
     }
     
     /**
-     * Create a new group conversation with group details
+     * Find an existing group conversation by group name
+     * @param groupName Name of the group
+     * @return The ObjectId of the existing conversation, or null if not found
+     */
+    public ObjectId findGroupConversation(String groupName) {
+        try {
+            Document query = new Document("type", "group")
+                    .append("groupName", groupName);
+            
+            Document result = conversations.find(query).first();
+            
+            if (result != null) {
+                return result.getObjectId("_id");
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error finding group conversation: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Create a new group conversation with group details, or return existing one
      * @param participantIds List of participant IDs
      * @param groupName Name of the group
      * @param photoUrl Profile picture URL of the group
-     * @return The ObjectId of the created conversation
+     * @return The ObjectId of the conversation (existing or newly created)
      */
     public ObjectId createGroupConversation(List<String> participantIds, String groupName, String photoUrl) {
         try {
+            // First check if conversation already exists for this group
+            ObjectId existingId = findGroupConversation(groupName);
+            if (existingId != null) {
+                System.out.println("Group conversation already exists: " + existingId + " for group: " + groupName);
+                return existingId;
+            }
+            
+            // If not, create a new one
             Document doc = new Document()
                     .append("type", "group")
                     .append("participantIds", participantIds)
@@ -154,6 +185,44 @@ public class ConversationDAO {
         } catch (Exception e) {
             System.err.println("Error updating last message: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Get a conversation by its ID
+     * @param conversationId The conversation ID
+     * @return The Conversation object, or null if not found
+     */
+    public Conversation getConversationById(ObjectId conversationId) {
+        try {
+            Document doc = conversations.find(new Document("_id", conversationId)).first();
+            
+            if (doc != null) {
+                Conversation conversation = new Conversation();
+                conversation.setId(doc.getObjectId("_id"));
+                conversation.setType(doc.getString("type"));
+                conversation.setParticipantIds(doc.getList("participantIds", String.class));
+                conversation.setLastMessageContent(doc.getString("lastMessageContent"));
+                conversation.setLastMessageSenderId(doc.getString("lastMessageSenderId"));
+                
+                // Handle LocalDateTime if stored as Date or string
+                Object lastMessageTime = doc.get("lastMessageTime");
+                if (lastMessageTime != null) {
+                    if (lastMessageTime instanceof LocalDateTime) {
+                        conversation.setLastMessageTime((LocalDateTime) lastMessageTime);
+                    }
+                }
+                
+                conversation.setGroupName(doc.getString("groupName"));
+                conversation.setPhotoUrl(doc.getString("photo_url"));
+                
+                return conversation;
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error getting conversation by ID: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
     }
 }

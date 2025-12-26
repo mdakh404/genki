@@ -6,6 +6,8 @@ import genki.utils.DBConnection;
 import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
 import genki.utils.NotificationDAO;
+import genki.utils.ConversationItemBuilder;
+import genki.utils.ConversationDAO;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -16,6 +18,8 @@ import org.bson.types.ObjectId;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -25,6 +29,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.util.logging.Logger;
+import java.util.List;
 
 public class JoinGroupController {
 
@@ -47,6 +52,11 @@ public class JoinGroupController {
     
     // Liste de tous les groupes disponibles
     private ObservableList<String> allGroups = FXCollections.observableArrayList();
+    private HomeController homeController;
+    
+    public void setHomeController(HomeController homeController) {
+        this.homeController = homeController;
+    }
     
     @FXML
     public void initialize() {
@@ -137,6 +147,18 @@ public class JoinGroupController {
             Document groupDoc = groupsCollection.find(
                     Filters.eq("group_name", nameGroup)
             ).first();
+            
+            // Check if group was found
+            if (groupDoc == null) {
+                AlertConstruct.alertConstructor(
+                        "Group Not Found",
+                        "",
+                        "No group found with the name: " + nameGroup,
+                        Alert.AlertType.ERROR
+                );
+                logger.warning("Group not found: " + nameGroup);
+                return;
+            }
 
 
             if (groupDoc.getBoolean("is_public")) {
@@ -161,8 +183,105 @@ public class JoinGroupController {
                        groupDoc.getString("profile_picture"),
                        groupDoc.getString("group_admin")
                 );
+                
+                // 🔥 CRITICAL: Populate group members from the original group document
+                if (groupDoc.getList("users", String.class) != null) {
+                    for (String userId : groupDoc.getList("users", String.class)) {
+                        nvGroup.addUser(userId);
+                    }
+                }
 
                 UserSession.addGroup(nvGroup);
+                
+                // 🔥 Fetch the UPDATED group document to get the latest participant list
+                Document updatedGroupDoc = groupsCollection.find(
+                        Filters.eq("_id", groupDoc.getObjectId("_id"))
+                ).first();
+                
+                ConversationDAO conversationDAO = new ConversationDAO();
+                ObjectId conversationId;
+                
+                // 🔥 Check if conversation already exists for this group
+                ObjectId existingConversationId = conversationDAO.findGroupConversation(groupDoc.getString("group_name"));
+                
+                if (existingConversationId != null) {
+                    // Conversation exists - add the new user to participants if not already there
+                    conversationId = existingConversationId;
+                    
+                    // Get the conversation and update its participants
+                    MongoCollection<Document> conversationCollection = JoinGroupDBConnection.getCollection("Conversation");
+                    Document conversationQuery = new Document("_id", existingConversationId);
+                    Document conversationDoc = conversationCollection.find(conversationQuery).first();
+                    
+                    if (conversationDoc != null) {
+                        List<String> currentParticipants = conversationDoc.getList("participantIds", String.class);
+                        if (currentParticipants == null) {
+                            currentParticipants = new java.util.ArrayList<>();
+                        }
+                        
+                        // Add current user if not already in the list
+                        if (!currentParticipants.contains(UserSession.getUserId())) {
+                            currentParticipants.add(UserSession.getUserId());
+                            
+                            // Update the conversation in database
+                            conversationCollection.updateOne(
+                                conversationQuery,
+                                new Document("$set", new Document("participantIds", currentParticipants))
+                            );
+                            
+                            System.out.println("✅ Added user to existing conversation: " + conversationId);
+                        }
+                    }
+                } else {
+                    // Conversation doesn't exist - create new one with all group members
+                    java.util.ArrayList<String> participantIds = new java.util.ArrayList<>();
+                    
+                    // Add all group members to participants (including the new user)
+                    if (updatedGroupDoc != null && updatedGroupDoc.getList("users", String.class) != null) {
+                        participantIds.addAll(updatedGroupDoc.getList("users", String.class));
+                    }
+                    
+                    // Ensure current user is in the list
+                    if (!participantIds.contains(UserSession.getUserId())) {
+                        participantIds.add(UserSession.getUserId());
+                    }
+                    
+                    conversationId = conversationDAO.createGroupConversation(
+                        participantIds,
+                        groupDoc.getString("group_name"),
+                        groupDoc.getString("profile_picture")
+                    );
+                    
+                    System.out.println("✅ Created new group conversation: " + conversationId);
+                }
+                
+                // Create UI item and cache it
+                if (conversationId != null && homeController != null) {
+                    javafx.scene.layout.HBox newGroupItem = ConversationItemBuilder.createConversationItem(
+                        groupDoc.getString("profile_picture") != null ? groupDoc.getString("profile_picture") : "genki/img/group-default.png",
+                        groupDoc.getString("group_name"),
+                        "",
+                        "",
+                        0,
+                        false
+                    );
+                    
+                    // Store conversation ID and group name in userData map
+                    java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                    userData.put("conversationId", conversationId.toString());
+                    userData.put("groupName", groupDoc.getString("group_name"));
+                    newGroupItem.setUserData(userData);
+                    
+                    newGroupItem.setOnMouseClicked(e -> homeController.setCurrentConversation(conversationId, false));
+                    
+                    // 🔥 Cache the new group conversation
+                    UserSession.addGroupConversationItem(newGroupItem);
+                    
+                    // 🔥 Display immediately in UI
+                    homeController.addNewGroupToUI(newGroupItem);
+                    
+                    System.out.println("✅ Joined group cached and displayed: " + nameGroup);
+                }
 
                 AlertConstruct.alertConstructor(
                            "Success",
@@ -170,6 +289,10 @@ public class JoinGroupController {
                         "You have joined " + nameGroup,
                         Alert.AlertType.INFORMATION
                 );
+                
+                // Close dialog
+                Stage stage = (Stage) btnJoinGroup.getScene().getWindow();
+                stage.close();
 
             } else {
 

@@ -9,10 +9,13 @@ import java.util.List;
 
 import genki.models.User;
 import genki.models.MessageData;
+import genki.models.Conversation;
 import genki.network.ClientHandler;
 import genki.network.MessageListener;
 import genki.utils.GsonUtility;
 import genki.utils.UserSession;
+import genki.utils.ConversationDAO;
+import org.bson.types.ObjectId;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -95,11 +98,23 @@ public class ServerSocketController implements MessageListener {
 	public void onClientConnected(ClientHandler handler) {
 		// Called from ClientHandler background thread; update UI/state on FX thread
 		Platform.runLater(() -> {
+			// Check if this user is already connected (prevent duplicates)
+			String username = handler.getUser().getUsername();
+			boolean alreadyConnected = ConnectedUsers.stream()
+				.anyMatch(h -> h.getUser().getUsername() != null && 
+					h.getUser().getUsername().equals(username));
+			
+			if (alreadyConnected) {
+				System.out.println("⚠️ User " + username + " already connected, not adding duplicate");
+				return;
+			}
+			
 			ConnectedUsers.add(handler);
 			UserSession.getConnectedUsers().add(handler.getUser());
-			System.out.println("Registered user: " + handler.getUser().getUsername());
-			System.out.println("Connected2222 : " + UserSession.getConnectedUsers());
-			//printConnectedUsers();
+			System.out.println("✓ Registered user: " + handler.getUser().getUsername());
+			System.out.println("✓ Total connected: " + UserSession.getConnectedUsers().size());
+			
+			// Broadcast updated list to all clients (including the newly connected one)
 			broadcastConnectedUsers();
 		});
 	}
@@ -124,11 +139,13 @@ public class ServerSocketController implements MessageListener {
 		try {
 			// Try to parse as MessageData (regular message)
 			MessageData msgData = GsonUtility.getGson().fromJson(cleanMessage, MessageData.class);
-			System.out.println("Looking for recipient: " + msgData.recipientId + " (or name: " + msgData.recipientName + ")");
 			
-			// Find the recipient and send the message to them
+			// Check if this is a GROUP message (recipientId is null) or DIRECT message (recipientId is not null)
 			if (msgData.recipientId != null) {
+				// DIRECT MESSAGE - route to single recipient
+				System.out.println("DIRECT MESSAGE - Looking for recipient: " + msgData.recipientId + " (or name: " + msgData.recipientName + ")");
 				System.out.println("Connected users count: " + ConnectedUsers.size());
+				
 				for (ClientHandler handler : ConnectedUsers) {
 					User handlerUser = handler.getUser();
 					if (handlerUser != null) {
@@ -146,6 +163,41 @@ public class ServerSocketController implements MessageListener {
 						}
 					}
 				}
+			} else if (msgData.conversationId != null) {
+				// GROUP MESSAGE - broadcast to all participants in the group
+				System.out.println("GROUP MESSAGE - Looking for conversation: " + msgData.conversationId);
+				
+				try {
+					// Get the conversation to find all participants
+					ConversationDAO conversationDAO = new ConversationDAO();
+					Conversation conversation = conversationDAO.getConversationById(new ObjectId(msgData.conversationId));
+					
+					if (conversation != null && conversation.getParticipantIds() != null) {
+						List<String> participantIds = conversation.getParticipantIds();
+						System.out.println("Found " + participantIds.size() + " participants in group");
+						
+						// Send to all connected participants
+						for (ClientHandler handler : ConnectedUsers) {
+							User handlerUser = handler.getUser();
+							if (handlerUser != null) {
+								String userId = handlerUser.getId() != null ? handlerUser.getId().toString() : null;
+								
+								// Send to all participants except the sender
+								if (userId != null && participantIds.contains(userId) && !userId.equals(msgData.senderId)) {
+									System.out.println("  Broadcasting to group member: " + handlerUser.getUsername());
+									handler.sendMessage(cleanMessage);
+								}
+							}
+						}
+					} else {
+						System.err.println("Conversation not found or has no participants: " + msgData.conversationId);
+					}
+				} catch (Exception e) {
+					System.err.println("Error handling group message: " + e.getMessage());
+					e.printStackTrace();
+				}
+			} else {
+				System.err.println("Message has neither recipientId (direct) nor conversationId (group)");
 			}
 		} catch (Exception e) {
 			// If it's not a valid MessageData, it might be another type of message

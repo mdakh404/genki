@@ -68,6 +68,11 @@ public class GroupModel {
                             "",
                             groupAdmin
                     );
+                    
+                    // 🔥 CRITICAL: Populate group members from usersIDs list
+                    for (String userId : usersIDs) {
+                        nvGroup.addUser(userId);
+                    }
 
                     usersCollection.updateOne(
                             Filters.eq("_id", adminUserDoc.getObjectId("_id")),
