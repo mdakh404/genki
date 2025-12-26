@@ -137,6 +137,7 @@ public class HomeController {
     @FXML private ImageView messageProfil;
     @FXML private Label CurrentUsername;
     @FXML private Button btnNotifications;
+    private Label notificationBadge;  // Badge to show unread notification count
     
 
 
@@ -150,14 +151,21 @@ public class HomeController {
 
              MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
 
+             // Load only pending notifications (not accepted or rejected)
              long notificationsCount = notificationsCollection.countDocuments(
-                     Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+                     Filters.and(
+                         Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId())),
+                         Filters.eq("status", "pending")
+                     )
              );
 
              if (notificationsCount > 0) {
 
                  notificationsCollection.find(
-                         Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+                         Filters.and(
+                             Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId())),
+                             Filters.eq("status", "pending")
+                         )
                  ).forEach(notificationDoc -> {
 
                       Notification nvNotification = new Notification(
@@ -182,6 +190,140 @@ public class HomeController {
         } catch (MongoException ex) {
             logger.warning("Failed to load notifications " + ex.getMessage());
         }
+        
+        // Update the notification badge with the count
+        updateNotificationBadge();
+    }
+
+    /**
+     * Create and setup the notification badge label
+     */
+    private void setupNotificationBadge() {
+        if (btnNotifications == null) return;
+        
+        notificationBadge = new Label();
+        notificationBadge.setStyle(
+            "-fx-background-color: #ef4444; " +
+            "-fx-text-fill: white; " +
+            "-fx-background-radius: 50%; " +
+            "-fx-min-width: 18px; " +
+            "-fx-min-height: 18px; " +
+            "-fx-alignment: center; " +
+            "-fx-font-size: 10px; " +
+            "-fx-font-weight: bold;"
+        );
+        notificationBadge.setVisible(false);
+        notificationBadge.setManaged(false);
+    }
+
+    /**
+     * Update the notification badge count
+     */
+    public void updateNotificationBadge() {
+        Platform.runLater(() -> {
+            int notificationCount = UserSession.getNotifications().size();
+            
+            if (notificationBadge == null) {
+                setupNotificationBadge();
+            }
+            
+            if (notificationCount > 0) {
+                notificationBadge.setText(String.valueOf(notificationCount));
+                notificationBadge.setVisible(true);
+                notificationBadge.setManaged(true);
+            } else {
+                notificationBadge.setVisible(false);
+                notificationBadge.setManaged(false);
+            }
+        });
+    }
+
+    /**
+     * Setup real-time notification listener via WebSocket
+     * This registers a callback to receive new notifications in real-time
+     */
+    public void setupNotificationListener() {
+        if (UserSession.getClientSocket() == null) {
+            logger.warning("Client socket is not initialized yet");
+            return;
+        }
+        
+        // Set callback for incoming notifications
+        UserSession.getClientSocket().setOnNewNotificationCallback(notification -> {
+            logger.info("📬 New notification received: " + notification.getSenderName() + " - " + notification.getType());
+            
+            Platform.runLater(() -> {
+                try {
+                    // Add notification to UserSession
+                    UserSession.addNotification(notification);
+                    
+                    // Update badge to show new count
+                    updateNotificationBadge();
+                    
+                    // Optional: Show a toast or system notification
+                    logger.info("✅ Notification badge updated - New count: " + UserSession.getNotifications().size());
+                    
+                } catch (Exception e) {
+                    logger.warning("Error processing incoming notification: " + e.getMessage());
+                }
+            });
+        });
+        
+        logger.info("✓ Real-time notification listener registered successfully");
+    }
+
+    /**
+     * Cleanup old notifications from the database
+     * Deletes notifications older than 30 days that have been accepted or rejected
+     * This prevents database bloat and keeps notification history manageable
+     */
+    private void cleanupOldNotifications() {
+        new Thread(() -> {
+            try {
+                DBConnection dbConnection = new DBConnection("genki_testing");
+                MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
+                
+                // Calculate date 30 days ago
+                java.time.LocalDateTime thirtyDaysAgo = java.time.LocalDateTime.now().minusDays(30);
+                java.time.ZonedDateTime zdt = thirtyDaysAgo.atZone(java.time.ZoneId.systemDefault());
+                java.util.Date cutoffDate = java.util.Date.from(zdt.toInstant());
+                
+                // Delete notifications older than 30 days that are not pending
+                long deletedCount = notificationsCollection.deleteMany(
+                    Filters.and(
+                        Filters.lt("createdAt", cutoffDate),
+                        Filters.ne("status", "pending")
+                    )
+                ).getDeletedCount();
+                
+                if (deletedCount > 0) {
+                    logger.info("🧹 Cleaned up " + deletedCount + " old notifications");
+                }
+            } catch (MongoException e) {
+                logger.warning("Error during notification cleanup: " + e.getMessage());
+            }
+        }).start();
+    }
+    
+    /**
+     * Start periodic notification cleanup task
+     * Runs every 12 hours to clean up old notifications
+     */
+    private void startNotificationCleanupScheduler() {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    // Run cleanup every 12 hours (43200000 ms)
+                    Thread.sleep(43200000);
+                    cleanupOldNotifications();
+                } catch (InterruptedException e) {
+                    logger.info("Notification cleanup scheduler interrupted");
+                    break;
+                } catch (Exception e) {
+                    logger.warning("Error in notification cleanup scheduler: " + e.getMessage());
+                }
+            }
+        }, "NotificationCleanupScheduler").start();
     }
 
     // handle logout of user
@@ -249,6 +391,9 @@ public class HomeController {
         // Initialize the DB connection ONCE for this controller
         dbConnection = new DBConnection("genki_testing");
 
+        // Setup notification badge first
+        setupNotificationBadge();
+        
         loadNotifications();
         switchUsers(true);
 
@@ -434,6 +579,10 @@ public class HomeController {
             });
         }
         
+        // Add notification button click handler
+        if (btnNotifications != null) {
+            btnNotifications.setOnMouseClicked(e -> openNotifications());
+        }
 
         // Register callback for incoming messages
         UserSession.getClientSocket().setOnNewMessageCallback(msgData -> {
@@ -490,6 +639,12 @@ public class HomeController {
 
         // Set reference to this HomeController in clientSocketController so it can update chat header status
         UserSession.getClientSocket().setHomeController(this);
+        
+        // Setup real-time notification listener for incoming notifications
+        setupNotificationListener();
+        
+        // Start periodic cleanup of old notifications
+        startNotificationCleanupScheduler();
 
     }
 
@@ -1225,6 +1380,10 @@ public class HomeController {
             logger.log(Level.INFO, "Loading Notifications.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Notifications.fxml"));
             Parent root = loader.load();
+            
+            // Set HomeController reference in NotificationsController
+            NotificationsController notificationsController = loader.getController();
+            notificationsController.setHomeController(this);
             
             Stage notificationStage = new Stage();
             try {

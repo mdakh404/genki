@@ -2,17 +2,28 @@ package genki.models;
 
 import org.bson.types.ObjectId;
 import java.time.LocalDateTime;
+import com.google.gson.annotations.Expose;
 
 public class Notification {
+    @Expose
     private ObjectId notificationId;
+    @Expose
     private ObjectId recipientUserId;
+    @Expose
     private String type; // "friend_request", "group_invite", "message", etc.
+    @Expose
     private String senderId;
+    @Expose
     private String senderName;
+    @Expose
     private String content;
+    @Expose
     private String requestType; // Additional request type classification
+    @Expose
     private String status; // "pending", "accepted", "rejected", "read"
+    @Expose
     private LocalDateTime createdAt;
+    @Expose
     private LocalDateTime readAt;
 
     public Notification() {

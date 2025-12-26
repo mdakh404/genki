@@ -5,7 +5,9 @@ import genki.utils.AlertConstruct;
 import genki.utils.DBConnection;
 import genki.utils.NotificationDAO;
 import genki.models.User;
-
+import genki.models.Notification;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -129,7 +131,50 @@ public class AddUserController implements Initializable {
             );
 
             if (sendFriendRequestNotificationId != null) {
-                logger.info("A friend request has been sent");
+                logger.info("✅ A friend request has been sent (saved to DB)");
+                
+                // 🔔 NEW: Send notification to server to broadcast to recipient via socket
+                try {
+                    System.out.println("\n╔══════════════════════════════════════════════════════════╗");
+                    System.out.println("║ SENDING NOTIFICATION VIA SOCKET                          ║");
+                    System.out.println("╚══════════════════════════════════════════════════════════╝");
+                    
+                    // Create notification object
+                    genki.models.Notification notification = new genki.models.Notification(
+                        sendFriendRequestNotificationId,
+                        recipientUserDoc.getObjectId("_id"),
+                        "friend_request",
+                        "friend_request",
+                        UserSession.getUserId(),
+                        UserSession.getUsername(),
+                        UserSession.getUsername() + " wants to add you as a friend"
+                    );
+                    notification.setStatus("pending");
+                    
+                    // Create a wrapper message to send to server
+                    // Server will see messageType="send_notification" and handle broadcasting
+                    com.google.gson.JsonObject notificationRequest = new com.google.gson.JsonObject();
+                    notificationRequest.addProperty("messageType", "send_notification");
+                    notificationRequest.addProperty("recipientId", recipientUserDoc.getObjectId("_id").toString());
+                    String notificationJson = genki.utils.GsonUtility.getGson().toJson(notification);
+                    com.google.gson.JsonObject notificationObj = com.google.gson.JsonParser.parseString(notificationJson).getAsJsonObject();
+                    notificationRequest.add("notification", notificationObj);
+                    
+                    String message = notificationRequest.toString();
+                    System.out.println("📤 Sending notification request to server...");
+                    System.out.println("   Message: " + message.substring(0, Math.min(150, message.length())));
+                    
+                    // Send via socket to server
+                    UserSession.getClientSocket().sendMessages(message);
+                    System.out.println("✓ Notification request sent to server");
+                    System.out.println("╚══════════════════════════════════════════════════════════╝\n");
+                    
+                } catch (Exception socketError) {
+                    System.err.println("\n❌ ERROR sending notification: " + socketError.getMessage());
+                    socketError.getMessage();
+                    logger.warning("Could not send notification via socket: " + socketError.getMessage());
+                }
+                
                 AlertConstruct.alertConstructor(
                        "Add User Success",
                        "",
