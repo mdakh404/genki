@@ -89,6 +89,35 @@ public class ConversationDAO {
     }
     
     /**
+     * Create a new group conversation with group details
+     * @param participantIds List of participant IDs
+     * @param groupName Name of the group
+     * @param photoUrl Profile picture URL of the group
+     * @return The ObjectId of the created conversation
+     */
+    public ObjectId createGroupConversation(List<String> participantIds, String groupName, String photoUrl) {
+        try {
+            Document doc = new Document()
+                    .append("type", "group")
+                    .append("participantIds", participantIds)
+                    .append("groupName", groupName)
+                    .append("photo_url", photoUrl)
+                    .append("lastMessageContent", "")
+                    .append("lastMessageSenderId", "")
+                    .append("lastMessageTime", LocalDateTime.now())
+                    .append("createdAt", LocalDateTime.now())
+                    .append("updatedAt", LocalDateTime.now());
+            
+            var result = conversations.insertOne(doc);
+            return result.getInsertedId().asObjectId().getValue();
+        } catch (Exception e) {
+            System.err.println("Error creating group conversation: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
      * Create a new group conversation
      * @param participantIds List of participant IDs
      * @return The ObjectId of the created conversation

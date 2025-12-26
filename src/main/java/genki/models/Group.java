@@ -36,6 +36,8 @@ public class Group {
 
     public String getGroupAdmin() { return this.groupAdmin; }
 
+    public ArrayList<String> getListUsers() { return this.listUsers; }
+
     public void addUser(String username) {
         listUsers.add(username);
     }
