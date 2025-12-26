@@ -18,6 +18,8 @@ import org.bson.types.ObjectId;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -263,6 +265,12 @@ public class JoinGroupController {
                         0,
                         false
                     );
+                    
+                    // Store conversation ID and group name in userData map
+                    java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                    userData.put("conversationId", conversationId.toString());
+                    userData.put("groupName", groupDoc.getString("group_name"));
+                    newGroupItem.setUserData(userData);
                     
                     newGroupItem.setOnMouseClicked(e -> homeController.setCurrentConversation(conversationId, false));
                     

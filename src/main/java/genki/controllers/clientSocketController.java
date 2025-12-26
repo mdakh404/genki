@@ -148,7 +148,26 @@ public class clientSocketController implements t2{
 					System.out.println("✓ Updating " + conversationItems.size() + " conversation items");
 					for(HBox conversationItem : conversationItems) {
 						Object userData = conversationItem.getUserData();
-						if (userData instanceof User) {
+						if (userData instanceof java.util.Map) {
+							// New structure: Map with "user" and "conversationId"
+							java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) userData;
+							User friend = (User) dataMap.get("user");
+							
+							if (friend != null) {
+								boolean isOnline = connectedUsers.stream()
+									.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
+								updateConversationItemOnlineStatus(conversationItem, isOnline);
+								
+								// Also update chat header if this is the currently open conversation
+								if (homeController != null && friend.getId() != null) {
+									String friendId = friend.getId().toString();
+									homeController.updateChatHeaderStatusForUser(friendId, friend.getUsername(), isOnline);
+								}
+								
+								System.out.println("  - " + friend.getUsername() + ": " + (isOnline ? "ONLINE" : "OFFLINE"));
+							}
+						} else if (userData instanceof User) {
+							// Fallback for old structure (direct User object)
 							User friend = (User) userData;
 							boolean isOnline = connectedUsers.stream()
 								.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));

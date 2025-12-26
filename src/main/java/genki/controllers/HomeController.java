@@ -402,7 +402,12 @@ public class HomeController {
             System.out.println("  - currentRecipientId: " + currentRecipientId);
             System.out.println("  - currentRecipientName: " + currentRecipientName);
             
-            // Only add message if it's for the current conversation
+            // Update conversation list with last message and time (always, regardless of current view)
+            if (msgData.conversationId != null) {
+                updateConversationListWithMessage(msgData);
+            }
+            
+            // Only add message to chat area if it's for the current conversation
             if (msgData.conversationId != null && currentConversationId != null) {
                 System.out.println("✓ Conversation ID and msgData both present, comparing...");
                 String msgConvId = msgData.conversationId;
@@ -435,6 +440,104 @@ public class HomeController {
 
     }
 
+    }
+
+    /**
+     * Update the conversation list with the latest message and timestamp
+     * This updates the UI without changing the main messages display area
+     */
+    private void updateConversationListWithMessage(MessageData msgData) {
+        Platform.runLater(() -> {
+            try {
+                // Get the conversation item from the conversation list
+                java.util.List<javafx.scene.Node> conversationItems = conversationListContainer.getChildren();
+                
+                for (javafx.scene.Node item : conversationItems) {
+                    if (item instanceof HBox) {
+                        HBox convItem = (HBox) item;
+                        Object userData = convItem.getUserData();
+                        
+                        // Check if userData is a map containing conversation ID
+                        if (userData instanceof java.util.Map) {
+                            java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) userData;
+                            Object convId = dataMap.get("conversationId");
+                            
+                            if (convId != null && convId.toString().equals(msgData.conversationId)) {
+                                // Found the conversation item - update it with new message and time
+                                updateConversationItemUI(convItem, msgData);
+                                System.out.println("✅ Updated conversation: " + msgData.conversationId);
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                System.out.println("⚠️  Conversation not found in list: " + msgData.conversationId);
+            } catch (Exception e) {
+                System.err.println("Error updating conversation list: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Update a specific conversation item UI with the latest message and timestamp
+     */
+    private void updateConversationItemUI(HBox conversationItem, MessageData msgData) {
+        try {
+            // The conversation item structure is typically:
+            // HBox [ImageView (avatar)] [VBox [Label (name)], [Label (message)], [Label (time)]]
+            
+            Label messageLabel = null;
+            Label timeLabel = null;
+            
+            // Iterate through the children of the HBox to find the VBox with text labels
+            for (javafx.scene.Node node : conversationItem.getChildren()) {
+                if (node instanceof VBox) {
+                    VBox vbox = (VBox) node;
+                    java.util.List<javafx.scene.Node> vboxChildren = vbox.getChildren();
+                    
+                    // Usually: label[0] = name, label[1] = message, label[2] = time
+                    if (vboxChildren.size() >= 2) {
+                        for (int i = 0; i < vboxChildren.size(); i++) {
+                            javafx.scene.Node vnode = vboxChildren.get(i);
+                            if (vnode instanceof Label) {
+                                Label label = (Label) vnode;
+                                
+                                // Try to identify which label is which
+                                if (messageLabel == null && i == 1) {
+                                    // Second label is usually the message
+                                    messageLabel = label;
+                                } else if (timeLabel == null && i == 2) {
+                                    // Third label is usually the time
+                                    timeLabel = label;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Update message label if found
+            if (messageLabel != null) {
+                String messagePreview = msgData.messageText;
+                if (messagePreview.length() > 40) {
+                    messagePreview = messagePreview.substring(0, 40) + "...";
+                }
+                messageLabel.setText(messagePreview);
+                System.out.println("✅ Updated message preview: " + messagePreview);
+            }
+            
+            // Update time label if found
+            if (timeLabel != null) {
+                String formattedTime = formatMessageTime(msgData.timestamp);
+                timeLabel.setText(formattedTime);
+                System.out.println("✅ Updated timestamp: " + formattedTime);
+            }
+        } catch (Exception e) {
+            System.err.println("Error updating conversation item UI: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -1255,7 +1358,12 @@ public class HomeController {
                             friendUser.setId(friendId);
                             friendUser.setUsername(friendName);
                             friendUser.setPhotoUrl(photoUrl);
-                            conversationItem.setUserData(friendUser);
+                            
+                            // Create a map to store both user and conversation ID
+                            java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                            userData.put("user", friendUser);
+                            userData.put("conversationId", conversationId.toString());
+                            conversationItem.setUserData(userData);
 
                             // Add click handler that dynamically checks current online status instead of using captured value
                             conversationItem.setOnMouseClicked(e -> {
@@ -1381,6 +1489,12 @@ public class HomeController {
                     unreadCount,
                     isOnline
                 );
+
+                // Store conversation ID and group name in userData map
+                java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                userData.put("conversationId", conversationId.toString());
+                userData.put("groupName", groupName);
+                conversationItem.setUserData(userData);
 
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
                 
