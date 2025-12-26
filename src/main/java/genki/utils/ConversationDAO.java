@@ -119,6 +119,18 @@ public class ConversationDAO {
      * @return The ObjectId of the conversation (existing or newly created)
      */
     public ObjectId createGroupConversation(List<String> participantIds, String groupName, String photoUrl) {
+        return createGroupConversation(participantIds, groupName, photoUrl, null);
+    }
+
+    /**
+     * Create a new group conversation with groupId
+     * @param participantIds List of participant IDs
+     * @param groupName Name of the group
+     * @param photoUrl Profile picture URL for the group
+     * @param groupId ObjectId of the group
+     * @return The ObjectId of the created conversation
+     */
+    public ObjectId createGroupConversation(List<String> participantIds, String groupName, String photoUrl, String groupId) {
         try {
             // First check if conversation already exists for this group
             ObjectId existingId = findGroupConversation(groupName);
@@ -132,6 +144,7 @@ public class ConversationDAO {
                     .append("type", "group")
                     .append("participantIds", participantIds)
                     .append("groupName", groupName)
+                    .append("groupId", groupId) // Store the group ID
                     .append("photo_url", photoUrl)
                     .append("lastMessageContent", "")
                     .append("lastMessageSenderId", "")

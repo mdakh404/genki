@@ -14,6 +14,7 @@ public class Conversation {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String groupName; // For group conversations
+    private String groupId; // For group conversations - stores the group's ObjectId
     private String photo_url; // For group conversations
     private Boolean isOnline; // Track if user is online (for direct conversations)
 
@@ -99,6 +100,14 @@ public class Conversation {
 
     public void setGroupName(String groupName) {
         this.groupName = groupName;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     public String getPhotoUrl() {

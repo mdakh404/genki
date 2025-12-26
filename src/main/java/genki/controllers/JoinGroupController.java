@@ -254,7 +254,8 @@ public class JoinGroupController {
                     conversationId = conversationDAO.createGroupConversation(
                         participantIds,
                         groupDoc.getString("group_name"),
-                        groupDoc.getString("profile_picture")
+                        groupDoc.getString("profile_picture"),
+                        groupDoc.getObjectId("_id").toString() // Pass the group ID
                     );
                     
                     System.out.println("✅ Created new group conversation: " + conversationId);

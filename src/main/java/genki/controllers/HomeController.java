@@ -1776,6 +1776,11 @@ public class HomeController {
                     groupDescription = "";
                 }
                 
+                String groupId = conversationDoc.getString("groupId");
+                if (groupId == null) {
+                    groupId = conversationId.toString(); // Fallback to conversation ID if groupId not set
+                }
+                
                 Boolean isPublic = conversationDoc.getBoolean("isPublic", false);
                 String groupAdmin = conversationDoc.getString("admin");
                 if (groupAdmin == null) {
@@ -1784,7 +1789,7 @@ public class HomeController {
                 
                 // Create Group object and add to UserSession
                 Group group = new Group(
-                    conversationId.toString(),
+                    groupId,  // Use the actual groupId instead of conversationId
                     groupName,
                     groupDescription,
                     isPublic,
@@ -1801,7 +1806,7 @@ public class HomeController {
                 }
                 
                 UserSession.addGroup(group);
-                System.out.println("hhhhhhhhhhhhhhhhhhhhhhhhhhh " + group);
+                logger.log(Level.INFO, "✓ Group added to UserSession: " + groupName + " (ConversationID: " + conversationId + ", GroupID: " + groupId + ")");
                 
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                     groupPhotoUrl,
@@ -1812,12 +1817,13 @@ public class HomeController {
                     isOnline
                 );
 
-                // Store conversation ID and group name in userData map
+                // Store conversation ID, group name, and groupId in userData map
                 java.util.Map<String, Object> userData = new java.util.HashMap<>();
                 userData.put("conversationId", conversationId.toString());
                 userData.put("groupName", groupName);
+                userData.put("groupId", groupId);
                 conversationItem.setUserData(userData);
-
+                System.out.println("lllllllllllllllllllllll "+ groupId);
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
                 
                 // Cache the group conversation item
@@ -2060,7 +2066,8 @@ public class HomeController {
             ObjectId conversationId = conversationDAO.createGroupConversation(
                 participantIds,
                 newGroup.getGroupName(),
-                newGroup.getGroupProfilePicture()
+                newGroup.getGroupProfilePicture(),
+                newGroup.getGroupId() // Pass the group ID
             );
             
             if (conversationId != null) {
