@@ -547,7 +547,7 @@ public class HomeController {
                 logger.log(Level.SEVERE, "Error loading group conversations in background", e);
             }
         }).start();
-
+     
         if (messagesContainer != null) {
         // Show some example messages dynamically
         /*if (messagesContainer != null) {
@@ -1769,6 +1769,39 @@ public class HomeController {
                 if (groupPhotoUrl == null) {
                     groupPhotoUrl = "genki/img/group-default.png";
                 }
+                
+                // Extract group information from conversation document
+                String groupDescription = conversationDoc.getString("description");
+                if (groupDescription == null) {
+                    groupDescription = "";
+                }
+                
+                Boolean isPublic = conversationDoc.getBoolean("isPublic", false);
+                String groupAdmin = conversationDoc.getString("admin");
+                if (groupAdmin == null) {
+                    groupAdmin = "";
+                }
+                
+                // Create Group object and add to UserSession
+                Group group = new Group(
+                    conversationId.toString(),
+                    groupName,
+                    groupDescription,
+                    isPublic,
+                    groupPhotoUrl,
+                    groupAdmin
+                );
+                
+                // Extract participant IDs if available
+                java.util.List<?> participantIds = conversationDoc.getList("participantIds", Object.class);
+                if (participantIds != null) {
+                    for (Object participantId : participantIds) {
+                        group.addUser(participantId.toString());
+                    }
+                }
+                
+                UserSession.addGroup(group);
+                System.out.println("hhhhhhhhhhhhhhhhhhhhhhhhhhh " + group);
                 
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                     groupPhotoUrl,
