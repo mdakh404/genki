@@ -344,7 +344,7 @@ public class HomeController {
             String senderImageUrl = UserSession.getImageUrl();
 
             messagesContainer.getChildren().add(
-                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, messageText));
+                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, messageText, formatTimestamp(System.currentTimeMillis())));
             messageInput.clear();
 
             // UserSession.getClientSocket().sendMessages(messageText);
@@ -880,12 +880,15 @@ public class HomeController {
                             senderImageUrl = doc.getString("photo_url"); // Fallback for legacy data
                         }
                         
+                        Object timestamp = doc.get("timestamp");
+                        String formattedTime = formatTimestamp(timestamp);
+                        
                         if (senderId != null && senderId.equals(currentUserId)) {
                             messagesContainer.getChildren().add(
-                                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content));
+                                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content, formattedTime));
                         } else {
                             messagesContainer.getChildren().add(
-                                    MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content));
+                                    MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content, formattedTime));
                         }
                     }
                     
@@ -929,6 +932,44 @@ public class HomeController {
             Platform.runLater(() -> {
                 messagesScrollPane.setVvalue(1.0);  // 1.0 = bottom of scroll pane
             });
+        }
+    }
+
+    /**
+     * Format a timestamp to a readable time string
+     * @param timestamp The timestamp in milliseconds or as a Date object
+     * @return A formatted time string (HH:mm)
+     */
+    private String formatTimestamp(Object timestamp) {
+        try {
+            long timestampMs = 0;
+            
+            if (timestamp instanceof Number) {
+                timestampMs = ((Number) timestamp).longValue();
+            } else if (timestamp instanceof java.util.Date) {
+                timestampMs = ((java.util.Date) timestamp).getTime();
+            } else if (timestamp != null) {
+                // Try to parse as string
+                timestampMs = Long.parseLong(timestamp.toString());
+            } else {
+                return "";
+            }
+            
+            // If timestamp is in seconds, convert to milliseconds
+            if (timestampMs < 10000000000L) {
+                timestampMs *= 1000;
+            }
+            
+            java.time.LocalDateTime msgTime = java.time.LocalDateTime.ofInstant(
+                java.time.Instant.ofEpochMilli(timestampMs),
+                java.time.ZoneId.systemDefault()
+            );
+            
+            // Show time only format (HH:mm)
+            java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+            return msgTime.format(timeFormatter);
+        } catch (Exception e) {
+            return "";
         }
     }
 

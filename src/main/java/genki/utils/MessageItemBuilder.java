@@ -15,6 +15,10 @@ import javafx.scene.paint.Color;
 public class MessageItemBuilder {
 
     public static HBox createReceivedMessage(String profileImageUrl, String senderName, String messageText) {
+        return createReceivedMessage(profileImageUrl, senderName, messageText, "");
+    }
+
+    public static HBox createReceivedMessage(String profileImageUrl, String senderName, String messageText, String timestamp) {
         HBox container = new HBox(10);
         container.getStyleClass().addAll("message-box", "received-message");
         container.setAlignment(Pos.TOP_LEFT);
@@ -31,13 +35,25 @@ public class MessageItemBuilder {
         msg.setMaxWidth(600);
         msg.getStyleClass().addAll("message-text", "received-bubble");
 
-        content.getChildren().addAll(name, msg);
+        // Add timestamp
+        HBox messageTimeBox = new HBox(8);
+        messageTimeBox.setAlignment(Pos.BOTTOM_LEFT);
+        Label timeLabel = new Label(timestamp);
+        timeLabel.getStyleClass().add("message-time");
+        timeLabel.setStyle("-fx-text-fill: #999999; -fx-font-size: 11px; -fx-padding: 2 0 0 0;");
+        messageTimeBox.getChildren().add(timeLabel);
+
+        content.getChildren().addAll(name, msg, messageTimeBox);
 
         container.getChildren().addAll(avatar, content);
         return container;
     }
 
     public static HBox createSentMessage(String profileImageUrl, String senderName, String messageText) {
+        return createSentMessage(profileImageUrl, senderName, messageText, "");
+    }
+
+    public static HBox createSentMessage(String profileImageUrl, String senderName, String messageText, String timestamp) {
         HBox container = new HBox(10);
         container.getStyleClass().addAll("message-box", "sent-message");
         container.setAlignment(Pos.TOP_RIGHT);
@@ -54,8 +70,16 @@ public class MessageItemBuilder {
         msg.setMaxWidth(600);
         msg.getStyleClass().addAll("message-text", "sent-bubble");
 
+        // Add timestamp
+        HBox messageTimeBox = new HBox(8);
+        messageTimeBox.setAlignment(Pos.BOTTOM_RIGHT);
+        Label timeLabel = new Label(timestamp);
+        timeLabel.getStyleClass().add("message-time");
+        timeLabel.setStyle("-fx-text-fill: #999999; -fx-font-size: 11px; -fx-padding: 2 0 0 0;");
+        messageTimeBox.getChildren().add(timeLabel);
+
         content.setAlignment(Pos.TOP_RIGHT);
-        content.getChildren().addAll(name, msg);
+        content.getChildren().addAll(name, msg, messageTimeBox);
 
         // For sent messages, order is content then avatar
         container.getChildren().addAll(content, avatar);
