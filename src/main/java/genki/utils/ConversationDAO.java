@@ -89,14 +89,45 @@ public class ConversationDAO {
     }
     
     /**
-     * Create a new group conversation with group details
+     * Find an existing group conversation by group name
+     * @param groupName Name of the group
+     * @return The ObjectId of the existing conversation, or null if not found
+     */
+    public ObjectId findGroupConversation(String groupName) {
+        try {
+            Document query = new Document("type", "group")
+                    .append("groupName", groupName);
+            
+            Document result = conversations.find(query).first();
+            
+            if (result != null) {
+                return result.getObjectId("_id");
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error finding group conversation: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Create a new group conversation with group details, or return existing one
      * @param participantIds List of participant IDs
      * @param groupName Name of the group
      * @param photoUrl Profile picture URL of the group
-     * @return The ObjectId of the created conversation
+     * @return The ObjectId of the conversation (existing or newly created)
      */
     public ObjectId createGroupConversation(List<String> participantIds, String groupName, String photoUrl) {
         try {
+            // First check if conversation already exists for this group
+            ObjectId existingId = findGroupConversation(groupName);
+            if (existingId != null) {
+                System.out.println("Group conversation already exists: " + existingId + " for group: " + groupName);
+                return existingId;
+            }
+            
+            // If not, create a new one
             Document doc = new Document()
                     .append("type", "group")
                     .append("participantIds", participantIds)

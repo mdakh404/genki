@@ -27,6 +27,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.util.logging.Logger;
+import java.util.List;
 
 public class JoinGroupController {
 
@@ -180,24 +181,77 @@ public class JoinGroupController {
                        groupDoc.getString("profile_picture"),
                        groupDoc.getString("group_admin")
                 );
+                
+                // 🔥 CRITICAL: Populate group members from the original group document
+                if (groupDoc.getList("users", String.class) != null) {
+                    for (String userId : groupDoc.getList("users", String.class)) {
+                        nvGroup.addUser(userId);
+                    }
+                }
 
                 UserSession.addGroup(nvGroup);
                 
-                // 🔥 Create Conversation and cache it for instant display
-                java.util.ArrayList<String> participantIds = new java.util.ArrayList<>();
-                participantIds.add(UserSession.getUserId());
-                
-                // Add all group members to participants
-                if (groupDoc.getList("users", String.class) != null) {
-                    participantIds.addAll(groupDoc.getList("users", String.class));
-                }
+                // 🔥 Fetch the UPDATED group document to get the latest participant list
+                Document updatedGroupDoc = groupsCollection.find(
+                        Filters.eq("_id", groupDoc.getObjectId("_id"))
+                ).first();
                 
                 ConversationDAO conversationDAO = new ConversationDAO();
-                ObjectId conversationId = conversationDAO.createGroupConversation(
-                    participantIds,
-                    groupDoc.getString("group_name"),
-                    groupDoc.getString("profile_picture")
-                );
+                ObjectId conversationId;
+                
+                // 🔥 Check if conversation already exists for this group
+                ObjectId existingConversationId = conversationDAO.findGroupConversation(groupDoc.getString("group_name"));
+                
+                if (existingConversationId != null) {
+                    // Conversation exists - add the new user to participants if not already there
+                    conversationId = existingConversationId;
+                    
+                    // Get the conversation and update its participants
+                    MongoCollection<Document> conversationCollection = JoinGroupDBConnection.getCollection("Conversation");
+                    Document conversationQuery = new Document("_id", existingConversationId);
+                    Document conversationDoc = conversationCollection.find(conversationQuery).first();
+                    
+                    if (conversationDoc != null) {
+                        List<String> currentParticipants = conversationDoc.getList("participantIds", String.class);
+                        if (currentParticipants == null) {
+                            currentParticipants = new java.util.ArrayList<>();
+                        }
+                        
+                        // Add current user if not already in the list
+                        if (!currentParticipants.contains(UserSession.getUserId())) {
+                            currentParticipants.add(UserSession.getUserId());
+                            
+                            // Update the conversation in database
+                            conversationCollection.updateOne(
+                                conversationQuery,
+                                new Document("$set", new Document("participantIds", currentParticipants))
+                            );
+                            
+                            System.out.println("✅ Added user to existing conversation: " + conversationId);
+                        }
+                    }
+                } else {
+                    // Conversation doesn't exist - create new one with all group members
+                    java.util.ArrayList<String> participantIds = new java.util.ArrayList<>();
+                    
+                    // Add all group members to participants (including the new user)
+                    if (updatedGroupDoc != null && updatedGroupDoc.getList("users", String.class) != null) {
+                        participantIds.addAll(updatedGroupDoc.getList("users", String.class));
+                    }
+                    
+                    // Ensure current user is in the list
+                    if (!participantIds.contains(UserSession.getUserId())) {
+                        participantIds.add(UserSession.getUserId());
+                    }
+                    
+                    conversationId = conversationDAO.createGroupConversation(
+                        participantIds,
+                        groupDoc.getString("group_name"),
+                        groupDoc.getString("profile_picture")
+                    );
+                    
+                    System.out.println("✅ Created new group conversation: " + conversationId);
+                }
                 
                 // Create UI item and cache it
                 if (conversationId != null && homeController != null) {

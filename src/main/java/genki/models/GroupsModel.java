@@ -55,6 +55,14 @@ public class GroupsModel {
                                      groupDoc.getString("profile_picture"),
                                      groupDoc.getString("group_admin")
                              );
+                             
+                             // 🔥 CRITICAL: Populate group members from database
+                             List<String> users = groupDoc.getList("users", String.class);
+                             if (users != null) {
+                                 for (String userId : users) {
+                                     nvGroup.addUser(userId);
+                                 }
+                             }
 
                              UserSession.addGroup(nvGroup);
                          }

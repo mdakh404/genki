@@ -377,7 +377,7 @@ public class HomeController {
         if (btnGroups != null) {
             btnGroups.setOnMouseClicked(e -> {
                 switchUsers(false);
-                showGroupConversations();
+                showGroupConversations();  // Show cached group conversations
             });
         }
         
@@ -1589,28 +1589,8 @@ public class HomeController {
 
 
     public void loadGroups() {
-        ArrayList<Group> userGroups = UserSession.getGroups();
-
-        if (userGroups != null && !userGroups.isEmpty()) {
-            for (Group group : userGroups) {
-                HBox nvGroupContainer = ConversationItemBuilder.createGroupConversationItem(
-                        group.getGroupProfilePicture(),
-                        group.getGroupName(),
-                        "",
-                        "",
-                        2
-                );
-                groupsListContainer.getChildren().add(nvGroupContainer);
-            }
-        } else {
-            Label noGroupsLabel = new Label("No groups found");
-            noGroupsLabel.setStyle(
-                    "-fx-text-fill: #6b9e9e; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-padding: 20;"
-            );
-            groupsListContainer.getChildren().add(noGroupsLabel);
-        }
+        // This method is no longer needed since we use group conversations instead
+        // Kept for backward compatibility
     }
 
     /**
