@@ -662,7 +662,7 @@ public class HomeController {
                 messageInputArea.setVisible(true);
                 messageInputArea.setManaged(true);
             }
-         // Réinitialisez le padding/spacing
+            // Réinitialisez le padding/spacing
             if (messagesContainer != null) {
                 messagesContainer.setPadding(new Insets(10));
                 messagesContainer.setSpacing(10);
@@ -689,7 +689,32 @@ public class HomeController {
                         // ========== GROUP CONVERSATION ==========
                         String groupName = conversationDoc.getString("groupName");
                         String groupPhotoUrl = conversationDoc.getString("photo_url");
+                        
+                        // 🔥 Si pas de photo dans Conversation, chercher dans la collection groups
+                        if (groupPhotoUrl == null || groupPhotoUrl.isEmpty()) {
+                            try {
+                                String groupIdStr = conversationDoc.getString("groupId");
+                                if (groupIdStr != null) {
+                                    org.bson.Document groupDoc = dbConnection
+                                        .getDatabase()
+                                        .getCollection("groups")
+                                        .find(new org.bson.Document("_id", new org.bson.types.ObjectId(groupIdStr)))
+                                        .first();
+                                    
+                                    if (groupDoc != null) {
+                                        groupPhotoUrl = groupDoc.getString("profile_picture");
+                                    }
+                                }
+                            } catch (Exception e) {
+                                System.out.println("Error fetching group photo: " + e.getMessage());
+                            }
+                        }
+                        
+                        // 🔥 Créer une variable final pour l'utiliser dans Platform.runLater()
+                        final String finalGroupPhotoUrl = groupPhotoUrl;
+                        
                         System.out.println("Group Name: " + groupName);
+                        System.out.println("Group Photo URL: " + finalGroupPhotoUrl);
                         System.out.println("Group Conversation Loaded ✓");
                         
                         this.currentRecipientId = null; // No single recipient for groups
@@ -722,12 +747,29 @@ public class HomeController {
                                 rightContactBio.setText("");
                             }
                             
-                            // Update group images
-                            String photoUrl = groupPhotoUrl != null ? groupPhotoUrl : "genki/img/group-default.png";
+                            // 🔥 Update group images - UTILISER finalGroupPhotoUrl
+                            String photoUrl = finalGroupPhotoUrl != null && !finalGroupPhotoUrl.isEmpty() 
+                                ? finalGroupPhotoUrl 
+                                : "genki/img/group-default.png";
                             
                             if (profilTrigger != null) {
                                 try {
-                                    Image groupImg = new Image(photoUrl, 180, 180, false, true);
+                                    Image groupImg;
+                                    // 🔥 Vérifier si c'est un chemin local (uploads/) ou une resource interne
+                                    if (photoUrl.startsWith("uploads/")) {
+                                        // Convertir le chemin relatif en URL de fichier absolu
+                                        java.io.File imageFile = new java.io.File(photoUrl);
+                                        if (imageFile.exists()) {
+                                            groupImg = new Image(imageFile.toURI().toString(), 180, 180, false, true);
+                                        } else {
+                                            System.out.println("Group image file not found: " + photoUrl);
+                                            groupImg = new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 180, 180, false, true);
+                                        }
+                                    } else {
+                                        // C'est une resource interne (genki/img/...)
+                                        groupImg = new Image(getClass().getResourceAsStream("/" + photoUrl), 180, 180, false, true);
+                                    }
+                                    
                                     profilTrigger.setImage(groupImg);
                                     profilTrigger.setFitWidth(43);
                                     profilTrigger.setFitHeight(43);
@@ -737,13 +779,33 @@ public class HomeController {
                                     profilTrigger.getStyleClass().add("avatar");
                                 } catch (Exception e) {
                                     System.out.println("Error loading group image: " + e.getMessage());
-                                    profilTrigger.setImage(new Image("genki/img/group-default.png", 180, 180, false, true));
+                                    e.printStackTrace();
+                                    try {
+                                        profilTrigger.setImage(new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 180, 180, false, true));
+                                    } catch (Exception ex) {
+                                        System.out.println("Error loading default image: " + ex.getMessage());
+                                    }
                                 }
                             }
                             
                             if (rightProfileImage != null) {
                                 try {
-                                    Image rightImg = new Image(photoUrl, 400, 400, false, true);
+                                    Image rightImg;
+                                    // 🔥 Vérifier si c'est un chemin local (uploads/) ou une resource interne
+                                    if (photoUrl.startsWith("uploads/")) {
+                                        // Convertir le chemin relatif en URL de fichier absolu
+                                        java.io.File imageFile = new java.io.File(photoUrl);
+                                        if (imageFile.exists()) {
+                                            rightImg = new Image(imageFile.toURI().toString(), 400, 400, false, true);
+                                        } else {
+                                            System.out.println("Right group image file not found: " + photoUrl);
+                                            rightImg = new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 400, 400, false, true);
+                                        }
+                                    } else {
+                                        // C'est une resource interne (genki/img/...)
+                                        rightImg = new Image(getClass().getResourceAsStream("/" + photoUrl), 400, 400, false, true);
+                                    }
+                                    
                                     rightProfileImage.setImage(rightImg);
                                     rightProfileImage.setFitWidth(100);
                                     rightProfileImage.setFitHeight(100);
@@ -753,7 +815,12 @@ public class HomeController {
                                     rightProfileImage.getStyleClass().add("avatar");
                                 } catch (Exception e) {
                                     System.out.println("Error loading right group image: " + e.getMessage());
-                                    rightProfileImage.setImage(new Image("genki/img/group-default.png", 400, 400, false, true));
+                                    e.printStackTrace();
+                                    try {
+                                        rightProfileImage.setImage(new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 400, 400, false, true));
+                                    } catch (Exception ex) {
+                                        System.out.println("Error loading default right image: " + ex.getMessage());
+                                    }
                                 }
                             }
                             
