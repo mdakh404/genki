@@ -20,7 +20,7 @@ import java.util.List;
 
 public class GroupModel {
 
-       private static final DBConnection groupModelDBConnection = new DBConnection("genki_testing");
+       private static final DBConnection groupModelDBConnection = DBConnection.getInstance("genki_testing");
        private static final Logger logger = Logger.getLogger(GroupModel.class.getName());
 
 

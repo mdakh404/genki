@@ -21,7 +21,7 @@ import java.time.LocalDate;
 public class RegisterModel {
 
     private static final Logger logger = Logger.getLogger(RegisterModel.class.getName());
-    private final DBConnection RegisterConnection = new DBConnection("genki_testing");
+    private final DBConnection RegisterConnection = DBConnection.getInstance("genki_testing");
 
 
     public RegisterStatus validateRegistration(String username, String password) {

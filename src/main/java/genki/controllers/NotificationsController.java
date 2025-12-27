@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 
 public class NotificationsController {
 
-    private static DBConnection notificationsDBConnection = new DBConnection("genki_testing");
+    private static DBConnection notificationsDBConnection = DBConnection.getInstance("genki_testing");
     private static Logger logger = Logger.getLogger(NotificationsController.class.getName());
 
     private static MongoCollection<Document> usersCollection = notificationsDBConnection.getCollection("users");

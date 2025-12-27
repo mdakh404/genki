@@ -385,8 +385,8 @@ public class HomeController {
 
     @FXML
     public void initialize() {
-        // Initialize the DB connection ONCE for this controller
-        dbConnection = new DBConnection("genki_testing");
+        // Initialize the DB connection ONCE for this controller using Singleton pattern
+        dbConnection = DBConnection.getInstance("genki_testing");
 
         // Setup notification badge first
         setupNotificationBadge();
@@ -1736,12 +1736,6 @@ public class HomeController {
         try {
             String currentUserId = UserSession.getUserId();
             
-            // Ensure dbConnection is initialized
-            if (this.dbConnection == null) {
-                this.dbConnection = new DBConnection("genki_testing");
-                logger.log(Level.INFO, "DBConnection was null, reinitializing...");
-            }
-            
             System.out.println("Loading group conversations for user: " + currentUserId);
             
             // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
@@ -2160,11 +2154,6 @@ public class HomeController {
     public void addGroupConversationFromAcceptance(String groupId, String groupName) {
         Platform.runLater(() -> {
             try {
-                // Fetch the group conversation from the database
-                if (this.dbConnection == null) {
-                    this.dbConnection = new DBConnection("genki_testing");
-                }
-                
                 String currentUserId = UserSession.getUserId();
                 
                 // First, try to find by groupId (preferred)
@@ -2289,10 +2278,6 @@ public class HomeController {
         Platform.runLater(() -> {
             try {
                 // Fetch the friend's information from database
-                if (this.dbConnection == null) {
-                    this.dbConnection = new DBConnection("genki_testing");
-                }
-                
                 UserDAO userDAO = new UserDAO();
                 Document friendDoc = userDAO.getUserByUsername(friendUsername);
                 
@@ -2399,10 +2384,6 @@ public class HomeController {
      */
     private boolean checkIfUserIsOnline(String userId) {
         try {
-            if (this.dbConnection == null) {
-                this.dbConnection = new DBConnection("genki_testing");
-            }
-            
             // Query the users collection to check the last_activity timestamp
             // A user is considered online if their last activity is recent (within last 2 minutes)
             Document userDoc = this.dbConnection.getCollection("users").find(

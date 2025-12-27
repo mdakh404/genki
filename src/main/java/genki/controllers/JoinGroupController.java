@@ -41,7 +41,7 @@ public class JoinGroupController {
     private static final NotificationDAO notificationDAO = new NotificationDAO();
     private static final GroupModel groupModel = new GroupModel();
     private static final Logger logger = Logger.getLogger(JoinGroupController.class.getName());
-    private static final DBConnection JoinGroupDBConnection = new DBConnection("genki_testing");
+    private static final DBConnection JoinGroupDBConnection = DBConnection.getInstance("genki_testing");
 
     @FXML
     private TextField nameJoinGroup;

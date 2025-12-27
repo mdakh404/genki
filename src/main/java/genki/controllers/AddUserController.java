@@ -30,7 +30,7 @@ import java.util.logging.Level;
 public class AddUserController implements Initializable {
     
     private static final Logger logger = Logger.getLogger(AddUserController.class.getName());
-    private static final DBConnection AddUserControllerDBConnection = new DBConnection("genki_testing");
+    private static final DBConnection AddUserControllerDBConnection = DBConnection.getInstance("genki_testing");
     private static final NotificationDAO notificationDAO = new NotificationDAO();
 
     @FXML

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 public class MessageDAO {
     
-    private DBConnection DBConnect = new DBConnection("genki_testing");
+    private DBConnection DBConnect = DBConnection.getInstance("genki_testing");
     private MongoDatabase database = DBConnect.getDatabase();
     private MongoCollection<Document> messages = database.getCollection("Message");
     
