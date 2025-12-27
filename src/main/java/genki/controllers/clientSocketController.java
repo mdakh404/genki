@@ -83,6 +83,16 @@ public class clientSocketController implements t2{
 		ClientThread.sendMessage(message);
 		System.out.println("✓ Sent GROUP_JOIN_ACCEPTED notification via socket");
 	}
+	
+	/**
+	 * Send a friend request acceptance notification via socket
+	 * This notifies the requester that their friend request was accepted
+	 * @param message JSON message containing FRIEND_REQUEST_ACCEPTED notification
+	 */
+	public void sendFriendRequestAcceptanceNotification(String message) {
+		ClientThread.sendMessage(message);
+		System.out.println("✓ Sent FRIEND_REQUEST_ACCEPTED notification via socket");
+	}
 
 	@Override
 	public void onMessageReceived(String message) {
@@ -113,6 +123,39 @@ public class clientSocketController implements t2{
 				// Parse as JSON to check message type
 				com.google.gson.JsonObject jsonObj = com.google.gson.JsonParser.parseString(jsonMessage).getAsJsonObject();
 				
+				// CHECK -1: Is this a FRIEND_REQUEST_ACCEPTED notification?
+				if (jsonObj.has("type") && jsonObj.get("type").getAsString().equals("FRIEND_REQUEST_ACCEPTED")) {
+					System.out.println("   → 👥 FRIEND_REQUEST_ACCEPTED MESSAGE DETECTED");
+					
+					try {
+						String recipientId = jsonObj.has("recipientId") ? jsonObj.get("recipientId").getAsString() : null;
+						String requesterUsername = jsonObj.get("requesterUsername").getAsString();
+						String acceptorUsername = jsonObj.get("acceptorUsername").getAsString();
+						String acceptedBy = jsonObj.get("acceptedBy").getAsString();
+						
+						// Only process if this message is for the current user
+						if (recipientId != null && recipientId.equals(UserSession.getUserId())) {
+							System.out.println("✓ Friend Request Accepted:");
+							System.out.println("  - Friend: " + acceptorUsername);
+							System.out.println("  - Accepted by: " + acceptedBy);
+							
+							// Notify HomeController to add the friend conversation to UI immediately
+							if (homeController != null) {
+								homeController.addFriendConversationFromAcceptance(acceptorUsername);
+								System.out.println("✅ Friend conversation added to UI\n");
+							} else {
+								System.out.println("⚠️ HomeController reference is null!\n");
+							}
+						} else {
+							System.out.println("⚠️ FRIEND_REQUEST_ACCEPTED message is for different user (recipient: " + recipientId + ", current: " + UserSession.getUserId() + ")");
+						}
+						return; // Don't try to parse as other message types
+					} catch (Exception e) {
+						System.err.println("❌ Error parsing FRIEND_REQUEST_ACCEPTED message: " + e.getMessage());
+						e.printStackTrace();
+					}
+				}
+				
 				// CHECK 0: Is this a GROUP_JOIN_ACCEPTED notification?
 				if (jsonObj.has("type") && jsonObj.get("type").getAsString().equals("GROUP_JOIN_ACCEPTED")) {
 					System.out.println("   → 🎉 GROUP_JOIN_ACCEPTED MESSAGE DETECTED");
@@ -124,16 +167,17 @@ public class clientSocketController implements t2{
 						String groupId = jsonObj.get("groupId").getAsString();
 						String acceptedBy = jsonObj.get("acceptedBy").getAsString();
 						
-						// Only process if this message is for the current user
+						// Only process if this message is for the current user (the requester/new member)
 						if (recipientId != null && recipientId.equals(UserSession.getUserId())) {
 							System.out.println("✓ Group Join Request Accepted:");
 							System.out.println("  - Group: " + groupName + " (ID: " + groupId + ")");
 							System.out.println("  - Accepted by: " + acceptedBy);
 							
-							// Notify HomeController to add the group conversation to UI immediately
+							// The requester (new member) needs the group conversation UI created
+							// The admin doesn't need a new UI since they already have the group
 							if (homeController != null) {
 								homeController.addGroupConversationFromAcceptance(groupId, groupName);
-								System.out.println("✅ Group conversation added to UI\n");
+								System.out.println("✅ Group conversation added to requester's UI\n");
 							} else {
 								System.out.println("⚠️ HomeController reference is null!\n");
 							}

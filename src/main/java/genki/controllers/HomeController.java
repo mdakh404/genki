@@ -147,9 +147,7 @@ public class HomeController {
 
         try {
 
-             DBConnection notificationsDBConnection = new DBConnection("genki_testing");
-
-             MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
+             MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
 
              // Load only pending notifications (not accepted or rejected)
              long notificationsCount = notificationsCollection.countDocuments(
@@ -280,7 +278,6 @@ public class HomeController {
     private void cleanupOldNotifications() {
         new Thread(() -> {
             try {
-                DBConnection dbConnection = new DBConnection("genki_testing");
                 MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
                 
                 // Calculate date 30 days ago
@@ -388,46 +385,24 @@ public class HomeController {
 
     @FXML
     public void initialize() {
-        // Initialize the DB connection ONCE for this controller
-        dbConnection = new DBConnection("genki_testing");
+        // Initialize the DB connection ONCE for this controller using Singleton pattern
+        dbConnection = DBConnection.getInstance("genki_testing");
 
         // Setup notification badge first
         setupNotificationBadge();
         
-        loadNotifications();
         switchUsers(true);
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
-//            chatHeader.getChildren().clear();
-//            messageInputArea.getChildren().clear();
-//            messagesContainer.getChildren().clear();
+            // chatHeader.getChildren().clear();
+            // messageInputArea.getChildren().clear();
+            // messagesContainer.getChildren().clear();
 
-        	// Au lieu de clear(), cachez les éléments
-            if (chatHeader != null) {
-                chatHeader.setVisible(false);
-                chatHeader.setManaged(false);
-            }
-            if (messageInputArea != null) {
-                messageInputArea.setVisible(false);
-                messageInputArea.setManaged(false);
-            }
-         // Ajoutez ces lignes pour éliminer les paddings/margins
-            if (messagesContainer != null) {
-                messagesContainer.setPadding(new Insets(10, 10, 10, 10)); // top, right, bottom, left
-                messagesContainer.setSpacing(10);
-            }
-            
-            if (messagesScrollPane != null) {
-                messagesScrollPane.setPadding(Insets.EMPTY);
-                messagesScrollPane.setFitToWidth(true);
-            }
-            messagesContainer.getChildren().clear();
-
-                     ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.jpg")));
-                     startConversationImageView.setPreserveRatio(true);
-                     startConversationImageView.setSmooth(true);
-                     startConversationImageView.setFitWidth(700);
-                     startConversationImageView.setFitHeight(400);
+            ImageView startConversationImageView = new ImageView(new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.jpg")));
+            startConversationImageView.setPreserveRatio(true);
+            startConversationImageView.setSmooth(true);
+            startConversationImageView.setFitWidth(300);
+                     startConversationImageView.setFitHeight(300);
 
                      HBox buttonsContainer = new HBox();
                      buttonsContainer.setAlignment(Pos.CENTER);
@@ -473,7 +448,6 @@ public class HomeController {
                      });
 
         }
-        
 
 
         if (profilTrigger != null) {
@@ -569,6 +543,15 @@ public class HomeController {
                 logger.log(Level.SEVERE, "Error loading group conversations in background", e);
             }
         }).start();
+
+        // Load notifications in background thread to avoid blocking UI
+        new Thread(() -> {
+            try {
+                loadNotifications();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error loading notifications in background", e);
+            }
+        }).start();
      
         if (messagesContainer != null) {
         // Show some example messages dynamically
@@ -662,8 +645,14 @@ public class HomeController {
         // Set reference to this HomeController in clientSocketController so it can update chat header status
         UserSession.getClientSocket().setHomeController(this);
         
-        // Setup real-time notification listener for incoming notifications
-        setupNotificationListener();
+        // Setup real-time notification listener for incoming notifications in background thread
+        new Thread(() -> {
+            try {
+                setupNotificationListener();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error setting up notification listener in background", e);
+            }
+        }).start();
         
         // Start periodic cleanup of old notifications
         startNotificationCleanupScheduler();
@@ -817,7 +806,7 @@ public class HomeController {
                 messageInputArea.setVisible(true);
                 messageInputArea.setManaged(true);
             }
-            // Réinitialisez le padding/spacing
+         // Réinitialisez le padding/spacing
             if (messagesContainer != null) {
                 messagesContainer.setPadding(new Insets(10));
                 messagesContainer.setSpacing(10);
@@ -844,32 +833,7 @@ public class HomeController {
                         // ========== GROUP CONVERSATION ==========
                         String groupName = conversationDoc.getString("groupName");
                         String groupPhotoUrl = conversationDoc.getString("photo_url");
-                        
-                        // 🔥 Si pas de photo dans Conversation, chercher dans la collection groups
-                        if (groupPhotoUrl == null || groupPhotoUrl.isEmpty()) {
-                            try {
-                                String groupIdStr = conversationDoc.getString("groupId");
-                                if (groupIdStr != null) {
-                                    org.bson.Document groupDoc = dbConnection
-                                        .getDatabase()
-                                        .getCollection("groups")
-                                        .find(new org.bson.Document("_id", new org.bson.types.ObjectId(groupIdStr)))
-                                        .first();
-                                    
-                                    if (groupDoc != null) {
-                                        groupPhotoUrl = groupDoc.getString("profile_picture");
-                                    }
-                                }
-                            } catch (Exception e) {
-                                System.out.println("Error fetching group photo: " + e.getMessage());
-                            }
-                        }
-                        
-                        // 🔥 Créer une variable final pour l'utiliser dans Platform.runLater()
-                        final String finalGroupPhotoUrl = groupPhotoUrl;
-                        
                         System.out.println("Group Name: " + groupName);
-                        System.out.println("Group Photo URL: " + finalGroupPhotoUrl);
                         System.out.println("Group Conversation Loaded ✓");
                         
                         this.currentRecipientId = null; // No single recipient for groups
@@ -902,29 +866,12 @@ public class HomeController {
                                 rightContactBio.setText("");
                             }
                             
-                            // 🔥 Update group images - UTILISER finalGroupPhotoUrl
-                            String photoUrl = finalGroupPhotoUrl != null && !finalGroupPhotoUrl.isEmpty() 
-                                ? finalGroupPhotoUrl 
-                                : "genki/img/group-default.png";
+                            // Update group images
+                            String photoUrl = groupPhotoUrl != null ? groupPhotoUrl : "genki/img/group-default.png";
                             
                             if (profilTrigger != null) {
                                 try {
-                                    Image groupImg;
-                                    // 🔥 Vérifier si c'est un chemin local (uploads/) ou une resource interne
-                                    if (photoUrl.startsWith("uploads/")) {
-                                        // Convertir le chemin relatif en URL de fichier absolu
-                                        java.io.File imageFile = new java.io.File(photoUrl);
-                                        if (imageFile.exists()) {
-                                            groupImg = new Image(imageFile.toURI().toString(), 180, 180, false, true);
-                                        } else {
-                                            System.out.println("Group image file not found: " + photoUrl);
-                                            groupImg = new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 180, 180, false, true);
-                                        }
-                                    } else {
-                                        // C'est une resource interne (genki/img/...)
-                                        groupImg = new Image(getClass().getResourceAsStream("/" + photoUrl), 180, 180, false, true);
-                                    }
-                                    
+                                    Image groupImg = new Image(photoUrl, 180, 180, false, true);
                                     profilTrigger.setImage(groupImg);
                                     profilTrigger.setFitWidth(43);
                                     profilTrigger.setFitHeight(43);
@@ -934,33 +881,13 @@ public class HomeController {
                                     profilTrigger.getStyleClass().add("avatar");
                                 } catch (Exception e) {
                                     System.out.println("Error loading group image: " + e.getMessage());
-                                    e.printStackTrace();
-                                    try {
-                                        profilTrigger.setImage(new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 180, 180, false, true));
-                                    } catch (Exception ex) {
-                                        System.out.println("Error loading default image: " + ex.getMessage());
-                                    }
+                                    profilTrigger.setImage(new Image("genki/img/group-default.png", 180, 180, false, true));
                                 }
                             }
                             
                             if (rightProfileImage != null) {
                                 try {
-                                    Image rightImg;
-                                    // 🔥 Vérifier si c'est un chemin local (uploads/) ou une resource interne
-                                    if (photoUrl.startsWith("uploads/")) {
-                                        // Convertir le chemin relatif en URL de fichier absolu
-                                        java.io.File imageFile = new java.io.File(photoUrl);
-                                        if (imageFile.exists()) {
-                                            rightImg = new Image(imageFile.toURI().toString(), 400, 400, false, true);
-                                        } else {
-                                            System.out.println("Right group image file not found: " + photoUrl);
-                                            rightImg = new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 400, 400, false, true);
-                                        }
-                                    } else {
-                                        // C'est une resource interne (genki/img/...)
-                                        rightImg = new Image(getClass().getResourceAsStream("/" + photoUrl), 400, 400, false, true);
-                                    }
-                                    
+                                    Image rightImg = new Image(photoUrl, 400, 400, false, true);
                                     rightProfileImage.setImage(rightImg);
                                     rightProfileImage.setFitWidth(100);
                                     rightProfileImage.setFitHeight(100);
@@ -970,12 +897,7 @@ public class HomeController {
                                     rightProfileImage.getStyleClass().add("avatar");
                                 } catch (Exception e) {
                                     System.out.println("Error loading right group image: " + e.getMessage());
-                                    e.printStackTrace();
-                                    try {
-                                        rightProfileImage.setImage(new Image(getClass().getResourceAsStream("/genki/img/group-default.png"), 400, 400, false, true));
-                                    } catch (Exception ex) {
-                                        System.out.println("Error loading default right image: " + ex.getMessage());
-                                    }
+                                    rightProfileImage.setImage(new Image("genki/img/group-default.png", 400, 400, false, true));
                                 }
                             }
                             
@@ -1814,18 +1736,10 @@ public class HomeController {
         try {
             String currentUserId = UserSession.getUserId();
             
-            // Ensure dbConnection is initialized
-            if (this.dbConnection == null) {
-                this.dbConnection = new DBConnection("genki_testing");
-                logger.log(Level.INFO, "DBConnection was null, reinitializing...");
-            }
-            
-            DBConnection dbConnection = this.dbConnection;
-            
             System.out.println("Loading group conversations for user: " + currentUserId);
             
             // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
-            var groupConversations = dbConnection
+            var groupConversations = this.dbConnection
                 .getDatabase()
                 .getCollection("Conversation")
                 .find(new org.bson.Document("type", "group")
@@ -1897,6 +1811,12 @@ public class HomeController {
                 UserSession.addGroup(group);
                 logger.log(Level.INFO, "✓ Group added to UserSession: " + groupName + " (ConversationID: " + conversationId + ", GroupID: " + groupId + ")");
                 
+                // Store conversation ID, group name, and groupId in userData map
+                java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                userData.put("conversationId", conversationId.toString());
+                userData.put("groupName", groupName);
+                userData.put("groupId", groupId);
+                
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                     groupPhotoUrl,
                     groupName,
@@ -1906,11 +1826,7 @@ public class HomeController {
                     isOnline
                 );
 
-                // Store conversation ID, group name, and groupId in userData map
-                java.util.Map<String, Object> userData = new java.util.HashMap<>();
-                userData.put("conversationId", conversationId.toString());
-                userData.put("groupName", groupName);
-                userData.put("groupId", groupId);
+                // userData map already created above - no need to recreate it
                 conversationItem.setUserData(userData);
                 System.out.println("lllllllllllllllllllllll "+ groupId);
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
@@ -2238,15 +2154,10 @@ public class HomeController {
     public void addGroupConversationFromAcceptance(String groupId, String groupName) {
         Platform.runLater(() -> {
             try {
-                // Fetch the group conversation from the database
-                if (dbConnection == null) {
-                    dbConnection = new DBConnection("genki_testing");
-                }
-                
                 String currentUserId = UserSession.getUserId();
                 
                 // First, try to find by groupId (preferred)
-                var groupConversations = dbConnection
+                var groupConversations = this.dbConnection
                     .getDatabase()
                     .getCollection("Conversation")
                     .find(new org.bson.Document("groupId", groupId)
@@ -2270,7 +2181,7 @@ public class HomeController {
                     
                     // Update the conversation document to include groupId if it doesn't have it
                     if (conversationDoc.getString("groupId") == null) {
-                        dbConnection.getDatabase()
+                        this.dbConnection.getDatabase()
                             .getCollection("Conversation")
                             .updateOne(
                                 new org.bson.Document("_id", conversationId),
@@ -2286,7 +2197,7 @@ public class HomeController {
                     
                     // If not a participant, add them
                     if (!isParticipant) {
-                        dbConnection.getDatabase()
+                        this.dbConnection.getDatabase()
                             .getCollection("Conversation")
                             .updateOne(
                                 new org.bson.Document("_id", conversationId),
@@ -2356,5 +2267,142 @@ public class HomeController {
                 e.printStackTrace();
             }
         });
+    }
+    
+    /**
+     * Add a friend conversation to the UI immediately when a friend request is accepted
+     * This is called when receiving FRIEND_REQUEST_ACCEPTED socket message
+     * @param friendUsername The username of the new friend
+     */
+    public void addFriendConversationFromAcceptance(String friendUsername) {
+        Platform.runLater(() -> {
+            try {
+                // Fetch the friend's information from database
+                UserDAO userDAO = new UserDAO();
+                Document friendDoc = userDAO.getUserByUsername(friendUsername);
+                
+                if (friendDoc == null) {
+                    logger.log(Level.WARNING, "⚠️ Could not find friend in database: " + friendUsername);
+                    return;
+                }
+                
+                String friendId = friendDoc.getObjectId("_id").toHexString();
+                String currentUserId = UserSession.getUserId();
+                
+                // Find or create the direct conversation with this friend
+                ConversationDAO conversationDAO = new ConversationDAO();
+                ObjectId conversationId = conversationDAO.findDirectConversation(currentUserId, friendId);
+                
+                // If conversation doesn't exist, create it
+                if (conversationId == null) {
+                    conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+                    logger.log(Level.INFO, "✓ Created new direct conversation with friend: " + friendUsername);
+                }
+                
+                if (conversationId == null) {
+                    logger.log(Level.WARNING, "⚠️ Could not create or find conversation with friend: " + friendUsername);
+                    return;
+                }
+                
+                // Get friend's profile picture
+                String friendPhotoUrl = friendDoc.getString("photo_url");
+                if (friendPhotoUrl == null) {
+                    friendPhotoUrl = "genki/img/user-default.png";
+                }
+                
+                // Check if friend is currently online
+                boolean isFriendOnline = false;
+                ArrayList<genki.models.User> connectedUsers = UserSession.getConnectedUsers();
+                if (connectedUsers != null) {
+                    isFriendOnline = connectedUsers.stream()
+                        .anyMatch(u -> u.getId() != null && u.getId().equals(friendId));
+                }
+                
+                // Create UI item for the friend conversation with correct online status
+                HBox newFriendContainer = ConversationItemBuilder.createConversationItem(
+                    friendPhotoUrl,
+                    friendUsername,
+                    "No messages yet",
+                    "",
+                    0,  // unread count
+                    isFriendOnline  // Use actual online status
+                );
+                
+                // Store conversation ID and friend info in userData map
+                java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                userData.put("conversationId", conversationId.toString());
+                userData.put("friendName", friendUsername);
+                userData.put("friendId", friendId);
+                newFriendContainer.setUserData(userData);
+                
+                // Add click handler to open friend conversation - check online status dynamically
+                final ObjectId finalConversationId = conversationId;
+                newFriendContainer.setOnMouseClicked(e -> {
+                    // Determine if friend is actually online by checking server's connected clients
+                    boolean isCurrentlyOnline = checkIfUserIsOnline(friendId);
+                    setCurrentConversation(finalConversationId, isCurrentlyOnline);
+                });
+                
+                // Cache the conversation item
+                UserSession.addConversationItem(newFriendContainer);
+                
+                // Also add to friends list if not already there
+                genki.models.User friendUser = new genki.models.User();
+                friendUser.setId(friendId);
+                friendUser.setUsername(friendUsername);
+                friendUser.setPhotoUrl(friendPhotoUrl);
+                ArrayList<genki.models.User> friends = UserSession.getFriends();
+                if (friends != null && !friends.stream().anyMatch(u -> u.getId().equals(friendId))) {
+                    friends.add(friendUser);
+                }
+                
+                // Add to the users conversation list container in UI
+                conversationListContainer.getChildren().add(0, newFriendContainer);
+                
+                // Remove "No conversations found" label if present
+                conversationListContainer.getChildren().removeIf(node -> 
+                    node instanceof Label && ((Label)node).getText().equals("No conversations found")
+                );
+                
+                // Switch to users view if not already there
+                if (!usersPane.isVisible()) {
+                    switchUsers(true);
+                }
+                
+                logger.log(Level.INFO, "✅ Friend conversation added to UI from acceptance: " + friendUsername + " (FriendID: " + friendId + ")");
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "❌ Error adding friend conversation from acceptance", e);
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Check if a user is currently online by querying the server
+     * @param userId The user ID to check
+     * @return true if the user is connected to the server, false otherwise
+     */
+    private boolean checkIfUserIsOnline(String userId) {
+        try {
+            // Query the users collection to check the last_activity timestamp
+            // A user is considered online if their last activity is recent (within last 2 minutes)
+            Document userDoc = this.dbConnection.getCollection("users").find(
+                new Document("_id", new ObjectId(userId))
+            ).first();
+            
+            if (userDoc != null) {
+                Object lastActivityObj = userDoc.get("last_activity");
+                if (lastActivityObj instanceof Long) {
+                    long lastActivity = (Long) lastActivityObj;
+                    long currentTime = System.currentTimeMillis();
+                    long timeDifference = currentTime - lastActivity;
+                    // Consider user online if activity within last 2 minutes (120000 ms)
+                    return timeDifference < 120000;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error checking user online status: " + e.getMessage());
+        }
+        return false;
     }
 }

@@ -19,7 +19,7 @@ public class GroupsModel {
 
      private final ArrayList<Group> listGroups = new ArrayList<>();
      private final Logger logger = Logger.getLogger(GroupsModel.class.getName());
-     private final DBConnection GroupsModelDBConnection = new DBConnection("genki_testing");
+     private final DBConnection GroupsModelDBConnection = DBConnection.getInstance("genki_testing");
 
      public void loadGroups(String username) {
 

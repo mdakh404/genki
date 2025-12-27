@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 
 public class NotificationsController {
 
-    private static DBConnection notificationsDBConnection = new DBConnection("genki_testing");
+    private static DBConnection notificationsDBConnection = DBConnection.getInstance("genki_testing");
     private static Logger logger = Logger.getLogger(NotificationsController.class.getName());
 
     private static MongoCollection<Document> usersCollection = notificationsDBConnection.getCollection("users");
@@ -211,8 +211,16 @@ public class NotificationsController {
                     removeNotificationFromUserSession(request.getNotificationId());
                     updateEmptyState();
                     
-                    // Update badge in HomeController
+                    // Send socket message to notify the requester that their friend request was accepted
+                    sendFriendRequestAcceptanceNotification(
+                        request.getUsername(),
+                        senderUserDoc.getObjectId("_id").toHexString(),  // Pass the requester's userId
+                        UserSession.getUsername()
+                    );
+                    
+                    // ✅ Also add the requester to the acceptor's conversation list immediately
                     if (homeController != null) {
+                        homeController.addFriendConversationFromAcceptance(request.getUsername());
                         homeController.updateNotificationBadge();
                     }
                 } else {
@@ -281,6 +289,7 @@ public class NotificationsController {
                     updateEmptyState();
                     
                     // Send socket message to notify the requester that their group join request was accepted
+                    // The requester will create the conversation UI when they receive this message
                     sendGroupJoinAcceptanceNotification(
                         request.getUsername(), 
                         senderUserDoc.getObjectId("_id").toHexString(),  // Pass the requester's userId
@@ -288,10 +297,7 @@ public class NotificationsController {
                         groupDoc.getObjectId("_id").toString()
                     );
                     
-                    // Update badge in HomeController
-                    if (homeController != null) {
-                        homeController.updateNotificationBadge();
-                    }
+                    // NOTE: We don't create UI here for the admin because they already have the group
                 } else {
                     logger.warning("Failed to update group membership");
                     AlertConstruct.alertConstructor(
@@ -539,6 +545,37 @@ public class NotificationsController {
             }
         } catch (Exception e) {
             logger.warning("Failed to send group join acceptance notification: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Send a socket message to notify the requester that their friend request was accepted
+     * This allows them to immediately add the friend conversation to their UI
+     * @param requesterUsername The username of the person who requested friendship
+     * @param requesterUserId The userId of the requester (for message routing)
+     * @param acceptorUsername The username of the person who accepted the request
+     */
+    private void sendFriendRequestAcceptanceNotification(String requesterUsername, String requesterUserId, String acceptorUsername) {
+        try {
+            // Create a notification message to send via socket with recipientId for proper routing
+            Document notificationMessage = new Document()
+                    .append("type", "FRIEND_REQUEST_ACCEPTED")
+                    .append("recipientId", requesterUserId)  // Add recipientId so server can route to the right client
+                    .append("requesterUsername", requesterUsername)
+                    .append("acceptorUsername", acceptorUsername)
+                    .append("acceptedBy", UserSession.getUsername())
+                    .append("timestamp", System.currentTimeMillis());
+            
+            String jsonMessage = genki.utils.GsonUtility.getGson().toJson(notificationMessage);
+            
+            if (UserSession.getClientSocket() != null) {
+                UserSession.getClientSocket().sendFriendRequestAcceptanceNotification(jsonMessage);
+                logger.info("✓ Sent FRIEND_REQUEST_ACCEPTED notification to user: " + requesterUsername + " (ID: " + requesterUserId + ")");
+            } else {
+                logger.warning("Client socket is not initialized, cannot send friend request acceptance notification");
+            }
+        } catch (Exception e) {
+            logger.warning("Failed to send friend request acceptance notification: " + e.getMessage());
         }
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ConversationDAO {
     
-    private DBConnection DBConnect = new DBConnection("genki_testing");
+    private DBConnection DBConnect = DBConnection.getInstance("genki_testing");
     private MongoDatabase database = DBConnect.getDatabase();
     private MongoCollection<Document> conversations = database.getCollection("Conversation");
     

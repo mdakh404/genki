@@ -16,10 +16,32 @@ public class DBConnection {
     private final String connectionURI = "mongodb+srv://mdakh404:moaditatchi2020@genki.vu4rdeo.mongodb.net/?appName=Genki";
 
     private final String dbName;
+    
+    // Singleton instance - only ONE connection for the entire application
+    private static DBConnection instance = null;
+    private static final Object lock = new Object();
 
 
-    public DBConnection(String dbName) {
-        this.dbName= dbName;
+    private DBConnection(String dbName) {
+        this.dbName = dbName;
+        logger.log(Level.INFO, "✓ DBConnection singleton instance created for: " + dbName);
+    }
+    
+    /**
+     * Get the singleton instance of DBConnection
+     * Thread-safe implementation
+     * @param dbName The database name
+     * @return The singleton DBConnection instance
+     */
+    public static DBConnection getInstance(String dbName) {
+        if (instance == null) {
+            synchronized(lock) {
+                if (instance == null) {
+                    instance = new DBConnection(dbName);
+                }
+            }
+        }
+        return instance;
     }
 
     public MongoDatabase getDatabase() throws MongoException{

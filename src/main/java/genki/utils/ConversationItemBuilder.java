@@ -104,9 +104,17 @@ public class ConversationItemBuilder {
         try {
             String imageUrl = profileImageUrl;
             if (profileImageUrl != null && !profileImageUrl.startsWith("http") && !profileImageUrl.startsWith("file:")) {
-                var res = ConversationItemBuilder.class.getResource("/" + profileImageUrl);
-                if (res != null) imageUrl = res.toExternalForm();
-                else imageUrl = ConversationItemBuilder.class.getResource("/genki/img/user-default.png").toExternalForm();
+                // Check if it's a filesystem path (like uploads/groups/...)
+                java.io.File file = new java.io.File(profileImageUrl);
+                if (file.exists()) {
+                    // It's a file path, convert to file:// URL
+                    imageUrl = file.toURI().toURL().toExternalForm();
+                } else {
+                    // Try to load as classpath resource
+                    var res = ConversationItemBuilder.class.getResource("/" + profileImageUrl);
+                    if (res != null) imageUrl = res.toExternalForm();
+                    else imageUrl = ConversationItemBuilder.class.getResource("/genki/img/user-default.png").toExternalForm();
+                }
             }
             // Load at 180x180 for better clarity when displaying at 45x45
             if (imageUrl != null) profileImage.setImage(new Image(imageUrl, 180, 180, false, true));

@@ -17,7 +17,7 @@ import java.util.logging.Level;
 public class AuthModel {
 
     private static final Logger logger = Logger.getLogger(AuthModel.class.getName());
-    private final DBConnection AuthConnection = new DBConnection("genki_testing");
+    private final DBConnection AuthConnection = DBConnection.getInstance("genki_testing");
 
 
     /**
