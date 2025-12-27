@@ -39,7 +39,7 @@ import java.io.IOException;
 public class SettingsController implements Initializable{
 
        private static final Logger logger = Logger.getLogger(SettingsController.class.getName());
-       private static final DBConnection SettingsControllerDBConnection = new DBConnection("genki_testing");
+       private static final DBConnection SettingsControllerDBConnection = DBConnection.getInstance("genki_testing");
        private static final SettingsModel settingsModel = new SettingsModel();
        private boolean uploadedPhoto;
 

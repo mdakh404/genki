@@ -28,7 +28,7 @@ public class SettingsModel {
     private static final Dotenv env = Dotenv.load();
     private static final Cloudinary cloudinary = new Cloudinary(env.get("CLOUDINARY_URL"));
     private static final Logger logger = Logger.getLogger(SettingsModel.class.getName());
-    private static final DBConnection SettingsUpdateConnection = new DBConnection("genki_testing");
+    private static final DBConnection SettingsUpdateConnection = DBConnection.getInstance("genki_testing");
     private String uploadedPhotoURL;
 
     public String getUploadedPhotoURL() {
