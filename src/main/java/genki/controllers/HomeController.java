@@ -356,7 +356,9 @@ public class HomeController {
     }
 
 
-
+    @FXML private Button btnCloseConversation;  // Ajouter à côté du profil
+    @FXML private ImageView defaultChatImage;   // Image par défaut
+    @FXML private VBox defaultChatContainer;    // Container de l'image par défaut
 
     private Popup addMenuPopup;
 
@@ -392,7 +394,8 @@ public class HomeController {
         setupNotificationBadge();
         
         switchUsers(true);
-
+        // AFFICHER L'IMAGE PAR DÉFAUT AU DÉMARRAGE
+        showDefaultChatView();
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
             // chatHeader.getChildren().clear();
             // messageInputArea.getChildren().clear();
@@ -452,6 +455,11 @@ public class HomeController {
 
         if (profilTrigger != null) {
             profilTrigger.setOnMouseClicked(e -> toggleRightPanel());
+        }
+     // 🔥 AJOUTER LE HANDLER DU BOUTON CLOSE
+        if (btnCloseConversation != null) {
+            btnCloseConversation.setOnMouseClicked(e -> closeCurrentConversation());
+            btnCloseConversation.setVisible(false);  // Caché par défaut
         }
         if (AmisNameStatus != null) {
             AmisNameStatus.setOnMouseClicked(e -> toggleRightPanel());
@@ -792,6 +800,12 @@ public class HomeController {
         System.out.println("Conversation ID: " + conversationId);
         this.currentConversationId = conversationId;
         
+        // AFFICHER LE BOUTON CLOSE QUAND UNE CONVERSATION EST OUVERTE
+        Platform.runLater(() -> {
+            if (btnCloseConversation != null) {
+                btnCloseConversation.setVisible(true);
+            }
+        });
         // Show loading spinner immediately
         Platform.runLater(() -> {
             if (messagesLoadingSpinnerContainer != null) {
@@ -810,6 +824,7 @@ public class HomeController {
             if (messagesContainer != null) {
                 messagesContainer.setPadding(new Insets(10));
                 messagesContainer.setSpacing(10);
+//                messagesContainer.setAlignment(Pos.TOP_LEFT);
             }
             messagesContainer.getChildren().clear();
         });
@@ -2404,5 +2419,71 @@ public class HomeController {
             logger.log(Level.WARNING, "Error checking user online status: " + e.getMessage());
         }
         return false;
+    }
+    
+    //hamza
+    /**
+     * Affiche la vue par défaut (image d'accueil sans conversation active)
+     */
+    private void showDefaultChatView() {
+        Platform.runLater(() -> {
+            // Cacher le chat header et l'input area
+            if (chatHeader != null) {
+                chatHeader.setVisible(false);
+                chatHeader.setManaged(false);
+            }
+            if (messageInputArea != null) {
+                messageInputArea.setVisible(false);
+                messageInputArea.setManaged(false);
+            }
+            if (btnCloseConversation != null) {
+                btnCloseConversation.setVisible(false);
+            }
+            
+            // Afficher l'image par défaut
+            if (messagesContainer != null) {
+                messagesContainer.getChildren().clear();
+                messagesContainer.setAlignment(Pos.CENTER);
+                messagesContainer.setPadding(new Insets(0));
+                messagesContainer.setSpacing(0);
+                
+                // Créer l'image par défaut
+                ImageView defaultImageView = new ImageView(
+                    new Image(HomeController.class.getResourceAsStream("/genki/img/page-par-defaut.jpg"))
+                );
+                defaultImageView.setPreserveRatio(true);
+                defaultImageView.setSmooth(true);
+                defaultImageView.setFitWidth(400);
+                defaultImageView.setFitHeight(400);
+                
+                // Texte d'accueil
+                Label welcomeLabel = new Label("Select a conversation to start chatting");
+                welcomeLabel.setStyle(
+                    "-fx-font-size: 18px; " +
+                    "-fx-text-fill: #6b7280; " +
+                    "-fx-font-weight: bold; " +
+                    "-fx-padding: 20 0 0 0;"
+                );
+                
+                VBox welcomeContainer = new VBox(20);
+                welcomeContainer.setAlignment(Pos.CENTER);
+                welcomeContainer.getChildren().addAll(defaultImageView, welcomeLabel);
+                
+                messagesContainer.getChildren().add(welcomeContainer);
+            }
+            
+            // Réinitialiser la conversation courante
+            currentConversationId = null;
+            currentRecipientId = null;
+            currentRecipientName = null;
+        });
+    }
+
+    /**
+     * Ferme la conversation actuelle et retourne à la vue par défaut
+     */
+    private void closeCurrentConversation() {
+        showDefaultChatView();
+        System.out.println("✓ Conversation closed, showing default view");
     }
 }
