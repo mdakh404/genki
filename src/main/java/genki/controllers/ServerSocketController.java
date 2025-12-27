@@ -10,11 +10,14 @@ import java.util.List;
 import genki.models.User;
 import genki.models.MessageData;
 import genki.models.Conversation;
+import genki.models.Notification;
 import genki.network.ClientHandler;
 import genki.network.MessageListener;
 import genki.utils.GsonUtility;
 import genki.utils.UserSession;
 import genki.utils.ConversationDAO;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.bson.types.ObjectId;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -137,7 +140,33 @@ public class ServerSocketController implements MessageListener {
 		}
 		
 		try {
-			// Try to parse as MessageData (regular message)
+			// Parse as JSON to check message type
+			JsonObject jsonObj = JsonParser.parseString(cleanMessage).getAsJsonObject();
+			
+			// CHECK 1: Is this a notification request from client?
+			if (jsonObj.has("messageType") && jsonObj.get("messageType").getAsString().equals("send_notification")) {
+				System.out.println("\n🔔 RECEIVED NOTIFICATION REQUEST FROM CLIENT");
+				
+				try {
+					String recipientId = jsonObj.get("recipientId").getAsString();
+					JsonObject notificationObj = jsonObj.getAsJsonObject("notification");
+					Notification notification = GsonUtility.getGson().fromJson(notificationObj, Notification.class);
+					
+					System.out.println("   From: " + notification.getSenderName());
+					System.out.println("   Type: " + notification.getType());
+					System.out.println("   To: " + recipientId);
+					
+					// Now broadcast to recipient if online
+					sendNotificationToUser(recipientId, notification);
+					return;
+				} catch (Exception e) {
+					System.err.println("❌ Error processing notification request: " + e.getMessage());
+					e.printStackTrace();
+					return;
+				}
+			}
+			
+			// CHECK 2: Try to parse as regular MessageData
 			MessageData msgData = GsonUtility.getGson().fromJson(cleanMessage, MessageData.class);
 			
 			// Check if this is a GROUP message (recipientId is null) or DIRECT message (recipientId is not null)
@@ -262,6 +291,58 @@ public class ServerSocketController implements MessageListener {
 		}
 		
 		System.out.println("Broadcasted users list: " + message);
+	}
+
+	/**
+	 * Send a notification to a specific connected user via socket
+	 * @param recipientUserId The ID of the user to send notification to
+	 * @param notification The Notification object to send
+	 * @return true if notification was sent successfully
+	 */
+	public static boolean sendNotificationToUser(String recipientUserId, genki.models.Notification notification) {
+		try {
+			System.out.println("\n🔔 SENDING NOTIFICATION TO USER");
+			System.out.println("   Recipient: " + recipientUserId);
+			System.out.println("   Type: " + notification.getType());
+			System.out.println("   From: " + notification.getSenderName());
+			
+			// Add a messageType field to identify this as a notification
+			// We'll wrap it in a JSON object with messageType
+			com.google.gson.JsonObject notificationWrapper = new com.google.gson.JsonObject();
+			notificationWrapper.addProperty("messageType", "notification");
+			
+			// Serialize the notification and add it to wrapper
+			String notificationJson = GsonUtility.getGson().toJson(notification);
+			com.google.gson.JsonObject notificationObj = com.google.gson.JsonParser.parseString(notificationJson).getAsJsonObject();
+			notificationWrapper.add("notification", notificationObj);
+			
+			String wrappedMessage = notificationWrapper.toString();
+			System.out.println("   Message: " + wrappedMessage.substring(0, Math.min(150, wrappedMessage.length())));
+			
+			// Find the recipient in connected users
+			System.out.println("   Searching " + ConnectedUsers.size() + " connected users...");
+			for (ClientHandler handler : ConnectedUsers) {
+				User handlerUser = handler.getUser();
+				if (handlerUser != null) {
+					String userId = handlerUser.getId() != null ? handlerUser.getId().toString() : null;
+					
+					if (userId != null && userId.equals(recipientUserId)) {
+						System.out.println("✓ Found recipient: " + handlerUser.getUsername());
+						System.out.println("✓ Sending via socket...");
+						handler.sendMessage(wrappedMessage);
+						System.out.println("✅ Notification sent successfully\n");
+						return true;
+					}
+				}
+			}
+			
+			System.out.println("⚠️ Recipient not connected (will be loaded from DB on login)\n");
+			return false;
+		} catch (Exception e) {
+			System.err.println("❌ Error sending notification: " + e.getMessage());
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	// public void openClientWindows() {

@@ -137,6 +137,7 @@ public class HomeController {
     @FXML private ImageView messageProfil;
     @FXML private Label CurrentUsername;
     @FXML private Button btnNotifications;
+    private Label notificationBadge;  // Badge to show unread notification count
     
 
 
@@ -150,14 +151,21 @@ public class HomeController {
 
              MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
 
+             // Load only pending notifications (not accepted or rejected)
              long notificationsCount = notificationsCollection.countDocuments(
-                     Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+                     Filters.and(
+                         Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId())),
+                         Filters.eq("status", "pending")
+                     )
              );
 
              if (notificationsCount > 0) {
 
                  notificationsCollection.find(
-                         Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId()))
+                         Filters.and(
+                             Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId())),
+                             Filters.eq("status", "pending")
+                         )
                  ).forEach(notificationDoc -> {
 
                       Notification nvNotification = new Notification(
@@ -182,6 +190,140 @@ public class HomeController {
         } catch (MongoException ex) {
             logger.warning("Failed to load notifications " + ex.getMessage());
         }
+        
+        // Update the notification badge with the count
+        updateNotificationBadge();
+    }
+
+    /**
+     * Create and setup the notification badge label
+     */
+    private void setupNotificationBadge() {
+        if (btnNotifications == null) return;
+        
+        notificationBadge = new Label();
+        notificationBadge.setStyle(
+            "-fx-background-color: #ef4444; " +
+            "-fx-text-fill: white; " +
+            "-fx-background-radius: 50%; " +
+            "-fx-min-width: 18px; " +
+            "-fx-min-height: 18px; " +
+            "-fx-alignment: center; " +
+            "-fx-font-size: 10px; " +
+            "-fx-font-weight: bold;"
+        );
+        notificationBadge.setVisible(false);
+        notificationBadge.setManaged(false);
+    }
+
+    /**
+     * Update the notification badge count
+     */
+    public void updateNotificationBadge() {
+        Platform.runLater(() -> {
+            int notificationCount = UserSession.getNotifications().size();
+            
+            if (notificationBadge == null) {
+                setupNotificationBadge();
+            }
+            
+            if (notificationCount > 0) {
+                notificationBadge.setText(String.valueOf(notificationCount));
+                notificationBadge.setVisible(true);
+                notificationBadge.setManaged(true);
+            } else {
+                notificationBadge.setVisible(false);
+                notificationBadge.setManaged(false);
+            }
+        });
+    }
+
+    /**
+     * Setup real-time notification listener via WebSocket
+     * This registers a callback to receive new notifications in real-time
+     */
+    public void setupNotificationListener() {
+        if (UserSession.getClientSocket() == null) {
+            logger.warning("Client socket is not initialized yet");
+            return;
+        }
+        
+        // Set callback for incoming notifications
+        UserSession.getClientSocket().setOnNewNotificationCallback(notification -> {
+            logger.info("📬 New notification received: " + notification.getSenderName() + " - " + notification.getType());
+            
+            Platform.runLater(() -> {
+                try {
+                    // Add notification to UserSession
+                    UserSession.addNotification(notification);
+                    
+                    // Update badge to show new count
+                    updateNotificationBadge();
+                    
+                    // Optional: Show a toast or system notification
+                    logger.info("✅ Notification badge updated - New count: " + UserSession.getNotifications().size());
+                    
+                } catch (Exception e) {
+                    logger.warning("Error processing incoming notification: " + e.getMessage());
+                }
+            });
+        });
+        
+        logger.info("✓ Real-time notification listener registered successfully");
+    }
+
+    /**
+     * Cleanup old notifications from the database
+     * Deletes notifications older than 30 days that have been accepted or rejected
+     * This prevents database bloat and keeps notification history manageable
+     */
+    private void cleanupOldNotifications() {
+        new Thread(() -> {
+            try {
+                DBConnection dbConnection = new DBConnection("genki_testing");
+                MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
+                
+                // Calculate date 30 days ago
+                java.time.LocalDateTime thirtyDaysAgo = java.time.LocalDateTime.now().minusDays(30);
+                java.time.ZonedDateTime zdt = thirtyDaysAgo.atZone(java.time.ZoneId.systemDefault());
+                java.util.Date cutoffDate = java.util.Date.from(zdt.toInstant());
+                
+                // Delete notifications older than 30 days that are not pending
+                long deletedCount = notificationsCollection.deleteMany(
+                    Filters.and(
+                        Filters.lt("createdAt", cutoffDate),
+                        Filters.ne("status", "pending")
+                    )
+                ).getDeletedCount();
+                
+                if (deletedCount > 0) {
+                    logger.info("🧹 Cleaned up " + deletedCount + " old notifications");
+                }
+            } catch (MongoException e) {
+                logger.warning("Error during notification cleanup: " + e.getMessage());
+            }
+        }).start();
+    }
+    
+    /**
+     * Start periodic notification cleanup task
+     * Runs every 12 hours to clean up old notifications
+     */
+    private void startNotificationCleanupScheduler() {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    // Run cleanup every 12 hours (43200000 ms)
+                    Thread.sleep(43200000);
+                    cleanupOldNotifications();
+                } catch (InterruptedException e) {
+                    logger.info("Notification cleanup scheduler interrupted");
+                    break;
+                } catch (Exception e) {
+                    logger.warning("Error in notification cleanup scheduler: " + e.getMessage());
+                }
+            }
+        }, "NotificationCleanupScheduler").start();
     }
 
     // handle logout of user
@@ -249,6 +391,9 @@ public class HomeController {
         // Initialize the DB connection ONCE for this controller
         dbConnection = new DBConnection("genki_testing");
 
+        // Setup notification badge first
+        setupNotificationBadge();
+        
         loadNotifications();
         switchUsers(true);
 
@@ -366,7 +511,7 @@ public class HomeController {
             String senderImageUrl = UserSession.getImageUrl();
 
             messagesContainer.getChildren().add(
-                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, messageText));
+                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, messageText, formatTimestamp(System.currentTimeMillis())));
             messageInput.clear();
 
             // UserSession.getClientSocket().sendMessages(messageText);
@@ -424,7 +569,7 @@ public class HomeController {
                 logger.log(Level.SEVERE, "Error loading group conversations in background", e);
             }
         }).start();
-
+     
         if (messagesContainer != null) {
         // Show some example messages dynamically
         /*if (messagesContainer != null) {
@@ -456,6 +601,10 @@ public class HomeController {
             });
         }
         
+        // Add notification button click handler
+        if (btnNotifications != null) {
+            btnNotifications.setOnMouseClicked(e -> openNotifications());
+        }
 
         // Register callback for incoming messages
         UserSession.getClientSocket().setOnNewMessageCallback(msgData -> {
@@ -512,6 +661,12 @@ public class HomeController {
 
         // Set reference to this HomeController in clientSocketController so it can update chat header status
         UserSession.getClientSocket().setHomeController(this);
+        
+        // Setup real-time notification listener for incoming notifications
+        setupNotificationListener();
+        
+        // Start periodic cleanup of old notifications
+        startNotificationCleanupScheduler();
 
     }
 
@@ -969,12 +1124,15 @@ public class HomeController {
                             senderImageUrl = doc.getString("photo_url"); // Fallback for legacy data
                         }
                         
+                        Object timestamp = doc.get("timestamp");
+                        String formattedTime = formatTimestamp(timestamp);
+                        
                         if (senderId != null && senderId.equals(currentUserId)) {
                             messagesContainer.getChildren().add(
-                                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content));
+                                    MessageItemBuilder.createSentMessage(senderImageUrl, senderName, content, formattedTime));
                         } else {
                             messagesContainer.getChildren().add(
-                                    MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content));
+                                    MessageItemBuilder.createReceivedMessage(senderImageUrl, senderName, content, formattedTime));
                         }
                     }
                     
@@ -1018,6 +1176,44 @@ public class HomeController {
             Platform.runLater(() -> {
                 messagesScrollPane.setVvalue(1.0);  // 1.0 = bottom of scroll pane
             });
+        }
+    }
+
+    /**
+     * Format a timestamp to a readable time string
+     * @param timestamp The timestamp in milliseconds or as a Date object
+     * @return A formatted time string (HH:mm)
+     */
+    private String formatTimestamp(Object timestamp) {
+        try {
+            long timestampMs = 0;
+            
+            if (timestamp instanceof Number) {
+                timestampMs = ((Number) timestamp).longValue();
+            } else if (timestamp instanceof java.util.Date) {
+                timestampMs = ((java.util.Date) timestamp).getTime();
+            } else if (timestamp != null) {
+                // Try to parse as string
+                timestampMs = Long.parseLong(timestamp.toString());
+            } else {
+                return "";
+            }
+            
+            // If timestamp is in seconds, convert to milliseconds
+            if (timestampMs < 10000000000L) {
+                timestampMs *= 1000;
+            }
+            
+            java.time.LocalDateTime msgTime = java.time.LocalDateTime.ofInstant(
+                java.time.Instant.ofEpochMilli(timestampMs),
+                java.time.ZoneId.systemDefault()
+            );
+            
+            // Show time only format (HH:mm)
+            java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+            return msgTime.format(timeFormatter);
+        } catch (Exception e) {
+            return "";
         }
     }
 
@@ -1274,6 +1470,10 @@ public class HomeController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Notifications.fxml"));
             Parent root = loader.load();
             
+            // Set HomeController reference in NotificationsController
+            NotificationsController notificationsController = loader.getController();
+            notificationsController.setHomeController(this);
+            
             Stage notificationStage = new Stage();
             try {
                 Image logo = new Image(getClass().getResourceAsStream("/genki/img/notifications.jpg"), 50, 50, true, true);
@@ -1526,8 +1726,8 @@ public class HomeController {
                             HBox conversationItem = ConversationItemBuilder.createConversationItem(
                                     photoUrl != null ? photoUrl : "genki/img/user-default.png",
                                     friendName,
-                                    lastMessage != null ? lastMessage : "",
-                                    time != null ? time : "",
+                                    lastMessage != null && !lastMessage.isEmpty() ? lastMessage : "No messages yet",
+                                    time != null && !time.isEmpty() ? time : "Just now",
                                     unreadCount,
                                     isOnline);
 
@@ -1659,6 +1859,44 @@ public class HomeController {
                     groupPhotoUrl = "genki/img/group-default.png";
                 }
                 
+                // Extract group information from conversation document
+                String groupDescription = conversationDoc.getString("description");
+                if (groupDescription == null) {
+                    groupDescription = "";
+                }
+                
+                String groupId = conversationDoc.getString("groupId");
+                if (groupId == null) {
+                    groupId = conversationId.toString(); // Fallback to conversation ID if groupId not set
+                }
+                
+                Boolean isPublic = conversationDoc.getBoolean("isPublic", false);
+                String groupAdmin = conversationDoc.getString("admin");
+                if (groupAdmin == null) {
+                    groupAdmin = "";
+                }
+                
+                // Create Group object and add to UserSession
+                Group group = new Group(
+                    groupId,  // Use the actual groupId instead of conversationId
+                    groupName,
+                    groupDescription,
+                    isPublic,
+                    groupPhotoUrl,
+                    groupAdmin
+                );
+                
+                // Extract participant IDs if available
+                java.util.List<?> participantIds = conversationDoc.getList("participantIds", Object.class);
+                if (participantIds != null) {
+                    for (Object participantId : participantIds) {
+                        group.addUser(participantId.toString());
+                    }
+                }
+                
+                UserSession.addGroup(group);
+                logger.log(Level.INFO, "✓ Group added to UserSession: " + groupName + " (ConversationID: " + conversationId + ", GroupID: " + groupId + ")");
+                
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                     groupPhotoUrl,
                     groupName,
@@ -1668,12 +1906,13 @@ public class HomeController {
                     isOnline
                 );
 
-                // Store conversation ID and group name in userData map
+                // Store conversation ID, group name, and groupId in userData map
                 java.util.Map<String, Object> userData = new java.util.HashMap<>();
                 userData.put("conversationId", conversationId.toString());
                 userData.put("groupName", groupName);
+                userData.put("groupId", groupId);
                 conversationItem.setUserData(userData);
-
+                System.out.println("lllllllllllllllllllllll "+ groupId);
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
                 
                 // Cache the group conversation item
@@ -1916,7 +2155,8 @@ public class HomeController {
             ObjectId conversationId = conversationDAO.createGroupConversation(
                 participantIds,
                 newGroup.getGroupName(),
-                newGroup.getGroupProfilePicture()
+                newGroup.getGroupProfilePicture(),
+                newGroup.getGroupId() // Pass the group ID
             );
             
             if (conversationId != null) {
@@ -1933,8 +2173,8 @@ public class HomeController {
                 HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
                         newGroup.getGroupProfilePicture(),
                         newGroup.getGroupName(),
-                        "",
-                        "",
+                        "No messages yet",
+                        "Just now",
                         0,
                         false
                 );
@@ -1985,6 +2225,135 @@ public class HomeController {
                 
                 System.out.println("✓ Updated chat header status for " + userName + 
                     " to " + (isOnline ? "ONLINE" : "OFFLINE"));
+            }
+        });
+    }
+    
+    /**
+     * Add a group conversation to the UI immediately when a group join request is accepted
+     * This is called when receiving GROUP_JOIN_ACCEPTED socket message
+     * @param groupId The ID of the group
+     * @param groupName The name of the group
+     */
+    public void addGroupConversationFromAcceptance(String groupId, String groupName) {
+        Platform.runLater(() -> {
+            try {
+                // Fetch the group conversation from the database
+                if (dbConnection == null) {
+                    dbConnection = new DBConnection("genki_testing");
+                }
+                
+                String currentUserId = UserSession.getUserId();
+                
+                // First, try to find by groupId (preferred)
+                var groupConversations = dbConnection
+                    .getDatabase()
+                    .getCollection("Conversation")
+                    .find(new org.bson.Document("groupId", groupId)
+                        .append("type", "group"));
+                
+                org.bson.Document conversationDoc = groupConversations.first();
+                
+                // If not found by groupId, try by groupName (fallback for older conversations)
+                if (conversationDoc == null) {
+                    logger.log(Level.INFO, "GroupId not found, searching by groupName: " + groupName);
+                    groupConversations = dbConnection
+                        .getDatabase()
+                        .getCollection("Conversation")
+                        .find(new org.bson.Document("groupName", groupName)
+                            .append("type", "group"));
+                    conversationDoc = groupConversations.first();
+                }
+                
+                if (conversationDoc != null) {
+                    ObjectId conversationId = conversationDoc.getObjectId("_id");
+                    
+                    // Update the conversation document to include groupId if it doesn't have it
+                    if (conversationDoc.getString("groupId") == null) {
+                        dbConnection.getDatabase()
+                            .getCollection("Conversation")
+                            .updateOne(
+                                new org.bson.Document("_id", conversationId),
+                                new org.bson.Document("$set", new org.bson.Document("groupId", groupId))
+                            );
+                        logger.log(Level.INFO, "✓ Updated conversation with groupId: " + groupId);
+                    }
+                    
+                    // Check if current user is already a participant
+                    java.util.List<?> participantIds = conversationDoc.getList("participantIds", Object.class);
+                    boolean isParticipant = participantIds != null && participantIds.stream()
+                        .anyMatch(id -> id.toString().equals(currentUserId));
+                    
+                    // If not a participant, add them
+                    if (!isParticipant) {
+                        dbConnection.getDatabase()
+                            .getCollection("Conversation")
+                            .updateOne(
+                                new org.bson.Document("_id", conversationId),
+                                new org.bson.Document("$addToSet", new org.bson.Document("participantIds", currentUserId))
+                            );
+                        logger.log(Level.INFO, "✓ Added user to group conversation participants");
+                    }
+                    
+                    String lastMessage = conversationDoc.getString("lastMessageContent");
+                    if (lastMessage == null || lastMessage.isEmpty()) {
+                        lastMessage = "No messages yet";
+                    }
+                    
+                    String time = "";
+                    Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+                    if (lastMsgTimeObj != null) {
+                        time = formatMessageTime(lastMsgTimeObj);
+                    }
+                    
+                    String groupPhotoUrl = conversationDoc.getString("photo_url");
+                    if (groupPhotoUrl == null) {
+                        groupPhotoUrl = "genki/img/group-default.png";
+                    }
+                    
+                    // Create UI item for the group conversation
+                    HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
+                        groupPhotoUrl,
+                        groupName,
+                        lastMessage,
+                        time,
+                        0,  // unread count
+                        false  // is online
+                    );
+                    
+                    // Store conversation ID and group ID in userData map
+                    java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                    userData.put("conversationId", conversationId.toString());
+                    userData.put("groupName", groupName);
+                    userData.put("groupId", groupId);
+                    newGroupContainer.setUserData(userData);
+                    
+                    // Add click handler to open group conversation
+                    newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
+                    
+                    // Cache the group conversation item
+                    UserSession.addGroupConversationItem(newGroupContainer);
+                    
+                    // Add to the groups list container in UI
+                    groupsListContainer.getChildren().add(0, newGroupContainer);
+                    
+                    // Remove "No groups found" label if present
+                    groupsListContainer.getChildren().removeIf(node -> 
+                        node instanceof Label && ((Label)node).getText().equals("No groups found")
+                    );
+                    
+                    // Switch to groups view if not already there
+                    if (!groupsPane.isVisible()) {
+                        switchUsers(false);
+                    }
+                    
+                    logger.log(Level.INFO, "✅ Group conversation added to UI from acceptance: " + groupName + " (GroupID: " + groupId + ")");
+                } else {
+                    logger.log(Level.WARNING, "⚠️ Could not find conversation for group: " + groupName + " (GroupID: " + groupId + ")");
+                }
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "❌ Error adding group conversation from acceptance", e);
+                e.printStackTrace();
             }
         });
     }

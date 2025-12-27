@@ -31,6 +31,7 @@ public class clientSocketController implements t2{
 	private String username;
 	private List<User> connectedUsers = new ArrayList<>();
 	private Consumer<MessageData> onNewMessageCallback;
+	private Consumer<genki.models.Notification> onNewNotificationCallback;  // Callback for new notifications
 	private HomeController homeController;  // Reference to HomeController for updating chat header
 
 	
@@ -51,6 +52,10 @@ public class clientSocketController implements t2{
 		this.onNewMessageCallback = callback;
 	}
 	
+	public void setOnNewNotificationCallback(Consumer<genki.models.Notification> callback) {
+		this.onNewNotificationCallback = callback;
+	}
+	
 	public void setHomeController(HomeController homeController) {
 		this.homeController = homeController;
 	}
@@ -68,61 +73,139 @@ public class clientSocketController implements t2{
 			//dddd
 		});
 	}
+	
+	/**
+	 * Send a group join acceptance notification via socket
+	 * This notifies the requester that their group join request was accepted
+	 * @param message JSON message containing GROUP_JOIN_ACCEPTED notification
+	 */
+	public void sendGroupJoinAcceptanceNotification(String message) {
+		ClientThread.sendMessage(message);
+		System.out.println("✓ Sent GROUP_JOIN_ACCEPTED notification via socket");
+	}
 
 	@Override
 	public void onMessageReceived(String message) {
-		// TODO Auto-generated method stub
 		Platform.runLater(() -> {
-			System.out.println("Client recieved : " + message);
+			System.out.println("\n📨 Client received from socket: " + message.substring(0, Math.min(100, message.length())));
 			
-			// Skip system messages (connection status, etc.)
+			// Skip system messages
 			if (message.startsWith("---") || message.startsWith("Server: ---")) {
-				System.out.println("Skipping system message");
+				System.out.println("   → System message (skipped)");
 				return;
 			}
 
-			
 			// Check if this is a users list message
 			if (message.startsWith("Server: USERS_LIST:")) {
-				// Extract JSON from message
+				System.out.println("   → Users list message");
 				String jsonPart = message.substring("Server: USERS_LIST:".length());
 				parseAndUpdateUsersList(jsonPart);
+				return;
 			}
-			else {
-				// This is a regular message - parse and notify callback
-				try {
-					// Strip "Server: " prefix if present
-					String jsonMessage = message;
-					if (message.startsWith("Server: ")) {
-						jsonMessage = message.substring("Server: ".length());
-					}
-					
-					System.out.println("╔════════════════════════════════════════════════════╗");
-					System.out.println("║ RECEIVED MESSAGE FROM SERVER                       ║");
-					System.out.println("╚════════════════════════════════════════════════════╝");
-					System.out.println("Raw message (first 150 chars): " + jsonMessage.substring(0, Math.min(150, jsonMessage.length())));
-					
-					MessageData msgData = GsonUtility.getGson().fromJson(jsonMessage, MessageData.class);
-					System.out.println("✓ Successfully parsed MessageData:");
-					System.out.println("  - conversationId: " + msgData.conversationId);
-					System.out.println("  - senderId: " + msgData.senderId);
-					System.out.println("  - senderName: " + msgData.senderName);
-					System.out.println("  - messageText: " + msgData.messageText);
-					System.out.println("  - senderProfileImage: " + msgData.senderProfileImage);
-					System.out.println("  - timestamp: " + msgData.timestamp);
-					System.out.println("  - recipientId: " + msgData.recipientId);
-					System.out.println("  - recipientName: " + msgData.recipientName);
-					
-					if (onNewMessageCallback != null) {
-						System.out.println("✓ Callback found, dispatching message to HomeController");
-						onNewMessageCallback.accept(msgData);
-					} else {
-						System.out.println("⚠️  WARNING: onNewMessageCallback is null!");
-					}
-				} catch (Exception e) {
-					System.err.println("✗ Error parsing incoming message: " + e.getMessage());
-					e.printStackTrace();
+			
+			try {
+				// Strip "Server: " prefix if present
+				String jsonMessage = message;
+				if (message.startsWith("Server: ")) {
+					jsonMessage = message.substring("Server: ".length());
 				}
+				
+				// Parse as JSON to check message type
+				com.google.gson.JsonObject jsonObj = com.google.gson.JsonParser.parseString(jsonMessage).getAsJsonObject();
+				
+				// CHECK 0: Is this a GROUP_JOIN_ACCEPTED notification?
+				if (jsonObj.has("type") && jsonObj.get("type").getAsString().equals("GROUP_JOIN_ACCEPTED")) {
+					System.out.println("   → 🎉 GROUP_JOIN_ACCEPTED MESSAGE DETECTED");
+					
+					try {
+						String recipientId = jsonObj.has("recipientId") ? jsonObj.get("recipientId").getAsString() : null;
+						String requesterUsername = jsonObj.get("requesterUsername").getAsString();
+						String groupName = jsonObj.get("groupName").getAsString();
+						String groupId = jsonObj.get("groupId").getAsString();
+						String acceptedBy = jsonObj.get("acceptedBy").getAsString();
+						
+						// Only process if this message is for the current user
+						if (recipientId != null && recipientId.equals(UserSession.getUserId())) {
+							System.out.println("✓ Group Join Request Accepted:");
+							System.out.println("  - Group: " + groupName + " (ID: " + groupId + ")");
+							System.out.println("  - Accepted by: " + acceptedBy);
+							
+							// Notify HomeController to add the group conversation to UI immediately
+							if (homeController != null) {
+								homeController.addGroupConversationFromAcceptance(groupId, groupName);
+								System.out.println("✅ Group conversation added to UI\n");
+							} else {
+								System.out.println("⚠️ HomeController reference is null!\n");
+							}
+						} else {
+							System.out.println("⚠️ GROUP_JOIN_ACCEPTED message is for different user (recipient: " + recipientId + ", current: " + UserSession.getUserId() + ")");
+						}
+						return; // Don't try to parse as other message types
+					} catch (Exception e) {
+						System.err.println("❌ Error parsing GROUP_JOIN_ACCEPTED message: " + e.getMessage());
+						e.printStackTrace();
+					}
+				}
+				
+				// CHECK 1: Is this a NOTIFICATION?
+				if (jsonObj.has("messageType") && jsonObj.get("messageType").getAsString().equals("notification")) {
+					System.out.println("   → 🔔 NOTIFICATION MESSAGE DETECTED");
+					
+					try {
+						// Extract the notification from the wrapper
+						com.google.gson.JsonObject notificationObj = jsonObj.getAsJsonObject("notification");
+						genki.models.Notification notification = GsonUtility.getGson().fromJson(notificationObj, genki.models.Notification.class);
+						
+						System.out.println("✓ Parsed Notification:");
+						System.out.println("  - From: " + notification.getSenderName());
+						System.out.println("  - Type: " + notification.getType());
+						System.out.println("  - Content: " + notification.getContent());
+						
+						if (onNewNotificationCallback != null) {
+							System.out.println("✓ Invoking notification callback...");
+							onNewNotificationCallback.accept(notification);
+							System.out.println("✅ Notification added to list\n");
+						} else {
+							System.out.println("⚠️ Notification callback is null!\n");
+						}
+						return; // Don't try to parse as regular message
+					} catch (Exception e) {
+						System.err.println("❌ Error parsing notification: " + e.getMessage());
+						e.printStackTrace();
+					}
+				}
+				
+				// CHECK 2: Is this a REGULAR MESSAGE?
+				if (jsonObj.has("messageText")) {
+					System.out.println("   → 💬 REGULAR MESSAGE DETECTED");
+					
+					try {
+						MessageData msgData = GsonUtility.getGson().fromJson(jsonMessage, MessageData.class);
+						
+						System.out.println("✓ Parsed Message:");
+						System.out.println("  - From: " + msgData.senderName);
+						System.out.println("  - Text: " + msgData.messageText.substring(0, Math.min(50, msgData.messageText.length())));
+						
+						if (onNewMessageCallback != null) {
+							System.out.println("✓ Invoking message callback...");
+							onNewMessageCallback.accept(msgData);
+							System.out.println("✅ Message added to chat\n");
+						} else {
+							System.out.println("⚠️ Message callback is null!\n");
+						}
+					} catch (Exception e) {
+						System.err.println("❌ Error parsing message: " + e.getMessage());
+						e.printStackTrace();
+					}
+					return;
+				}
+				
+				// Unknown message type
+				System.out.println("   → ⚠️ Unknown message type (not notification or message)\n");
+				
+			} catch (Exception e) {
+				System.err.println("❌ Error processing message: " + e.getMessage());
+				e.printStackTrace();
 			}
 		});
 	}

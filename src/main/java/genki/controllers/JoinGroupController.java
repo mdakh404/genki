@@ -2,12 +2,14 @@ package genki.controllers;
 
 import genki.models.GroupModel;
 import genki.models.Group;
+import genki.models.Notification;
 import genki.utils.DBConnection;
 import genki.utils.UserSession;
 import genki.utils.AlertConstruct;
 import genki.utils.NotificationDAO;
 import genki.utils.ConversationItemBuilder;
 import genki.utils.ConversationDAO;
+import genki.utils.GsonUtility;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -15,6 +17,9 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.MongoException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -249,7 +254,8 @@ public class JoinGroupController {
                     conversationId = conversationDAO.createGroupConversation(
                         participantIds,
                         groupDoc.getString("group_name"),
-                        groupDoc.getString("profile_picture")
+                        groupDoc.getString("profile_picture"),
+                        groupDoc.getObjectId("_id").toString() // Pass the group ID
                     );
                     
                     System.out.println("✅ Created new group conversation: " + conversationId);
@@ -309,6 +315,35 @@ public class JoinGroupController {
                             UserSession.getUsername(),
                             nameGroup
                    );
+                   
+                   // 🔔 NEW: Send notification via socket to group admin (if online)
+                   if (joinGroupNotificationId != null) {
+                       try {
+                           genki.models.Notification notification = new genki.models.Notification(
+                               joinGroupNotificationId,
+                               groupAdminDoc.getObjectId("_id"),
+                               "group_join_request",
+                               "group_" + groupDoc.getObjectId("_id"),
+                               UserSession.getUserId(),
+                               UserSession.getUsername(),
+                               UserSession.getUsername() + " wants to join " + nameGroup
+                           );
+                           notification.setStatus("pending");
+                           
+                           // Send notification request to server via socket instead of calling server method directly
+                           JsonObject wrapper = new JsonObject();
+                           wrapper.addProperty("messageType", "send_notification");
+                           wrapper.addProperty("recipientId", groupAdminDoc.getObjectId("_id").toString());
+                           wrapper.add("notification", GsonUtility.getGson().toJsonTree(notification));
+                           
+                           String message = GsonUtility.getGson().toJson(wrapper);
+                           UserSession.getClientSocket().sendMessages(message);
+                           
+                           logger.info("✓ Group join notification sent to server");
+                       } catch (Exception socketError) {
+                           logger.warning("Could not send notification via socket: " + socketError.getMessage());
+                       }
+                   }
 
                    AlertConstruct.alertConstructor(
                            "Join Request",

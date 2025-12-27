@@ -60,6 +60,32 @@ public class NotificationsController {
     // Liste observable des notifications
     private ObservableList<NotificationRequest> notifications = FXCollections.observableArrayList();
     
+    // Reference to HomeController to update badge
+    private HomeController homeController;
+    
+    public void setHomeController(HomeController homeController) {
+        this.homeController = homeController;
+    }
+    
+    /**
+     * Update notification status in database instead of deleting
+     * @param notificationId The ID of the notification to update
+     * @param newStatus The new status ("accepted", "rejected", etc.)
+     * @return true if update was successful
+     */
+    private boolean updateNotificationStatus(ObjectId notificationId, String newStatus) {
+        try {
+            UpdateResult result = notificationsCollection.updateOne(
+                    Filters.eq("_id", notificationId),
+                    Updates.set("status", newStatus)
+            );
+            return result.getModifiedCount() > 0;
+        } catch (MongoException e) {
+            logger.warning("Failed to update notification status: " + e.getMessage());
+            return false;
+        }
+    }
+    
     @FXML
     public void initialize() {
         setupListView();
@@ -104,18 +130,24 @@ public class NotificationsController {
     private void loadNotifications() {
 
          for (Notification notification : UserSession.getNotifications()) {
+             
+             // Skip notifications with null type (shouldn't happen but safe check)
+             if (notification == null || notification.getType() == null) {
+                 logger.warning("⚠️ Skipping notification with null type or notification object");
+                 continue;
+             }
 
-                notifications.add(
-                        new NotificationRequest(
-                             notification.getNotificationId(),
-                             notification.getRequestType(),
-                             notification.getSenderName(),
-                             notification.getContent(),
-                             notification.getType().equals("friend_request") ?
-                                     NotificationType.FRIEND_REQUEST : NotificationType.GROUP_JOIN_REQUEST,
-                             getSenderImageUrl(notification.getSenderId())
-                        )
-                );
+             notifications.add(
+                     new NotificationRequest(
+                          notification.getNotificationId(),
+                          notification.getRequestType(),
+                          notification.getSenderName(),
+                          notification.getContent(),
+                          notification.getType().equals("friend_request") ?
+                                  NotificationType.FRIEND_REQUEST : NotificationType.GROUP_JOIN_REQUEST,
+                          getSenderImageUrl(notification.getSenderId())
+                     )
+             );
 
          }
 
@@ -138,51 +170,68 @@ public class NotificationsController {
      */
     private void handleAccept(NotificationRequest request) {
 
-
         if (request.getType() == NotificationType.FRIEND_REQUEST) {
             logger.info(UserSession.getUsername() + " accepted " + request.getUsername() + "'s friend request");
 
+            // Update notification status to "accepted" instead of deleting
+            boolean statusUpdated = updateNotificationStatus(request.getNotificationId(), "accepted");
 
-            DeleteResult userNotificationDeleteresult = notificationsCollection.deleteOne(
-                        Filters.eq("_id", request.getNotificationId())
-            );
+            if (statusUpdated) {
+                logger.info("Updated notification " + request.getNotificationId().toHexString() + " status to 'accepted'");
 
-            if (userNotificationDeleteresult.getDeletedCount() > 0) {
+                Document senderUserDoc = usersCollection.find(
+                        Filters.eq("username", request.getUsername())
+                ).first();
 
-                   logger.info("Deleted notification " + request.getNotificationId().toHexString() + " from database");
+                UpdateResult recipientUpdate = usersCollection.updateOne(
+                        Filters.eq("username", UserSession.getUsername()),
+                        Updates.addToSet("friends", senderUserDoc.getObjectId("_id"))
+                );
 
-                    Document senderUserDoc = usersCollection.find(
-                            Filters.eq("username", request.getUsername())
-                    ).first();
+                UpdateResult senderUpdate = usersCollection.updateOne(
+                        Filters.eq("username", request.getUsername()),
+                        Updates.addToSet("friends", new ObjectId(UserSession.getUserId()))
+                );
 
-                   UpdateResult recipientUpdate = usersCollection.updateOne(
-                              Filters.eq("username", UserSession.getUsername()),
-                              Updates.addToSet("friends", senderUserDoc.getObjectId("_id"))
-                   );
-
-                   UpdateResult senderUpdate = usersCollection.updateOne(
-                           Filters.eq("username", request.getUsername()),
-                           Updates.addToSet("friends", new ObjectId(UserSession.getUserId()))
-                   );
-
-                   if (senderUpdate.getModifiedCount() > 0 && recipientUpdate.getModifiedCount() > 0 ) {
-                       logger.info("Updated friends array field for " + UserSession.getUsername()
-                                       + " and " + request.getUsername()
-                       );
-
-                   }
-
-
+                if (senderUpdate.getModifiedCount() > 0 && recipientUpdate.getModifiedCount() > 0) {
+                    logger.info("Updated friends array field for " + UserSession.getUsername()
+                            + " and " + request.getUsername()
+                    );
+                    
+                    // Show success message
+                    AlertConstruct.alertConstructor(
+                            "Friend Request Accepted",
+                            "Success",
+                            "You are now friends with " + request.getUsername(),
+                            Alert.AlertType.INFORMATION
+                    );
+                    
+                    // Remove from UI and UserSession
+                    notifications.remove(request);
+                    removeNotificationFromUserSession(request.getNotificationId());
+                    updateEmptyState();
+                    
+                    // Update badge in HomeController
+                    if (homeController != null) {
+                        homeController.updateNotificationBadge();
+                    }
+                } else {
+                    logger.warning("Failed to update friends list");
+                    AlertConstruct.alertConstructor(
+                            "Error",
+                            "Partial failure",
+                            "Friend request accepted but failed to update friends list. Please refresh.",
+                            Alert.AlertType.WARNING
+                    );
+                }
             } else {
-
-                  logger.warning("An error occurred while adding " + request.getUsername() + " as a friend");
-                  AlertConstruct.alertConstructor(
-                             "Unexpected Error",
-                          "",
-                          "Unexpected error occurred while accepting your friend, please try again in a few minutes",
-                          Alert.AlertType.ERROR
-                  );
-
+                logger.warning("An error occurred while accepting " + request.getUsername() + "'s friend request");
+                AlertConstruct.alertConstructor(
+                        "Unexpected Error",
+                        "",
+                        "Unexpected error occurred while accepting your friend, please try again in a few minutes",
+                        Alert.AlertType.ERROR
+                );
             }
 
         } else if (request.getType() == NotificationType.GROUP_JOIN_REQUEST) {
@@ -190,20 +239,18 @@ public class NotificationsController {
 
             String groupId = request.getNotificationSubType().split("_")[1];
             Document groupDoc = groupsCollection.find(
-                     Filters.eq("_id", new ObjectId(groupId))
+                    Filters.eq("_id", new ObjectId(groupId))
             ).first();
 
             Document senderUserDoc = usersCollection.find(
-                      Filters.eq("username", request.getUsername())
+                    Filters.eq("username", request.getUsername())
             ).first();
 
-            DeleteResult groupNotificationDeleteresult = notificationsCollection.deleteOne(
-                    Filters.eq("_id", request.getNotificationId())
-            );
+            // Update notification status to "accepted" instead of deleting
+            boolean statusUpdated = updateNotificationStatus(request.getNotificationId(), "accepted");
 
-            if (groupNotificationDeleteresult.getDeletedCount() > 0) {
-
-                logger.info("Deleted notification " + request.getNotificationId().toHexString() + " from database");
+            if (statusUpdated) {
+                logger.info("Updated notification " + request.getNotificationId().toHexString() + " status to 'accepted'");
 
                 UpdateResult groupUpdateResult = groupsCollection.updateOne(
                         Filters.eq("_id", groupDoc.getObjectId("_id")),
@@ -215,29 +262,57 @@ public class NotificationsController {
                         Updates.addToSet("groups", groupDoc.getObjectId("_id").toHexString())
                 );
 
-                if (groupUpdateResult.getModifiedCount() > 0 && userUpdateResult.getModifiedCount() > 0 ) {
+                if (groupUpdateResult.getModifiedCount() > 0 && userUpdateResult.getModifiedCount() > 0) {
                     logger.info("Updated groups array field for " + request.getUsername()
                             + " and users array field for " + groupDoc.getString("group_name")
                     );
-
+                    
+                    // Show success message
+                    AlertConstruct.alertConstructor(
+                            "Group Join Request Accepted",
+                            "Success",
+                            request.getUsername() + " has been added to " + groupDoc.getString("group_name"),
+                            Alert.AlertType.INFORMATION
+                    );
+                    
+                    // Remove from UI and UserSession
+                    notifications.remove(request);
+                    removeNotificationFromUserSession(request.getNotificationId());
+                    updateEmptyState();
+                    
+                    // Send socket message to notify the requester that their group join request was accepted
+                    sendGroupJoinAcceptanceNotification(
+                        request.getUsername(), 
+                        senderUserDoc.getObjectId("_id").toHexString(),  // Pass the requester's userId
+                        groupDoc.getString("group_name"), 
+                        groupDoc.getObjectId("_id").toString()
+                    );
+                    
+                    // Update badge in HomeController
+                    if (homeController != null) {
+                        homeController.updateNotificationBadge();
+                    }
+                } else {
+                    logger.warning("Failed to update group membership");
+                    AlertConstruct.alertConstructor(
+                            "Error",
+                            "Partial failure",
+                            "Group join request accepted but failed to update group. Please refresh.",
+                            Alert.AlertType.WARNING
+                    );
                 }
-
-
             } else {
-
-                logger.warning("An error occurred while adding " + request.getUsername() + " as a friend");
+                logger.warning("An error occurred while accepting " + request.getUsername() + "'s group join request");
                 AlertConstruct.alertConstructor(
                         "Unexpected Error",
                         "",
-                        "Unexpected error occurred while accepting your friend, please try again in a few minutes",
+                        "Unexpected error occurred while accepting the group join request. Please try again.",
                         Alert.AlertType.ERROR
                 );
-
             }
-
         }
         
-        // Supprimer la notification de la liste
+        // Remove from UI list
         notifications.remove(request);
         updateEmptyState();
     }
@@ -246,13 +321,50 @@ public class NotificationsController {
      * Refuse une demande
      */
     private void handleReject(NotificationRequest request) {
-        System.out.println("❌ Rejected: " + request.getUsername());
+        logger.info(UserSession.getUsername() + " rejected " + request.getUsername() + "'s request");
         
-        // TODO: Ajouter la logique pour refuser dans votre base de données
-        
-        // Supprimer la notification de la liste
-        notifications.remove(request);
-        updateEmptyState();
+        try {
+            // Update notification status to "rejected" instead of deleting
+            boolean statusUpdated = updateNotificationStatus(request.getNotificationId(), "rejected");
+            
+            if (statusUpdated) {
+                logger.info("Updated notification " + request.getNotificationId().toHexString() + " status to 'rejected'");
+                
+                // Show success message
+                AlertConstruct.alertConstructor(
+                        "Request Rejected",
+                        "Success",
+                        "You have rejected " + request.getUsername() + "'s request",
+                        Alert.AlertType.INFORMATION
+                );
+                
+                // Remove from UI and UserSession
+                notifications.remove(request);
+                removeNotificationFromUserSession(request.getNotificationId());
+                updateEmptyState();
+                
+                // Update badge in HomeController
+                if (homeController != null) {
+                    homeController.updateNotificationBadge();
+                }
+            } else {
+                logger.warning("Failed to update notification status to rejected");
+                AlertConstruct.alertConstructor(
+                        "Error",
+                        "Failed to reject",
+                        "Could not reject the request. Please try again.",
+                        Alert.AlertType.ERROR
+                );
+            }
+        } catch (Exception e) {
+            logger.warning("Error while rejecting notification: " + e.getMessage());
+            AlertConstruct.alertConstructor(
+                    "Error",
+                    "Failed to reject",
+                    "An error occurred while rejecting the request: " + e.getMessage(),
+                    Alert.AlertType.ERROR
+            );
+        }
     }
     
     /**
@@ -378,6 +490,55 @@ public class NotificationsController {
             container.getChildren().addAll(avatar, textContainer, spacer, buttonBox);
             
             setGraphic(container);
+        }
+    }
+    
+    /**
+     * Remove a notification from UserSession by its ID
+     * This ensures notifications don't reappear on restart
+     * @param notificationId The ID of the notification to remove
+     */
+    private void removeNotificationFromUserSession(ObjectId notificationId) {
+        try {
+            UserSession.getNotifications().removeIf(notification -> 
+                notification.getNotificationId().equals(notificationId)
+            );
+            logger.info("✓ Notification " + notificationId.toHexString() + " removed from UserSession");
+        } catch (Exception e) {
+            logger.warning("Failed to remove notification from UserSession: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Send a socket message to notify the requester that their group join request was accepted
+     * This allows them to immediately add the group conversation to their UI
+     * @param requesterUsername The username of the person who requested to join
+     * @param requesterUserId The userId of the requester (for message routing)
+     * @param groupName The name of the group
+     * @param groupId The ID of the group
+     */
+    private void sendGroupJoinAcceptanceNotification(String requesterUsername, String requesterUserId, String groupName, String groupId) {
+        try {
+            // Create a notification message to send via socket with recipientId for proper routing
+            Document notificationMessage = new Document()
+                    .append("type", "GROUP_JOIN_ACCEPTED")
+                    .append("recipientId", requesterUserId)  // Add recipientId so server can route to the right client
+                    .append("requesterUsername", requesterUsername)
+                    .append("groupName", groupName)
+                    .append("groupId", groupId)
+                    .append("acceptedBy", UserSession.getUsername())
+                    .append("timestamp", System.currentTimeMillis());
+            
+            String jsonMessage = genki.utils.GsonUtility.getGson().toJson(notificationMessage);
+            
+            if (UserSession.getClientSocket() != null) {
+                UserSession.getClientSocket().sendGroupJoinAcceptanceNotification(jsonMessage);
+                logger.info("✓ Sent GROUP_JOIN_ACCEPTED notification for group: " + groupName + " to user: " + requesterUsername + " (ID: " + requesterUserId + ")");
+            } else {
+                logger.warning("Client socket is not initialized, cannot send group join acceptance notification");
+            }
+        } catch (Exception e) {
+            logger.warning("Failed to send group join acceptance notification: " + e.getMessage());
         }
     }
 }
