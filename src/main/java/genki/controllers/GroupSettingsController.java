@@ -39,7 +39,7 @@ import java.io.IOException;
 public class GroupSettingsController implements Initializable{
 
     private static final Logger logger = Logger.getLogger(GroupSettingsController.class.getName());
-    private static final DBConnection GSettingsControllerDBConnection = new DBConnection("genki_testing");
+    private static final DBConnection GSettingsControllerDBConnection = DBConnection.getInstance("genki_testing");
     private static final SettingsModel settingsModel = new SettingsModel();
     private boolean uploadedPhoto;
 
@@ -340,7 +340,7 @@ public class GroupSettingsController implements Initializable{
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
-        MongoCollection<Document> usersCollection = SettingsController.SettingsControllerDBConnection.getCollection("users");
+        MongoCollection<Document> usersCollection = GroupSettingsController.GSettingsControllerDBConnection.getCollection("users");
         Document userDoc = usersCollection.find(Filters.eq("username", UserSession.getUsername())).first();
 
         if (userDoc != null) {

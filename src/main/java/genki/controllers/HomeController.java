@@ -12,6 +12,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -63,6 +64,8 @@ import genki.utils.ConversationDAO;
 
 public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
+    private static final DBConnection HomeControllerDBConnection = DBConnection.getInstance("genki_testing");
+
     @FXML
     private Button btnSettings;
 
@@ -147,9 +150,7 @@ public class HomeController {
 
         try {
 
-             DBConnection notificationsDBConnection = new DBConnection("genki_testing");
-
-             MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
+             MongoCollection<Document> notificationsCollection = HomeControllerDBConnection.getCollection("notifications");
 
              // Load only pending notifications (not accepted or rejected)
              long notificationsCount = notificationsCollection.countDocuments(
@@ -280,8 +281,7 @@ public class HomeController {
     private void cleanupOldNotifications() {
         new Thread(() -> {
             try {
-                DBConnection dbConnection = new DBConnection("genki_testing");
-                MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
+                MongoCollection<Document> notificationsCollection = HomeControllerDBConnection.getCollection("notifications");
                 
                 // Calculate date 30 days ago
                 java.time.LocalDateTime thirtyDaysAgo = java.time.LocalDateTime.now().minusDays(30);
@@ -389,7 +389,7 @@ public class HomeController {
     @FXML
     public void initialize() {
         // Initialize the DB connection ONCE for this controller
-        dbConnection = new DBConnection("genki_testing");
+        dbConnection = DBConnection.getInstance("genki_testing");
 
         // Setup notification badge first
         setupNotificationBadge();
@@ -821,6 +821,7 @@ public class HomeController {
                     if ("group".equals(conversationType)) {
                         // ========== GROUP CONVERSATION ==========
                         String groupName = conversationDoc.getString("groupName");
+                        String groupId = conversationDoc.getString("groupId");
                         String groupPhotoUrl = conversationDoc.getString("photo_url");
                         System.out.println("Group Name: " + groupName);
                         System.out.println("Group Conversation Loaded ✓");
@@ -832,6 +833,31 @@ public class HomeController {
                             // Update header
                             if (chatContactName != null) {
                                 chatContactName.setText(groupName != null ? groupName : "Group Chat");
+
+                                String groupAdmin = HomeControllerDBConnection.getCollection("groups").find(
+                                      Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getString("group_admin");
+
+                                if (groupAdmin != null) {
+                                     if (groupAdmin.equals(UserSession.getUsername())) {
+
+                                         try {
+                                             Image settingsImg = new Image(getClass().getResourceAsStream("/genki/img/setting.png"));
+                                             ImageView settingsImgView = new ImageView(settingsImg);
+                                             settingsImgView.setFitHeight(20);
+                                             settingsImgView.setPreserveRatio(true);
+
+                                             Button settingsImgBtn = new Button();
+                                             settingsImgBtn.setGraphic(settingsImgView);
+
+                                             chatHeader.getChildren().add(settingsImgBtn);
+                                             chatHeader.setAlignment(Pos.CENTER_LEFT);
+
+                                         } catch (NullPointerException e) {
+                                             logger.warning("Failed to load setting.png " + e.getMessage());
+                                         }
+                                     }
+                                }
                             }
                             
                             // For groups, don't show online/offline status
@@ -1727,7 +1753,7 @@ public class HomeController {
             
             // Ensure dbConnection is initialized
             if (this.dbConnection == null) {
-                this.dbConnection = new DBConnection("genki_testing");
+                this.dbConnection = DBConnection.getInstance("genki_testing");
                 logger.log(Level.INFO, "DBConnection was null, reinitializing...");
             }
             
