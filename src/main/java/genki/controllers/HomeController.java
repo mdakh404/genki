@@ -391,7 +391,6 @@ public class HomeController {
         // Setup notification badge first
         setupNotificationBadge();
         
-        loadNotifications();
         switchUsers(true);
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
@@ -544,6 +543,15 @@ public class HomeController {
                 logger.log(Level.SEVERE, "Error loading group conversations in background", e);
             }
         }).start();
+
+        // Load notifications in background thread to avoid blocking UI
+        new Thread(() -> {
+            try {
+                loadNotifications();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error loading notifications in background", e);
+            }
+        }).start();
      
         if (messagesContainer != null) {
         // Show some example messages dynamically
@@ -637,8 +645,14 @@ public class HomeController {
         // Set reference to this HomeController in clientSocketController so it can update chat header status
         UserSession.getClientSocket().setHomeController(this);
         
-        // Setup real-time notification listener for incoming notifications
-        setupNotificationListener();
+        // Setup real-time notification listener for incoming notifications in background thread
+        new Thread(() -> {
+            try {
+                setupNotificationListener();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error setting up notification listener in background", e);
+            }
+        }).start();
         
         // Start periodic cleanup of old notifications
         startNotificationCleanupScheduler();
