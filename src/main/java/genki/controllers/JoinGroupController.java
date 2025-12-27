@@ -32,6 +32,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Insets;
 
 import java.util.logging.Logger;
 import java.util.List;
@@ -55,6 +58,9 @@ public class JoinGroupController {
     @FXML
     private Button btnCancel;
     
+    @FXML
+    private VBox rootContainer;
+    
     // Liste de tous les groupes disponibles
     private ObservableList<String> allGroups = FXCollections.observableArrayList();
     private HomeController homeController;
@@ -65,8 +71,15 @@ public class JoinGroupController {
     
     @FXML
     public void initialize() {
+    	configureCompactLayout();
         setupAutoComplete();
         allGroups.addAll(groupModel.getGroupNames());
+    }
+    
+    private void configureCompactLayout() {
+        // Masquer initialement la liste
+        listSuggestions.setVisible(false);
+        listSuggestions.setManaged(false); // 🔥 CRITIQUE
     }
     
     /**
@@ -80,6 +93,7 @@ public class JoinGroupController {
         nameJoinGroup.textProperty().addListener((obs, oldText, newText) -> {
             if (newText == null || newText.trim().isEmpty()) {
                 listSuggestions.setVisible(false);
+                listSuggestions.setManaged(false);
                 return;
             }
             
@@ -87,7 +101,9 @@ public class JoinGroupController {
                 group.toLowerCase().contains(newText.toLowerCase())
             );
             
-            listSuggestions.setVisible(!filteredGroups.isEmpty());
+            boolean hasResults = !filteredGroups.isEmpty();
+            listSuggestions.setVisible(hasResults);
+            listSuggestions.setManaged(hasResults);
         });
         
         // 🔥 Cliquer sur une suggestion

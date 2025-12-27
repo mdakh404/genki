@@ -12,7 +12,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.application.Platform;
-import javafx.geometry.Pos;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,8 +63,6 @@ import genki.utils.ConversationDAO;
 
 public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
-    private static final DBConnection HomeControllerDBConnection = DBConnection.getInstance("genki_testing");
-
     @FXML
     private Button btnSettings;
 
@@ -150,7 +147,7 @@ public class HomeController {
 
         try {
 
-             MongoCollection<Document> notificationsCollection = HomeControllerDBConnection.getCollection("notifications");
+             MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
 
              // Load only pending notifications (not accepted or rejected)
              long notificationsCount = notificationsCollection.countDocuments(
@@ -281,7 +278,7 @@ public class HomeController {
     private void cleanupOldNotifications() {
         new Thread(() -> {
             try {
-                MongoCollection<Document> notificationsCollection = HomeControllerDBConnection.getCollection("notifications");
+                MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
                 
                 // Calculate date 30 days ago
                 java.time.LocalDateTime thirtyDaysAgo = java.time.LocalDateTime.now().minusDays(30);
@@ -388,13 +385,12 @@ public class HomeController {
 
     @FXML
     public void initialize() {
-        // Initialize the DB connection ONCE for this controller
+        // Initialize the DB connection ONCE for this controller using Singleton pattern
         dbConnection = DBConnection.getInstance("genki_testing");
 
         // Setup notification badge first
         setupNotificationBadge();
         
-        loadNotifications();
         switchUsers(true);
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
@@ -547,6 +543,15 @@ public class HomeController {
                 logger.log(Level.SEVERE, "Error loading group conversations in background", e);
             }
         }).start();
+
+        // Load notifications in background thread to avoid blocking UI
+        new Thread(() -> {
+            try {
+                loadNotifications();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error loading notifications in background", e);
+            }
+        }).start();
      
         if (messagesContainer != null) {
         // Show some example messages dynamically
@@ -640,8 +645,14 @@ public class HomeController {
         // Set reference to this HomeController in clientSocketController so it can update chat header status
         UserSession.getClientSocket().setHomeController(this);
         
-        // Setup real-time notification listener for incoming notifications
-        setupNotificationListener();
+        // Setup real-time notification listener for incoming notifications in background thread
+        new Thread(() -> {
+            try {
+                setupNotificationListener();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error setting up notification listener in background", e);
+            }
+        }).start();
         
         // Start periodic cleanup of old notifications
         startNotificationCleanupScheduler();
@@ -821,7 +832,6 @@ public class HomeController {
                     if ("group".equals(conversationType)) {
                         // ========== GROUP CONVERSATION ==========
                         String groupName = conversationDoc.getString("groupName");
-                        String groupId = conversationDoc.getString("groupId");
                         String groupPhotoUrl = conversationDoc.getString("photo_url");
                         System.out.println("Group Name: " + groupName);
                         System.out.println("Group Conversation Loaded ✓");
@@ -833,31 +843,6 @@ public class HomeController {
                             // Update header
                             if (chatContactName != null) {
                                 chatContactName.setText(groupName != null ? groupName : "Group Chat");
-
-                                String groupAdmin = HomeControllerDBConnection.getCollection("groups").find(
-                                      Filters.eq("_id", new ObjectId(groupId))
-                                ).first().getString("group_admin");
-
-                                if (groupAdmin != null) {
-                                     if (groupAdmin.equals(UserSession.getUsername())) {
-
-                                         try {
-                                             Image settingsImg = new Image(getClass().getResourceAsStream("/genki/img/setting.png"));
-                                             ImageView settingsImgView = new ImageView(settingsImg);
-                                             settingsImgView.setFitHeight(20);
-                                             settingsImgView.setPreserveRatio(true);
-
-                                             Button settingsImgBtn = new Button();
-                                             settingsImgBtn.setGraphic(settingsImgView);
-
-                                             chatHeader.getChildren().add(settingsImgBtn);
-                                             chatHeader.setAlignment(Pos.CENTER_LEFT);
-
-                                         } catch (NullPointerException e) {
-                                             logger.warning("Failed to load setting.png " + e.getMessage());
-                                         }
-                                     }
-                                }
                             }
                             
                             // For groups, don't show online/offline status
@@ -1751,18 +1736,10 @@ public class HomeController {
         try {
             String currentUserId = UserSession.getUserId();
             
-            // Ensure dbConnection is initialized
-            if (this.dbConnection == null) {
-                this.dbConnection = DBConnection.getInstance("genki_testing");
-                logger.log(Level.INFO, "DBConnection was null, reinitializing...");
-            }
-            
-            DBConnection dbConnection = this.dbConnection;
-            
             System.out.println("Loading group conversations for user: " + currentUserId);
             
             // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
-            var groupConversations = dbConnection
+            var groupConversations = this.dbConnection
                 .getDatabase()
                 .getCollection("Conversation")
                 .find(new org.bson.Document("type", "group")
@@ -1802,6 +1779,11 @@ public class HomeController {
                     groupDescription = "";
                 }
                 
+                String groupId = conversationDoc.getString("groupId");
+                if (groupId == null) {
+                    groupId = conversationId.toString(); // Fallback to conversation ID if groupId not set
+                }
+                
                 Boolean isPublic = conversationDoc.getBoolean("isPublic", false);
                 String groupAdmin = conversationDoc.getString("admin");
                 if (groupAdmin == null) {
@@ -1810,7 +1792,7 @@ public class HomeController {
                 
                 // Create Group object and add to UserSession
                 Group group = new Group(
-                    conversationId.toString(),
+                    groupId,  // Use the actual groupId instead of conversationId
                     groupName,
                     groupDescription,
                     isPublic,
@@ -1827,7 +1809,13 @@ public class HomeController {
                 }
                 
                 UserSession.addGroup(group);
-                System.out.println("hhhhhhhhhhhhhhhhhhhhhhhhhhh " + group);
+                logger.log(Level.INFO, "✓ Group added to UserSession: " + groupName + " (ConversationID: " + conversationId + ", GroupID: " + groupId + ")");
+                
+                // Store conversation ID, group name, and groupId in userData map
+                java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                userData.put("conversationId", conversationId.toString());
+                userData.put("groupName", groupName);
+                userData.put("groupId", groupId);
                 
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                     groupPhotoUrl,
@@ -1838,12 +1826,9 @@ public class HomeController {
                     isOnline
                 );
 
-                // Store conversation ID and group name in userData map
-                java.util.Map<String, Object> userData = new java.util.HashMap<>();
-                userData.put("conversationId", conversationId.toString());
-                userData.put("groupName", groupName);
+                // userData map already created above - no need to recreate it
                 conversationItem.setUserData(userData);
-
+                System.out.println("lllllllllllllllllllllll "+ groupId);
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
                 
                 // Cache the group conversation item
@@ -2086,7 +2071,8 @@ public class HomeController {
             ObjectId conversationId = conversationDAO.createGroupConversation(
                 participantIds,
                 newGroup.getGroupName(),
-                newGroup.getGroupProfilePicture()
+                newGroup.getGroupProfilePicture(),
+                newGroup.getGroupId() // Pass the group ID
             );
             
             if (conversationId != null) {
@@ -2157,5 +2143,266 @@ public class HomeController {
                     " to " + (isOnline ? "ONLINE" : "OFFLINE"));
             }
         });
+    }
+    
+    /**
+     * Add a group conversation to the UI immediately when a group join request is accepted
+     * This is called when receiving GROUP_JOIN_ACCEPTED socket message
+     * @param groupId The ID of the group
+     * @param groupName The name of the group
+     */
+    public void addGroupConversationFromAcceptance(String groupId, String groupName) {
+        Platform.runLater(() -> {
+            try {
+                String currentUserId = UserSession.getUserId();
+                
+                // First, try to find by groupId (preferred)
+                var groupConversations = this.dbConnection
+                    .getDatabase()
+                    .getCollection("Conversation")
+                    .find(new org.bson.Document("groupId", groupId)
+                        .append("type", "group"));
+                
+                org.bson.Document conversationDoc = groupConversations.first();
+                
+                // If not found by groupId, try by groupName (fallback for older conversations)
+                if (conversationDoc == null) {
+                    logger.log(Level.INFO, "GroupId not found, searching by groupName: " + groupName);
+                    groupConversations = dbConnection
+                        .getDatabase()
+                        .getCollection("Conversation")
+                        .find(new org.bson.Document("groupName", groupName)
+                            .append("type", "group"));
+                    conversationDoc = groupConversations.first();
+                }
+                
+                if (conversationDoc != null) {
+                    ObjectId conversationId = conversationDoc.getObjectId("_id");
+                    
+                    // Update the conversation document to include groupId if it doesn't have it
+                    if (conversationDoc.getString("groupId") == null) {
+                        this.dbConnection.getDatabase()
+                            .getCollection("Conversation")
+                            .updateOne(
+                                new org.bson.Document("_id", conversationId),
+                                new org.bson.Document("$set", new org.bson.Document("groupId", groupId))
+                            );
+                        logger.log(Level.INFO, "✓ Updated conversation with groupId: " + groupId);
+                    }
+                    
+                    // Check if current user is already a participant
+                    java.util.List<?> participantIds = conversationDoc.getList("participantIds", Object.class);
+                    boolean isParticipant = participantIds != null && participantIds.stream()
+                        .anyMatch(id -> id.toString().equals(currentUserId));
+                    
+                    // If not a participant, add them
+                    if (!isParticipant) {
+                        this.dbConnection.getDatabase()
+                            .getCollection("Conversation")
+                            .updateOne(
+                                new org.bson.Document("_id", conversationId),
+                                new org.bson.Document("$addToSet", new org.bson.Document("participantIds", currentUserId))
+                            );
+                        logger.log(Level.INFO, "✓ Added user to group conversation participants");
+                    }
+                    
+                    String lastMessage = conversationDoc.getString("lastMessageContent");
+                    if (lastMessage == null || lastMessage.isEmpty()) {
+                        lastMessage = "No messages yet";
+                    }
+                    
+                    String time = "";
+                    Object lastMsgTimeObj = conversationDoc.get("lastMessageTime");
+                    if (lastMsgTimeObj != null) {
+                        time = formatMessageTime(lastMsgTimeObj);
+                    }
+                    
+                    String groupPhotoUrl = conversationDoc.getString("photo_url");
+                    if (groupPhotoUrl == null) {
+                        groupPhotoUrl = "genki/img/group-default.png";
+                    }
+                    
+                    // Create UI item for the group conversation
+                    HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
+                        groupPhotoUrl,
+                        groupName,
+                        lastMessage,
+                        time,
+                        0,  // unread count
+                        false  // is online
+                    );
+                    
+                    // Store conversation ID and group ID in userData map
+                    java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                    userData.put("conversationId", conversationId.toString());
+                    userData.put("groupName", groupName);
+                    userData.put("groupId", groupId);
+                    newGroupContainer.setUserData(userData);
+                    
+                    // Add click handler to open group conversation
+                    newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
+                    
+                    // Cache the group conversation item
+                    UserSession.addGroupConversationItem(newGroupContainer);
+                    
+                    // Add to the groups list container in UI
+                    groupsListContainer.getChildren().add(0, newGroupContainer);
+                    
+                    // Remove "No groups found" label if present
+                    groupsListContainer.getChildren().removeIf(node -> 
+                        node instanceof Label && ((Label)node).getText().equals("No groups found")
+                    );
+                    
+                    // Switch to groups view if not already there
+                    if (!groupsPane.isVisible()) {
+                        switchUsers(false);
+                    }
+                    
+                    logger.log(Level.INFO, "✅ Group conversation added to UI from acceptance: " + groupName + " (GroupID: " + groupId + ")");
+                } else {
+                    logger.log(Level.WARNING, "⚠️ Could not find conversation for group: " + groupName + " (GroupID: " + groupId + ")");
+                }
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "❌ Error adding group conversation from acceptance", e);
+                e.printStackTrace();
+            }
+        });
+    }
+    
+    /**
+     * Add a friend conversation to the UI immediately when a friend request is accepted
+     * This is called when receiving FRIEND_REQUEST_ACCEPTED socket message
+     * @param friendUsername The username of the new friend
+     */
+    public void addFriendConversationFromAcceptance(String friendUsername) {
+        Platform.runLater(() -> {
+            try {
+                // Fetch the friend's information from database
+                UserDAO userDAO = new UserDAO();
+                Document friendDoc = userDAO.getUserByUsername(friendUsername);
+                
+                if (friendDoc == null) {
+                    logger.log(Level.WARNING, "⚠️ Could not find friend in database: " + friendUsername);
+                    return;
+                }
+                
+                String friendId = friendDoc.getObjectId("_id").toHexString();
+                String currentUserId = UserSession.getUserId();
+                
+                // Find or create the direct conversation with this friend
+                ConversationDAO conversationDAO = new ConversationDAO();
+                ObjectId conversationId = conversationDAO.findDirectConversation(currentUserId, friendId);
+                
+                // If conversation doesn't exist, create it
+                if (conversationId == null) {
+                    conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+                    logger.log(Level.INFO, "✓ Created new direct conversation with friend: " + friendUsername);
+                }
+                
+                if (conversationId == null) {
+                    logger.log(Level.WARNING, "⚠️ Could not create or find conversation with friend: " + friendUsername);
+                    return;
+                }
+                
+                // Get friend's profile picture
+                String friendPhotoUrl = friendDoc.getString("photo_url");
+                if (friendPhotoUrl == null) {
+                    friendPhotoUrl = "genki/img/user-default.png";
+                }
+                
+                // Check if friend is currently online
+                boolean isFriendOnline = false;
+                ArrayList<genki.models.User> connectedUsers = UserSession.getConnectedUsers();
+                if (connectedUsers != null) {
+                    isFriendOnline = connectedUsers.stream()
+                        .anyMatch(u -> u.getId() != null && u.getId().equals(friendId));
+                }
+                
+                // Create UI item for the friend conversation with correct online status
+                HBox newFriendContainer = ConversationItemBuilder.createConversationItem(
+                    friendPhotoUrl,
+                    friendUsername,
+                    "No messages yet",
+                    "",
+                    0,  // unread count
+                    isFriendOnline  // Use actual online status
+                );
+                
+                // Store conversation ID and friend info in userData map
+                java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                userData.put("conversationId", conversationId.toString());
+                userData.put("friendName", friendUsername);
+                userData.put("friendId", friendId);
+                newFriendContainer.setUserData(userData);
+                
+                // Add click handler to open friend conversation - check online status dynamically
+                final ObjectId finalConversationId = conversationId;
+                newFriendContainer.setOnMouseClicked(e -> {
+                    // Determine if friend is actually online by checking server's connected clients
+                    boolean isCurrentlyOnline = checkIfUserIsOnline(friendId);
+                    setCurrentConversation(finalConversationId, isCurrentlyOnline);
+                });
+                
+                // Cache the conversation item
+                UserSession.addConversationItem(newFriendContainer);
+                
+                // Also add to friends list if not already there
+                genki.models.User friendUser = new genki.models.User();
+                friendUser.setId(friendId);
+                friendUser.setUsername(friendUsername);
+                friendUser.setPhotoUrl(friendPhotoUrl);
+                ArrayList<genki.models.User> friends = UserSession.getFriends();
+                if (friends != null && !friends.stream().anyMatch(u -> u.getId().equals(friendId))) {
+                    friends.add(friendUser);
+                }
+                
+                // Add to the users conversation list container in UI
+                conversationListContainer.getChildren().add(0, newFriendContainer);
+                
+                // Remove "No conversations found" label if present
+                conversationListContainer.getChildren().removeIf(node -> 
+                    node instanceof Label && ((Label)node).getText().equals("No conversations found")
+                );
+                
+                // Switch to users view if not already there
+                if (!usersPane.isVisible()) {
+                    switchUsers(true);
+                }
+                
+                logger.log(Level.INFO, "✅ Friend conversation added to UI from acceptance: " + friendUsername + " (FriendID: " + friendId + ")");
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "❌ Error adding friend conversation from acceptance", e);
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Check if a user is currently online by querying the server
+     * @param userId The user ID to check
+     * @return true if the user is connected to the server, false otherwise
+     */
+    private boolean checkIfUserIsOnline(String userId) {
+        try {
+            // Query the users collection to check the last_activity timestamp
+            // A user is considered online if their last activity is recent (within last 2 minutes)
+            Document userDoc = this.dbConnection.getCollection("users").find(
+                new Document("_id", new ObjectId(userId))
+            ).first();
+            
+            if (userDoc != null) {
+                Object lastActivityObj = userDoc.get("last_activity");
+                if (lastActivityObj instanceof Long) {
+                    long lastActivity = (Long) lastActivityObj;
+                    long currentTime = System.currentTimeMillis();
+                    long timeDifference = currentTime - lastActivity;
+                    // Consider user online if activity within last 2 minutes (120000 ms)
+                    return timeDifference < 120000;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error checking user online status: " + e.getMessage());
+        }
+        return false;
     }
 }
