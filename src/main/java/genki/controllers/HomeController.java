@@ -147,9 +147,7 @@ public class HomeController {
 
         try {
 
-             DBConnection notificationsDBConnection = new DBConnection("genki_testing");
-
-             MongoCollection<Document> notificationsCollection = notificationsDBConnection.getCollection("notifications");
+             MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
 
              // Load only pending notifications (not accepted or rejected)
              long notificationsCount = notificationsCollection.countDocuments(
@@ -280,7 +278,6 @@ public class HomeController {
     private void cleanupOldNotifications() {
         new Thread(() -> {
             try {
-                DBConnection dbConnection = new DBConnection("genki_testing");
                 MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
                 
                 // Calculate date 30 days ago
@@ -1731,12 +1728,10 @@ public class HomeController {
                 logger.log(Level.INFO, "DBConnection was null, reinitializing...");
             }
             
-            DBConnection dbConnection = this.dbConnection;
-            
             System.out.println("Loading group conversations for user: " + currentUserId);
             
             // Récupérer toutes les conversations de type "group" où l'utilisateur est participant
-            var groupConversations = dbConnection
+            var groupConversations = this.dbConnection
                 .getDatabase()
                 .getCollection("Conversation")
                 .find(new org.bson.Document("type", "group")
@@ -1808,6 +1803,12 @@ public class HomeController {
                 UserSession.addGroup(group);
                 logger.log(Level.INFO, "✓ Group added to UserSession: " + groupName + " (ConversationID: " + conversationId + ", GroupID: " + groupId + ")");
                 
+                // Store conversation ID, group name, and groupId in userData map
+                java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                userData.put("conversationId", conversationId.toString());
+                userData.put("groupName", groupName);
+                userData.put("groupId", groupId);
+                
                 HBox conversationItem = ConversationItemBuilder.createConversationItem(
                     groupPhotoUrl,
                     groupName,
@@ -1817,11 +1818,7 @@ public class HomeController {
                     isOnline
                 );
 
-                // Store conversation ID, group name, and groupId in userData map
-                java.util.Map<String, Object> userData = new java.util.HashMap<>();
-                userData.put("conversationId", conversationId.toString());
-                userData.put("groupName", groupName);
-                userData.put("groupId", groupId);
+                // userData map already created above - no need to recreate it
                 conversationItem.setUserData(userData);
                 System.out.println("lllllllllllllllllllllll "+ groupId);
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
@@ -2150,14 +2147,14 @@ public class HomeController {
         Platform.runLater(() -> {
             try {
                 // Fetch the group conversation from the database
-                if (dbConnection == null) {
-                    dbConnection = new DBConnection("genki_testing");
+                if (this.dbConnection == null) {
+                    this.dbConnection = new DBConnection("genki_testing");
                 }
                 
                 String currentUserId = UserSession.getUserId();
                 
                 // First, try to find by groupId (preferred)
-                var groupConversations = dbConnection
+                var groupConversations = this.dbConnection
                     .getDatabase()
                     .getCollection("Conversation")
                     .find(new org.bson.Document("groupId", groupId)
@@ -2181,7 +2178,7 @@ public class HomeController {
                     
                     // Update the conversation document to include groupId if it doesn't have it
                     if (conversationDoc.getString("groupId") == null) {
-                        dbConnection.getDatabase()
+                        this.dbConnection.getDatabase()
                             .getCollection("Conversation")
                             .updateOne(
                                 new org.bson.Document("_id", conversationId),
@@ -2197,7 +2194,7 @@ public class HomeController {
                     
                     // If not a participant, add them
                     if (!isParticipant) {
-                        dbConnection.getDatabase()
+                        this.dbConnection.getDatabase()
                             .getCollection("Conversation")
                             .updateOne(
                                 new org.bson.Document("_id", conversationId),
@@ -2267,5 +2264,150 @@ public class HomeController {
                 e.printStackTrace();
             }
         });
+    }
+    
+    /**
+     * Add a friend conversation to the UI immediately when a friend request is accepted
+     * This is called when receiving FRIEND_REQUEST_ACCEPTED socket message
+     * @param friendUsername The username of the new friend
+     */
+    public void addFriendConversationFromAcceptance(String friendUsername) {
+        Platform.runLater(() -> {
+            try {
+                // Fetch the friend's information from database
+                if (this.dbConnection == null) {
+                    this.dbConnection = new DBConnection("genki_testing");
+                }
+                
+                UserDAO userDAO = new UserDAO();
+                Document friendDoc = userDAO.getUserByUsername(friendUsername);
+                
+                if (friendDoc == null) {
+                    logger.log(Level.WARNING, "⚠️ Could not find friend in database: " + friendUsername);
+                    return;
+                }
+                
+                String friendId = friendDoc.getObjectId("_id").toHexString();
+                String currentUserId = UserSession.getUserId();
+                
+                // Find or create the direct conversation with this friend
+                ConversationDAO conversationDAO = new ConversationDAO();
+                ObjectId conversationId = conversationDAO.findDirectConversation(currentUserId, friendId);
+                
+                // If conversation doesn't exist, create it
+                if (conversationId == null) {
+                    conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
+                    logger.log(Level.INFO, "✓ Created new direct conversation with friend: " + friendUsername);
+                }
+                
+                if (conversationId == null) {
+                    logger.log(Level.WARNING, "⚠️ Could not create or find conversation with friend: " + friendUsername);
+                    return;
+                }
+                
+                // Get friend's profile picture
+                String friendPhotoUrl = friendDoc.getString("photo_url");
+                if (friendPhotoUrl == null) {
+                    friendPhotoUrl = "genki/img/user-default.png";
+                }
+                
+                // Check if friend is currently online
+                boolean isFriendOnline = false;
+                ArrayList<genki.models.User> connectedUsers = UserSession.getConnectedUsers();
+                if (connectedUsers != null) {
+                    isFriendOnline = connectedUsers.stream()
+                        .anyMatch(u -> u.getId() != null && u.getId().equals(friendId));
+                }
+                
+                // Create UI item for the friend conversation with correct online status
+                HBox newFriendContainer = ConversationItemBuilder.createConversationItem(
+                    friendPhotoUrl,
+                    friendUsername,
+                    "No messages yet",
+                    "",
+                    0,  // unread count
+                    isFriendOnline  // Use actual online status
+                );
+                
+                // Store conversation ID and friend info in userData map
+                java.util.Map<String, Object> userData = new java.util.HashMap<>();
+                userData.put("conversationId", conversationId.toString());
+                userData.put("friendName", friendUsername);
+                userData.put("friendId", friendId);
+                newFriendContainer.setUserData(userData);
+                
+                // Add click handler to open friend conversation - check online status dynamically
+                final ObjectId finalConversationId = conversationId;
+                newFriendContainer.setOnMouseClicked(e -> {
+                    // Determine if friend is actually online by checking server's connected clients
+                    boolean isCurrentlyOnline = checkIfUserIsOnline(friendId);
+                    setCurrentConversation(finalConversationId, isCurrentlyOnline);
+                });
+                
+                // Cache the conversation item
+                UserSession.addConversationItem(newFriendContainer);
+                
+                // Also add to friends list if not already there
+                genki.models.User friendUser = new genki.models.User();
+                friendUser.setId(friendId);
+                friendUser.setUsername(friendUsername);
+                friendUser.setPhotoUrl(friendPhotoUrl);
+                ArrayList<genki.models.User> friends = UserSession.getFriends();
+                if (friends != null && !friends.stream().anyMatch(u -> u.getId().equals(friendId))) {
+                    friends.add(friendUser);
+                }
+                
+                // Add to the users conversation list container in UI
+                conversationListContainer.getChildren().add(0, newFriendContainer);
+                
+                // Remove "No conversations found" label if present
+                conversationListContainer.getChildren().removeIf(node -> 
+                    node instanceof Label && ((Label)node).getText().equals("No conversations found")
+                );
+                
+                // Switch to users view if not already there
+                if (!usersPane.isVisible()) {
+                    switchUsers(true);
+                }
+                
+                logger.log(Level.INFO, "✅ Friend conversation added to UI from acceptance: " + friendUsername + " (FriendID: " + friendId + ")");
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "❌ Error adding friend conversation from acceptance", e);
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Check if a user is currently online by querying the server
+     * @param userId The user ID to check
+     * @return true if the user is connected to the server, false otherwise
+     */
+    private boolean checkIfUserIsOnline(String userId) {
+        try {
+            if (this.dbConnection == null) {
+                this.dbConnection = new DBConnection("genki_testing");
+            }
+            
+            // Query the users collection to check the last_activity timestamp
+            // A user is considered online if their last activity is recent (within last 2 minutes)
+            Document userDoc = this.dbConnection.getCollection("users").find(
+                new Document("_id", new ObjectId(userId))
+            ).first();
+            
+            if (userDoc != null) {
+                Object lastActivityObj = userDoc.get("last_activity");
+                if (lastActivityObj instanceof Long) {
+                    long lastActivity = (Long) lastActivityObj;
+                    long currentTime = System.currentTimeMillis();
+                    long timeDifference = currentTime - lastActivity;
+                    // Consider user online if activity within last 2 minutes (120000 ms)
+                    return timeDifference < 120000;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error checking user online status: " + e.getMessage());
+        }
+        return false;
     }
 }
