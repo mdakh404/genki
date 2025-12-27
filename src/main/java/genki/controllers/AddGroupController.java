@@ -14,13 +14,25 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 public class AddGroupController {
 
     private HomeController homeController;
+    private String selectedPhotoPath = null; // Chemin de la photo sélectionnée
 
     @FXML
     private TextField txtGroupName;
@@ -40,7 +52,15 @@ public class AddGroupController {
     @FXML
     private RadioButton rbPrivate;
     
-    // Ajoutez cette méthode initialize
+    @FXML
+    private ImageView imgGroupPhoto;
+    
+    @FXML
+    private Button btnUploadPhoto;
+    
+    @FXML
+    private Label lblPhotoStatus;
+    
     @FXML
     public void initialize() {
         // Créer un ToggleGroup pour les RadioButtons
@@ -50,6 +70,19 @@ public class AddGroupController {
         
         // Sélectionner "Public" par défaut
         rbPublic.setSelected(true);
+        
+        // Initialiser l'image par défaut
+        try {
+            Image defaultImage = new Image(getClass().getResourceAsStream("/genki/img/group-default.png"));
+            if (imgGroupPhoto != null) {
+                imgGroupPhoto.setImage(defaultImage);
+                // Rendre l'image circulaire
+                javafx.scene.shape.Circle clip = new javafx.scene.shape.Circle(50, 50, 50);
+                imgGroupPhoto.setClip(clip);
+            }
+        } catch (Exception e) {
+            System.out.println("Erreur chargement image par défaut: " + e.getMessage());
+        }
     }
 
     public void setHomeController(HomeController homeController) {
@@ -57,14 +90,86 @@ public class AddGroupController {
     }
     
     @FXML
+    private void handlePhotoUpload() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Group Photo");
+        
+        // Filtres pour les images
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+        );
+        
+        Stage stage = (Stage) btnUploadPhoto.getScene().getWindow();
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        
+        if (selectedFile != null) {
+            try {
+                // Créer le dossier uploads/groups s'il n'existe pas
+                Path uploadsDir = Paths.get("uploads", "groups");
+                if (!Files.exists(uploadsDir)) {
+                    Files.createDirectories(uploadsDir);
+                }
+                
+                // Générer un nom unique pour le fichier
+                String extension = getFileExtension(selectedFile.getName());
+                String uniqueFileName = "group_" + UUID.randomUUID().toString() + extension;
+                Path destinationPath = uploadsDir.resolve(uniqueFileName);
+                
+                // Copier le fichier
+                Files.copy(selectedFile.toPath(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                
+                // Stocker le chemin relatif
+                selectedPhotoPath = "uploads/groups/" + uniqueFileName;
+                
+                // Afficher l'image dans l'ImageView
+                Image image = new Image(selectedFile.toURI().toString());
+                imgGroupPhoto.setImage(image);
+                
+                // Mettre à jour le label de statut
+                if (lblPhotoStatus != null) {
+                    lblPhotoStatus.setText("✓ Photo uploaded");
+                    lblPhotoStatus.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 11px;");
+                }
+                
+                System.out.println("Photo uploaded successfully: " + selectedPhotoPath);
+                
+            } catch (IOException e) {
+                System.err.println("Error uploading photo: " + e.getMessage());
+                e.printStackTrace();
+                
+                if (lblPhotoStatus != null) {
+                    lblPhotoStatus.setText("✗ Upload failed");
+                    lblPhotoStatus.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 11px;");
+                }
+                
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Upload Error");
+                alert.setHeaderText("Failed to upload photo");
+                alert.setContentText("An error occurred while uploading the photo. Please try again.");
+                alert.showAndWait();
+            }
+        }
+    }
+    
+    /**
+     * Récupère l'extension d'un fichier
+     */
+    private String getFileExtension(String fileName) {
+        int lastIndexOf = fileName.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return ""; // Pas d'extension
+        }
+        return fileName.substring(lastIndexOf);
+    }
+    
+    @FXML
     private void handleAddGroup() {
-
         String groupName = txtGroupName.getText().trim();
         String groupDescription = txtDescription.getText().trim();
         String privacy = rbPublic.isSelected() ? "Public" : "Private";
-
         boolean groupPrivacyPublic = privacy.equals("Public");
 
+        // Validation du nom de groupe
         if (groupName.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Validation Error");
@@ -74,58 +179,62 @@ public class AddGroupController {
             return;
         }
 
-        AddGroupResult addGroupResult = GroupModel.addGroup(groupName, groupDescription, groupPrivacyPublic, UserSession.getUsername());
+        // Si aucune photo n'a été uploadée, utiliser l'image par défaut
+        String photoPath = selectedPhotoPath != null ? selectedPhotoPath : "genki/img/group-default.png";
+
+        // Appeler la méthode modifiée avec le chemin de la photo
+        AddGroupResult addGroupResult = GroupModel.addGroupWithPhoto(
+            groupName, 
+            groupDescription, 
+            groupPrivacyPublic, 
+            UserSession.getUsername(),
+            photoPath
+        );
 
         switch (addGroupResult.getResult()) {
-
             case AddGroupStatus.GROUP_ADD_SUCCESS:
-                 AlertConstruct.alertConstructor(
-                         "Create Group",
-                              "Group creation success",
-                              "Your group has been successfully created !",
-                         AlertType.INFORMATION
-                 );
-                 
-                 // Get the newly created group from UserSession and notify HomeController
-                 Group newGroup = UserSession.getGroups().get(UserSession.getGroups().size() - 1);
-                 if (homeController != null) {
-                     homeController.handleAddGroupFromDialog(newGroup);
-                 }
-                 
-                 closeWindow();
-                 break;
+                AlertConstruct.alertConstructor(
+                    "Create Group",
+                    "Group creation success",
+                    "Your group has been successfully created !",
+                    AlertType.INFORMATION
+                );
+                
+                // Get the newly created group from UserSession and notify HomeController
+                Group newGroup = UserSession.getGroups().get(UserSession.getGroups().size() - 1);
+                if (homeController != null) {
+                    homeController.handleAddGroupFromDialog(newGroup);
+                }
+                
+                closeWindow();
+                break;
 
             case AddGroupStatus.GROUP_ADD_FAILURE:
                 AlertConstruct.alertConstructor(
-                        "Create Group",
-                        "Group creation failure",
-                        "An unexpected error occurred while creating your group, please try again.",
-                        AlertType.INFORMATION
+                    "Create Group",
+                    "Group creation failure",
+                    "An unexpected error occurred while creating your group, please try again.",
+                    AlertType.INFORMATION
                 );
                 break;
 
             case AddGroupStatus.DB_ERROR:
                 AlertConstruct.alertConstructor(
-                        "Network Error",
-                        "Database Connection Error",
-                        "Failed to connect to database, please try again in a few minutes.",
-                        AlertType.ERROR
+                    "Network Error",
+                    "Database Connection Error",
+                    "Failed to connect to database, please try again in a few minutes.",
+                    AlertType.ERROR
                 );
                 break;
 
             default:
                 AlertConstruct.alertConstructor(
-                        "Unexpected Error",
-                        "Something went wrong",
-                        "An unexpected error occurred, please ty again in a few minutes.",
-                        AlertType.ERROR
+                    "Unexpected Error",
+                    "Something went wrong",
+                    "An unexpected error occurred, please ty again in a few minutes.",
+                    AlertType.ERROR
                 );
-
         }
-
-
-        
-
     }
     
     @FXML

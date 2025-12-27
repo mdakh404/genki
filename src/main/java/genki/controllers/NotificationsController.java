@@ -289,6 +289,7 @@ public class NotificationsController {
                     updateEmptyState();
                     
                     // Send socket message to notify the requester that their group join request was accepted
+                    // The requester will create the conversation UI when they receive this message
                     sendGroupJoinAcceptanceNotification(
                         request.getUsername(), 
                         senderUserDoc.getObjectId("_id").toHexString(),  // Pass the requester's userId
@@ -296,14 +297,7 @@ public class NotificationsController {
                         groupDoc.getObjectId("_id").toString()
                     );
                     
-                    // ✅ Also add the group to the acceptor's conversation list immediately
-                    if (homeController != null) {
-                        homeController.addGroupConversationFromAcceptance(
-                            groupDoc.getObjectId("_id").toString(),
-                            groupDoc.getString("group_name")
-                        );
-                        homeController.updateNotificationBadge();
-                    }
+                    // NOTE: We don't create UI here for the admin because they already have the group
                 } else {
                     logger.warning("Failed to update group membership");
                     AlertConstruct.alertConstructor(

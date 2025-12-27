@@ -2,19 +2,19 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="TOP_CENTER" minHeight="50" minWidth="50" prefHeight="350" prefWidth="450" spacing="15" style="-fx-background-color: #f5f7fa; -fx-background-radius: 12;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.AddGroupController">
+<VBox alignment="TOP_CENTER" minHeight="50" minWidth="50" prefHeight="480" prefWidth="450" spacing="15" style="-fx-background-color: #f5f7fa; -fx-background-radius: 12;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="genki.controllers.AddGroupController">
 
     <padding>
-        <Insets bottom="10" left="30" right="30" top="13" />
+        <Insets bottom="25" left="30" right="30" top="13" />
     </padding>
 
     <VBox spacing="2" style="-fx-background-color: #f5f7fa; -fx-background-radius: 10;">
@@ -22,7 +22,32 @@
             <Insets bottom="15" left="25" right="25" top="15" />
         </padding>
 
+        <!-- Group Photo Section -->
+        <HBox alignment="CENTER" spacing="10">
+            <VBox alignment="CENTER" spacing="5">
+                <ImageView fx:id="imgGroupPhoto"
+                           fitWidth="100"
+                           fitHeight="100"
+                           preserveRatio="false"
+                           style="-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);">
+                    <image>
+                        <Image url="@../img/group-default.png" />
+                    </image>
+                </ImageView>
+                <Button fx:id="btnUploadPhoto"
+                        onAction="#handlePhotoUpload"
+                        text="Upload Group Photo"
+                        style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8; -fx-font-size: 12px; -fx-padding: 8 15;"/>
+                <Label fx:id="lblPhotoStatus"
+                       textFill="#7f8c8d"
+                       style="-fx-font-size: 11px;"/>
+            </VBox>
+        </HBox>
+
         <VBox spacing="4">
+            <VBox.margin>
+                <Insets top="10" />
+            </VBox.margin>
             <Label style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #34495e;" text="Group Name *" />
             <TextField fx:id="txtGroupName" prefHeight="40" promptText="Enter group name" style="-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14; -fx-padding: 10;" />
         </VBox>
@@ -44,11 +69,11 @@
 
     <HBox alignment="CENTER" spacing="15">
         <VBox.margin>
-            <Insets top="4" />
+            <Insets top="15" bottom="10" />
         </VBox.margin>
-        
+
         <Button fx:id="btnCancel" onAction="#handleCancel" prefHeight="45" prefWidth="120" style="-fx-background-color: #ecf0f1; -fx-text-fill: #34495e; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 14; -fx-font-weight: bold;" text="Cancel" />
-        
+
         <Button fx:id="btnAddGroup" onAction="#handleAddGroup" prefHeight="45" prefWidth="140" style="-fx-background-color: #4A5CFF; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 14; -fx-font-weight: bold;" text="Create Group" />
     </HBox>
 

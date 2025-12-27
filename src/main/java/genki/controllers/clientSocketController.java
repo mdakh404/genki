@@ -167,16 +167,17 @@ public class clientSocketController implements t2{
 						String groupId = jsonObj.get("groupId").getAsString();
 						String acceptedBy = jsonObj.get("acceptedBy").getAsString();
 						
-						// Only process if this message is for the current user
+						// Only process if this message is for the current user (the requester/new member)
 						if (recipientId != null && recipientId.equals(UserSession.getUserId())) {
 							System.out.println("✓ Group Join Request Accepted:");
 							System.out.println("  - Group: " + groupName + " (ID: " + groupId + ")");
 							System.out.println("  - Accepted by: " + acceptedBy);
 							
-							// Notify HomeController to add the group conversation to UI immediately
+							// The requester (new member) needs the group conversation UI created
+							// The admin doesn't need a new UI since they already have the group
 							if (homeController != null) {
 								homeController.addGroupConversationFromAcceptance(groupId, groupName);
-								System.out.println("✅ Group conversation added to UI\n");
+								System.out.println("✅ Group conversation added to requester's UI\n");
 							} else {
 								System.out.println("⚠️ HomeController reference is null!\n");
 							}
