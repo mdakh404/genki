@@ -395,7 +395,7 @@ public class HomeController {
         
         switchUsers(true);
         // AFFICHER L'IMAGE PAR DÉFAUT AU DÉMARRAGE
-        showDefaultChatView();
+//        showDefaultChatView();
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
             // chatHeader.getChildren().clear();
             // messageInputArea.getChildren().clear();
@@ -538,6 +538,8 @@ public class HomeController {
         new Thread(() -> {
             try {
                 loadConversations();
+             // Après le chargement, décider quelle vue afficher
+                checkAndShowAppropriateDefaultView();
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Error loading conversations in background", e);
             }
@@ -547,6 +549,8 @@ public class HomeController {
         new Thread(() -> {
             try {
                 loadGroupConversations();
+             // Après le chargement, décider quelle vue afficher
+                checkAndShowAppropriateDefaultView();
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Error loading group conversations in background", e);
             }
@@ -667,6 +671,114 @@ public class HomeController {
 
     }
 
+    }
+    
+    /**
+     * Vérifie s'il y a des conversations/groupes et affiche la vue appropriée
+     */
+    private void checkAndShowAppropriateDefaultView() {
+        Platform.runLater(() -> {
+            // Attendre que les deux listes soient chargées
+            boolean hasUsers = UserSession.getConversationItems() != null && 
+                              !UserSession.getConversationItems().isEmpty();
+            boolean hasGroups = UserSession.getGroupConversationItems() != null && 
+                               !UserSession.getGroupConversationItems().isEmpty();
+            
+            // Si aucune conversation n'est ouverte
+            if (currentConversationId == null) {
+                if (!hasUsers && !hasGroups) {
+                    // Cas 1 : Aucun user ni groupe → start_conversation
+                    showStartConversationView();
+                } else {
+                    // Cas 2 : Il y a des users/groupes mais rien n'est sélectionné → page-par-defaut
+                    showDefaultChatView();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Affiche la vue "Démarrer une conversation" avec boutons Add Friend / Join Group
+     * Utilisée quand l'utilisateur n'a AUCUN ami ni groupe
+     */
+    private void showStartConversationView() {
+        Platform.runLater(() -> {
+            // Cacher le chat header et l'input area
+            if (chatHeader != null) {
+                chatHeader.setVisible(false);
+                chatHeader.setManaged(false);
+            }
+            if (messageInputArea != null) {
+                messageInputArea.setVisible(false);
+                messageInputArea.setManaged(false);
+            }
+            if (btnCloseConversation != null) {
+                btnCloseConversation.setVisible(false);
+            }
+            
+            // Clear et configurer le container
+            if (messagesContainer != null) {
+                messagesContainer.getChildren().clear();
+                messagesContainer.setAlignment(Pos.CENTER);
+                messagesContainer.setPadding(new Insets(20));
+                messagesContainer.setSpacing(20);
+                
+                // Image start_conversation
+                ImageView startConversationImageView = new ImageView(
+                    new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.jpg"))
+                );
+                startConversationImageView.setPreserveRatio(true);
+                startConversationImageView.setSmooth(true);
+                startConversationImageView.setFitWidth(300);
+                startConversationImageView.setFitHeight(300);
+                
+                // Conteneur des boutons
+                HBox buttonsContainer = new HBox(10);
+                buttonsContainer.setAlignment(Pos.CENTER);
+                
+                // Bouton Add Friend
+                Button addFriendBtn = new Button("Add a Friend");
+                ImageView addFriendIcon = new ImageView(
+                    new Image(HomeController.class.getResourceAsStream("/genki/img/add_friend.png"))
+                );
+                addFriendBtn.setGraphic(addFriendIcon);
+                addFriendBtn.setStyle(
+                    "-fx-background-color: #746996; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-padding: 8 16; " +
+                    "-fx-font-size: 14px; " +
+                    "-fx-cursor: hand;"
+                );
+                addFriendBtn.setOnAction(e -> openAddUserDialog());
+                
+                // Bouton Join Group
+                Button joinGroupBtn = new Button("Join a Group");
+                ImageView joinGroupIcon = new ImageView(
+                    new Image(HomeController.class.getResourceAsStream("/genki/img/join_group.png"))
+                );
+                joinGroupBtn.setGraphic(joinGroupIcon);
+                joinGroupBtn.setStyle(
+                    "-fx-background-color: #76B885; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-padding: 8 16; " +
+                    "-fx-font-size: 14px; " +
+                    "-fx-cursor: hand;"
+                );
+                joinGroupBtn.setOnAction(e -> openJoinGroupDialog());
+                
+                buttonsContainer.getChildren().addAll(addFriendBtn, joinGroupBtn);
+                messagesContainer.getChildren().addAll(startConversationImageView, buttonsContainer);
+            }
+            
+            // Réinitialiser la conversation courante
+            currentConversationId = null;
+            currentRecipientId = null;
+            currentRecipientName = null;
+            
+            logger.log(Level.INFO, "✓ Showing start conversation view (no friends/groups)");
+        });
     }
 
     /**
@@ -2277,6 +2389,12 @@ public class HomeController {
                 } else {
                     logger.log(Level.WARNING, "⚠️ Could not find conversation for group: " + groupName + " (GroupID: " + groupId + ")");
                 }
+             // AJOUTER À LA FIN :
+                // Si c'était la vue "start_conversation", passer à "page-par-defaut"
+                if (currentConversationId == null) {
+                    checkAndShowAppropriateDefaultView();
+                }
+                
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "❌ Error adding group conversation from acceptance", e);
                 e.printStackTrace();
@@ -2385,6 +2503,13 @@ public class HomeController {
                 }
                 
                 logger.log(Level.INFO, "✅ Friend conversation added to UI from acceptance: " + friendUsername + " (FriendID: " + friendId + ")");
+                
+             // AJOUTER À LA FIN :
+                // Si c'était la vue "start_conversation", passer à "page-par-defaut"
+                if (currentConversationId == null) {
+                    checkAndShowAppropriateDefaultView();
+                }
+                
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "❌ Error adding friend conversation from acceptance", e);
                 e.printStackTrace();
@@ -2476,6 +2601,9 @@ public class HomeController {
             currentConversationId = null;
             currentRecipientId = null;
             currentRecipientName = null;
+            
+            logger.log(Level.INFO, "✓ Showing default chat view (conversations available)");
+            
         });
     }
 
@@ -2483,7 +2611,17 @@ public class HomeController {
      * Ferme la conversation actuelle et retourne à la vue par défaut
      */
     private void closeCurrentConversation() {
-        showDefaultChatView();
-        System.out.println("✓ Conversation closed, showing default view");
+        boolean hasUsers = UserSession.getConversationItems() != null && 
+                          !UserSession.getConversationItems().isEmpty();
+        boolean hasGroups = UserSession.getGroupConversationItems() != null && 
+                           !UserSession.getGroupConversationItems().isEmpty();
+        
+        if (!hasUsers && !hasGroups) {
+            showStartConversationView();
+        } else {
+            showDefaultChatView();
+        }
+        
+        System.out.println("✓ Conversation closed, showing appropriate view");
     }
 }
