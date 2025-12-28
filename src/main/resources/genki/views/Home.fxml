@@ -183,6 +183,20 @@
                 
                 <!-- Spacer -->
                 <Region HBox.hgrow="ALWAYS"/>
+
+                <!-- Group Settings Btn -->
+                <Button id="groupSettingsBtn"
+                        fx:id="groupSettingsBtn"
+                        visible="false"
+                        managed="false">
+                    <graphic>
+                        <ImageView fitHeight="20.0" preserveRatio="true">
+                            <image>
+                                <Image url="@../img/group-settings.png" />
+                            </image>
+                        </ImageView>
+                    </graphic>
+                </Button>
                 
                 <!-- Logout button (à droite) -->
                 <Button fx:id="btnLogout" 

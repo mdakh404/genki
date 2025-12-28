@@ -1,5 +1,7 @@
 package genki.controllers;
 
+import genki.controllers.GroupSettingsController;
+import genki.utils.AlertConstruct;
 import genki.models.Notification;
 import genki.models.Group;
 
@@ -12,6 +14,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -63,8 +66,13 @@ import genki.utils.ConversationDAO;
 
 public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
+    private static final DBConnection HomeControllerDBConnection = DBConnection.getInstance("genki_testing");
+
     @FXML
     private Button btnSettings;
+
+    @FXML
+    private Button groupSettingsBtn;
 
     @FXML
     private Button btnAll;
@@ -321,6 +329,49 @@ public class HomeController {
                 }
             }
         }, "NotificationCleanupScheduler").start();
+    }
+
+    // handle group settings button click
+    private void handleGroupSettingsClick(String groupAdmin)  {
+
+       if (groupAdmin.equals(UserSession.getUsername())) {
+           try {
+
+               logger.log(Level.INFO, "Loading GroupSettings.fxml");
+               FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/GroupSettings.fxml"));
+               Parent root = loader.load();
+
+               Stage groupSettingsStage = new Stage();
+
+               try {
+                   Image logo = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/genki/img/setting.png")), 50, 50, true, true);
+                   groupSettingsStage.getIcons().add(logo);
+               } catch (Exception e) {
+                   logger.log(Level.WARNING, "Failed to load application logo", e);
+               }
+               groupSettingsStage.setTitle("Group Settings");
+               groupSettingsStage.setResizable(false);
+               groupSettingsStage.initModality(Modality.APPLICATION_MODAL);
+               if (groupSettingsBtn != null && groupSettingsBtn.getScene() != null) {
+                   groupSettingsStage.initOwner(groupSettingsBtn.getScene().getWindow());
+               }
+               groupSettingsStage.setScene(new Scene(root));
+               groupSettingsStage.centerOnScreen();
+               groupSettingsStage.showAndWait();
+           } catch (IOException loadingException) {
+               logger.log(Level.WARNING, loadingException.getMessage());
+               Alert failedLoadingAlert = new Alert(Alert.AlertType.ERROR, "Failed to load GroupSettings.fxml file.");
+               failedLoadingAlert.showAndWait();
+           }
+       } else {
+              logger.warning("Unauthorized access to group settings.");
+              AlertConstruct.alertConstructor(
+                      "Access Control Error",
+                      "",
+                      "You're not authorized to edit group settings.",
+                      Alert.AlertType.ERROR
+              );
+       }
     }
 
     // handle logout of user
@@ -831,6 +882,7 @@ public class HomeController {
                     
                     if ("group".equals(conversationType)) {
                         // ========== GROUP CONVERSATION ==========
+                        String groupId = conversationDoc.getString("groupId");
                         String groupName = conversationDoc.getString("groupName");
                         String groupPhotoUrl = conversationDoc.getString("photo_url");
                         System.out.println("Group Name: " + groupName);
@@ -843,6 +895,33 @@ public class HomeController {
                             // Update header
                             if (chatContactName != null) {
                                 chatContactName.setText(groupName != null ? groupName : "Group Chat");
+
+                                MongoCollection<Document> groupsCollection = HomeControllerDBConnection.getCollection("groups");
+
+                                String groupAdmin = groupsCollection.find(
+                                       Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getString("group_admin");
+
+                                if (groupAdmin != null) {
+
+                                      if (groupAdmin.equals(UserSession.getUsername())) {
+
+                                                  groupSettingsBtn.setAlignment(Pos.CENTER_LEFT);
+                                                  groupSettingsBtn.setVisible(true);
+                                                  groupSettingsBtn.setManaged(true);
+                                                  groupSettingsBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand");
+                                      }
+
+                                    if (groupSettingsBtn.isVisible() && groupSettingsBtn.isManaged()) {
+
+                                        groupSettingsBtn.setOnMouseClicked(e->{
+
+                                            GroupSettingsController.setGroupId(groupId);
+                                            handleGroupSettingsClick(groupAdmin);
+                                        });
+                                    }
+                                }
+
                             }
                             
                             // For groups, don't show online/offline status

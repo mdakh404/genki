@@ -1,6 +1,7 @@
 package genki.controllers;
 
-import genki.models.SettingsModel;
+import genki.models.Group;
+import genki.models.GroupSettingsModel;
 import genki.utils.UpdateResult;
 import genki.utils.UpdateStatus;
 import genki.utils.UserSession;
@@ -10,6 +11,9 @@ import genki.utils.AlertConstruct;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.stage.Stage;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
@@ -36,57 +40,67 @@ import java.io.File;
 import java.io.IOException;
 
 
+
 public class GroupSettingsController implements Initializable{
+
+    private static String groupId;
 
     private static final Logger logger = Logger.getLogger(GroupSettingsController.class.getName());
     private static final DBConnection GSettingsControllerDBConnection = DBConnection.getInstance("genki_testing");
-    private static final SettingsModel settingsModel = new SettingsModel();
+    private static final GroupSettingsModel groupSettingsModel = new GroupSettingsModel();
     private boolean uploadedPhoto;
 
     @FXML
-    private TextField newUsername;
+    private TextField newGroupName;
     @FXML
-    private PasswordField currentPassword;
+    private TextArea newDescription;
     @FXML
-    private PasswordField newPassword;
+    private ToggleGroup visibilityGroup;
     @FXML
-    private TextArea bioField;
+    private RadioButton publicRadio;
 
     @FXML
-    private Button btnSaveSettings;
-    @FXML
-    private Button btnUploadPhoto;
-    @FXML
-    private Button btnDeleteAccount;
+    private RadioButton privateRadio;
 
     @FXML
-    private ImageView imageProfileView;
+    private Button btnSaveGroup;
+    @FXML
+    private Button btnUploadGroupImage;
+    @FXML
+    private Button btnDeleteGroup;
 
     @FXML
-    public void handleUploadPhoto() {
+    private ImageView groupImageView;
+
+    public static void setGroupId(String groupId) {
+        GroupSettingsController.groupId = groupId;
+    }
+
+    @FXML
+    public void handleUploadGroupImage() {
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select Profile Image");
+        fileChooser.setTitle("Select Group Image");
         FileChooser.ExtensionFilter filterImages = new FileChooser.ExtensionFilter("Image Files", "*.JPG", "*.JPEG", "*.PNG" ,"*.jpg", "*.jpeg", "*.png");
         fileChooser.getExtensionFilters().add(filterImages);
 
-        Stage stage = (Stage) btnUploadPhoto.getScene().getWindow();
+        Stage stage = (Stage) btnUploadGroupImage.getScene().getWindow();
         File selectedFile = fileChooser.showOpenDialog(stage);
 
         if (selectedFile != null) {
 
             Image newImage = new Image(selectedFile.toURI().toString());
-            imageProfileView.setImage(newImage);
+            groupImageView.setImage(newImage);
 
-            UpdateResult photoUploadResult = settingsModel.updatePhoto(UserSession.getUsername(), selectedFile);
+            UpdateResult photoUploadResult = groupSettingsModel.updatePhoto(groupId, selectedFile);
 
             if (photoUploadResult.getStatus() == UpdateStatus.PHOTO_UPDATED) {
                 uploadedPhoto = true;
 
-                String uploadedPhotoURL = settingsModel.getUploadedPhotoURL();
+                String uploadedPhotoURL = groupSettingsModel.getUploadedPhotoURL();
 
                 Image uploadedPhoto = new Image(uploadedPhotoURL, true);
-                imageProfileView.setImage(uploadedPhoto);
+                groupImageView.setImage(uploadedPhoto);
             }
 
             if (photoUploadResult.getStatus() == UpdateStatus.IMG_UPLOAD_ERROR) {
@@ -105,36 +119,39 @@ public class GroupSettingsController implements Initializable{
     }
 
     @FXML
-    public void handleSaveSettings() {
+    public void handleSaveGroupSettings() {
 
-        logger.log(Level.INFO, "Saving settings");
+        logger.log(Level.INFO, "Saving Group settings");
 
-        String newUsernameText = newUsername.getText().trim();
-        String currentPasswordText = currentPassword.getText().trim();
-        String newPasswordText = newPassword.getText().trim();
-        String bioText = bioField.getText().trim();
+        String newGroupNameText = newGroupName.getText().trim();
+        String newDescriptionText = newDescription.getText().trim();
+        Toggle selectedPrivacyToggle = visibilityGroup.getSelectedToggle();
 
-        if (newUsernameText.isEmpty()) {
-            logger.log(Level.WARNING, "newUsername field is empty.");
-            newUsername.setStyle("-fx-border-color: #FF6347");
+        if (newGroupNameText.isEmpty()) {
+            logger.log(Level.WARNING, "newGroupName field is empty.");
+            newGroupName.setStyle("-fx-border-color: #FF6347");
         }
 
+
         else {
-            UpdateResult updateUsernameResult = settingsModel.updateUsername(UserSession.getUsername(), newUsernameText);
+            UpdateResult updateGroupNameResult = groupSettingsModel.updateGroupName(groupId, newGroupNameText);
 
-            switch (updateUsernameResult.getStatus()) {
-                case UpdateStatus.INVALID_USERNAME:
-                    logger.log(Level.WARNING, "Invalid username supplied " + newUsernameText);
+            switch (updateGroupNameResult.getStatus()) {
+
+                case UpdateStatus.GROUP_NAME_UPDATED:
+
                     AlertConstruct.alertConstructor(
-                            "Settings error",
-                            "Invalid username",
-                            "Your username must be 5–15 characters long and can only include letters, numbers, and underscores.",
-                            AlertType.ERROR
+                            "Saving Group Settings",
+                            "",
+                            "Group name has been updated successfully.",
+                            AlertType.INFORMATION
                     );
-                    break;
 
-                case UpdateStatus.USERNAME_UPDATED:
-                    UserSession.setUsername(newUsernameText);
+                    for (Group group : UserSession.getGroups()) {
+                          if (group.getGroupId().equals(groupId)) {
+                              group.setGroupName(newGroupNameText);
+                          }
+                    }
                     break;
 
                 case UpdateStatus.DB_ERROR:
@@ -156,56 +173,25 @@ public class GroupSettingsController implements Initializable{
             }
         }
 
-        if (currentPasswordText.isEmpty()) {
-            logger.log(Level.WARNING, "currentPassword field is empty.");
-            currentPassword.setStyle("-fx-border-color: #FF6347");
+        if (newDescriptionText.isEmpty()) {
+            logger.log(Level.WARNING, "newDescriptionText field is empty.");
+            newDescription.setStyle("-fx-border-color: #FF6347");
         }
 
-        if (newPasswordText.isEmpty()) {
-            logger.log(Level.WARNING, "newPassword field is empty.");
-            newPassword.setStyle("-fx-border-color: #FF6347");
-        }
 
         else {
-            if (currentPasswordText.isEmpty()) {
-                AlertConstruct.alertConstructor(
-                        "Settings Error",
-                        "Saving Settings Failed",
-                        "Please enter your current password.",
-                        AlertType.ERROR
-                );
-            }
-            else {
-                UpdateResult updatePasswordResult = settingsModel.updatePassword(
-                        UserSession.getUsername(),
-                        currentPasswordText,
-                        newPasswordText);
 
-                switch (updatePasswordResult.getStatus()) {
+                UpdateResult updateDescriptionResult = groupSettingsModel.updateGroupDescription(
+                        groupId,
+                        newDescriptionText);
 
-                    case UpdateStatus.INVALID_CURRENT_PASSWORD:
+                switch (updateDescriptionResult.getStatus()) {
+
+                    case UpdateStatus. GROUP_DESCRIPTION_UPDATED:
                         AlertConstruct.alertConstructor(
-                                "Settings Error",
-                                "Incorrect current password",
-                                "The current password entered is incorrect.",
-                                AlertType.ERROR
-                        );
-                        break;
-
-                    case UpdateStatus.INVALID_NEW_PASSWORD:
-                        AlertConstruct.alertConstructor(
-                                "Settings Error",
-                                "Invalid new password",
-                                "Your new password needs at least 8 characters, with at least one uppercase letter and one symbol.",
-                                AlertType.ERROR
-                        );
-                        break;
-
-                    case UpdateStatus.PASSWORD_UPDATED:
-                        AlertConstruct.alertConstructor(
-                                "Saving Settings",
-                                "Password Updated",
-                                "Your password has been updated successfully.",
+                                "Saving Group Settings",
+                                "",
+                                "Group description has been updated successfully.",
                                 AlertType.INFORMATION
                         );
                         break;
@@ -228,23 +214,23 @@ public class GroupSettingsController implements Initializable{
                         );
 
                 }
-            }
+
         }
 
-        if (bioText.isEmpty()) {
-            logger.log(Level.WARNING, "bioField field is empty.");
-            bioField.setStyle("-fx-border-color: #FF6347");
-        }
 
-        else {
 
-            UpdateResult updateBioResult = settingsModel.updateBio(UserSession.getUsername(), bioText);
+        if (selectedPrivacyToggle != null) {
 
-            if (updateBioResult.getStatus() == UpdateStatus.BIO_UPDATED) {
+            RadioButton selectedPrivacy = (RadioButton) selectedPrivacyToggle;
+            String privacy = selectedPrivacy.getText();
+
+            UpdateResult updateVisibilityResult = groupSettingsModel.updateVisibility(groupId, privacy);
+
+            if (updateVisibilityResult.getStatus() == UpdateStatus.GROUP_VISIBILITY_UPDATED) {
                 AlertConstruct.alertConstructor(
-                        "Saving Settings",
-                        "Bio Updated",
-                        "Your bio has been updated successfully.",
+                        "Saving Group Settings",
+                        "",
+                        "Your group visibility has been updated successfully to be " + privacy,
                         AlertType.INFORMATION
                 );
             }
@@ -259,14 +245,14 @@ public class GroupSettingsController implements Initializable{
             }
         }
 
-        if (newUsernameText.isEmpty() &&
-                (newPasswordText.isEmpty() || currentPasswordText.isEmpty()) &&
-                bioText.isEmpty() && !uploadedPhoto
+        if (newGroupNameText.isEmpty() &&
+                newDescriptionText.isEmpty() &&
+                visibilityGroup.getSelectedToggle() == null && !uploadedPhoto
         ) {
             AlertConstruct.alertConstructor(
-                    "Settings Error",
+                    "Group Settings Error",
                     "Saving Settings Failed",
-                    "Please fill the necessary fields to update your settings.",
+                    "Please fill the necessary fields to update your group settings.",
                     AlertType.ERROR
             );
         }
@@ -277,37 +263,36 @@ public class GroupSettingsController implements Initializable{
 
 
     @FXML
-    public void handleDeleteAccount() {
+    public void handleGroupDeletion() {
 
-        Alert deleteAccountAlert = new Alert(AlertType.CONFIRMATION);
-        deleteAccountAlert.setTitle("Confirmation");
-        deleteAccountAlert.setHeaderText("Delete account confirmation");
-        deleteAccountAlert.setContentText("Are you sure you want to delete your account ?");
+        Alert deleteGroupAlert = new Alert(AlertType.CONFIRMATION);
+        deleteGroupAlert.setTitle("Confirmation");
+        deleteGroupAlert.setHeaderText("Delete Group Confirmation");
+        deleteGroupAlert.setContentText("Are you sure you want to delete your group ?");
 
-        Optional<ButtonType> deleteAccAlertResult = deleteAccountAlert.showAndWait();
+        Optional<ButtonType> deleteGroupOption = deleteGroupAlert.showAndWait();
 
-        if (deleteAccAlertResult.isPresent() && deleteAccAlertResult.get() == ButtonType.OK) {
+        if (deleteGroupOption.isPresent() && deleteGroupOption.get() == ButtonType.OK) {
 
-            UpdateResult deleteAccResult = settingsModel.deleteAccount(UserSession.getUsername());
+            UpdateResult deleteGroupResult = groupSettingsModel.deleteGroup(groupId);
 
-            switch (deleteAccResult.getStatus()) {
+            switch (deleteGroupResult.getStatus()) {
 
-                case UpdateStatus.ACCOUNT_DELETED:
-                    UserSession.logout();
-                    try {
-                        Stage thisStage = (Stage) btnDeleteAccount.getScene().getWindow();
-                        thisStage.close();
-                        ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "Failed to switch to Genki - Sign in");
-                    }
+                // TODO: Update UI after group deletion from the database
+                case UpdateStatus.GROUP_DELETED:
+                    AlertConstruct.alertConstructor(
+                          "Group Settings",
+                          "",
+                          "This group has been deleted.",
+                          AlertType.INFORMATION
+                    );
                     break;
 
-                case UpdateStatus.ACCOUNT_DELETION_ERROR:
+                case UpdateStatus. GROUP_DELETION_ERROR:
                     AlertConstruct.alertConstructor(
-                            "Settings Error",
-                            "Account deletion error",
-                            "Failed to delete your account, please try again in a few minutes.",
+                            "Group Settings Error",
+                            "Group deletion error",
+                            "Failed to delete your group, please try again in a few minutes.",
                             AlertType.ERROR
                     );
                     break;
@@ -340,15 +325,15 @@ public class GroupSettingsController implements Initializable{
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
-        MongoCollection<Document> usersCollection = GroupSettingsController.GSettingsControllerDBConnection.getCollection("users");
-        Document userDoc = usersCollection.find(Filters.eq("username", UserSession.getUsername())).first();
+        MongoCollection<Document> groupsCollection = GroupSettingsController.GSettingsControllerDBConnection.getCollection("groups");
+        Document groupDoc = groupsCollection.find(Filters.eq("username", UserSession.getUsername())).first();
 
-        if (userDoc != null) {
-            String photoUrl = userDoc.getString("photo_url");
+        if (groupDoc != null) {
+            String profilePicture = groupDoc.getString("profile_picture");
 
-            if (photoUrl != null && !photoUrl.isBlank()) {
-                Image initPhotoURL = new Image(photoUrl, true);
-                imageProfileView.setImage(initPhotoURL);
+            if (profilePicture.startsWith("https")) {
+                Image initPhotoURL = new Image(profilePicture, true);
+                groupImageView.setImage(initPhotoURL);
             }
         }
 

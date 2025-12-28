@@ -3,7 +3,6 @@ package genki.models;
 import genki.utils.UpdateResult;
 import genki.utils.UpdateStatus;
 import genki.utils.DBConnection;
-import genki.utils.PasswordHasher;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -141,12 +140,17 @@ public class GroupSettingsModel {
         try {
 
             MongoCollection<Document> groupsCollection = GroupSettingsDBConnection.getCollection("groups");
+            MongoCollection<Document> conversationsCollection = GroupSettingsDBConnection.getCollection("Conversation");
 
-            DeleteResult deleteResult = groupsCollection.deleteOne(
+            DeleteResult deleteConversationsResult = conversationsCollection.deleteMany(
+                    Filters.eq("groupId", groupId)
+            );
+
+            DeleteResult deleteGroupResult = groupsCollection.deleteOne(
                     Filters.eq("_id", new ObjectId(groupId))
             );
 
-            if (deleteResult.getDeletedCount() > 0) {
+            if (deleteGroupResult.getDeletedCount() > 0 && deleteConversationsResult.getDeletedCount() > 0) {
                 return new UpdateResult(UpdateStatus.GROUP_DELETED);
             }
             else {

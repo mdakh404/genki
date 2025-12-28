@@ -10,7 +10,7 @@
             style="-fx-background-color: #F9FAFB;"
             xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="genki.controllers.SettingsController">
+            fx:controller="genki.controllers.GroupSettingsController">
 
     <VBox alignment="TOP_CENTER" spacing="15"
           AnchorPane.topAnchor="10"
@@ -28,25 +28,28 @@
                 </ImageView>
             </StackPane>
 
-            <Button fx:id="btnUploadGroupImage" text="Upload Image"
+            <Button fx:id="btnUploadGroupImage" text="Upload Image" onAction="#handleUploadGroupImage"
                     style="-fx-cursor: hand; -fx-background-color: #4B5563; -fx-text-fill: #F9FAFB;-fx-background-radius: 6;-fx-padding: 8 20;"/>
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
             <Label text="Group Name" textFill="#374151"/>
-            <TextField fx:id="groupNameField" promptText="Enter group name"
+            <TextField fx:id="newGroupName" promptText="Enter group name"
                        style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 8;"/>
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
             <Label text="Description" textFill="#374151"/>
-            <TextArea fx:id="groupDescriptionField" prefHeight="140"
+            <TextArea fx:id="newDescription" prefHeight="140"
                       promptText="Describe the group..."
                       style="-fx-border-color: #9CA3AF;-fx-border-radius: 6;-fx-background-radius: 6;-fx-padding: 0.3;"/>
         </VBox>
 
         <VBox spacing="6" maxWidth="420">
             <Label text="Visibility" textFill="#374151"/>
+            <fx:define>
+                <ToggleGroup fx:id="visibilityGroup"/>
+            </fx:define>
             <HBox spacing="20">
                 <RadioButton fx:id="publicRadio" text="Public" toggleGroup="$visibilityGroup"/>
                 <RadioButton fx:id="privateRadio" text="Private" toggleGroup="$visibilityGroup"/>
@@ -54,7 +57,7 @@
         </VBox>
 
         <HBox spacing="20" alignment="CENTER" style="-fx-padding: 20 0 0 0;">
-            <Button fx:id="btnSaveGroup" text="Save Group" prefWidth="150" prefHeight="40"
+            <Button fx:id="btnSaveGroup" text="Save Group" prefWidth="150" prefHeight="40" onAction="#handleSaveGroupSettings"
                     style="-fx-cursor: hand; -fx-background-color: Green; -fx-text-fill: white;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
 
             <Button fx:id="btnDeleteGroup" text="Delete Group" prefWidth="150" prefHeight="40"
