@@ -195,6 +195,7 @@ public class HomeController {
 
     /**
      * Create and setup the notification badge label
+     * Red circle badge overlay positioned on top-right of the notification icon
      */
     private void setupNotificationBadge() {
         if (btnNotifications == null) return;
@@ -206,12 +207,30 @@ public class HomeController {
             "-fx-background-radius: 50%; " +
             "-fx-min-width: 18px; " +
             "-fx-min-height: 18px; " +
+            "-fx-padding: 0; " +
             "-fx-alignment: center; " +
             "-fx-font-size: 10px; " +
             "-fx-font-weight: bold;"
         );
         notificationBadge.setVisible(false);
         notificationBadge.setManaged(false);
+        
+        // Add badge to the parent HBox after the button
+        javafx.scene.Parent btnParent = btnNotifications.getParent();
+        if (btnParent instanceof javafx.scene.layout.HBox) {
+            javafx.scene.layout.HBox parentHBox = (javafx.scene.layout.HBox) btnParent;
+            int btnIndex = parentHBox.getChildren().indexOf(btnNotifications);
+            if (btnIndex >= 0) {
+                // Add badge right after button
+                parentHBox.getChildren().add(btnIndex + 1, notificationBadge);
+                
+                // Position badge on top of button using translate
+                notificationBadge.setTranslateX(-20);
+                notificationBadge.setTranslateY(-8);
+                
+                logger.info("✓ Notification badge overlay positioned on icon");
+            }
+        }
     }
 
     /**
@@ -388,8 +407,8 @@ public class HomeController {
         // Initialize the DB connection ONCE for this controller using Singleton pattern
         dbConnection = DBConnection.getInstance("genki_testing");
 
-        // Setup notification badge first
-        setupNotificationBadge();
+        // Setup notification badge after UI is loaded
+        Platform.runLater(() -> setupNotificationBadge());
         
         switchUsers(true);
 

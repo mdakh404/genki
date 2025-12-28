@@ -180,8 +180,8 @@ public class LoginController implements Initializable {
                }
          });
          // TODO: hamza logging
-         userName.setText("aimane");
-         password.setText("Aimaneaboufadle@2020");
+         userName.setText("ayman");
+         password.setText("Ayman@2020");
 
 
          
