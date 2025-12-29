@@ -13,7 +13,7 @@ import java.util.logging.Level;
 public class DBConnection {
 
     private static final Logger logger = Logger.getLogger(DBConnection.class.getName());
-    private final String connectionURI = "mongodb+srv://hamza:hamza2020@cluster0.gtnn0nb.mongodb.net/?appName=Cluster0";
+    private final String connectionURI = "mongodb+srv://mdakh404:moaditatchi2020@genki.vu4rdeo.mongodb.net/?appName=Genki";
 
     private final String dbName;
     
