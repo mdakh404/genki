@@ -141,7 +141,7 @@ public class clientSocketController implements t2{
 							
 							// Notify HomeController to add the friend conversation to UI immediately
 							if (homeController != null) {
-								homeController.addFriendConversationFromAcceptance(acceptorUsername);
+								//homeController.addFriendConversationFromAcceptance(acceptorUsername);
 								System.out.println("✅ Friend conversation added to UI\n");
 							} else {
 								System.out.println("⚠️ HomeController reference is null!\n");

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.image.Image?>
@@ -183,6 +184,20 @@
                 
                 <!-- Spacer -->
                 <Region HBox.hgrow="ALWAYS"/>
+
+                <!-- Group Settings Btn -->
+                <Button id="groupSettingsBtn"
+                        fx:id="groupSettingsBtn"
+                        visible="false"
+                        managed="false">
+                    <graphic>
+                        <ImageView fitHeight="20.0" preserveRatio="true">
+                            <image>
+                                <Image url="@../img/group-settings.png" />
+                            </image>
+                        </ImageView>
+                    </graphic>
+                </Button>
                 
                 <!-- Logout button (à droite) -->
                 <Button fx:id="btnLogout" 
@@ -262,7 +277,7 @@
               style="-fx-background-color: #f8fefe; -fx-border-color: #e0f7fa; -fx-border-width: 0 0 0 1;">
             
             <VBox alignment="CENTER" 
-                 spacing="12.0" 
+                 spacing="20.0"
                  style="-fx-padding: 32 24 24 24;">
                 
                 <ImageView fx:id="rightProfileImage" 
@@ -287,16 +302,28 @@
                       style="-fx-text-fill: #6b7280; -fx-font-size: 14px;" 
                       text="Product Designer" />
                 
-                <Label fx:id="rightContactBio" 
+                <Label alignment="CENTER" fx:id="rightContactBio"
                       maxWidth="240" 
                       style="-fx-text-fill: #6b7280; -fx-font-size: 13px; -fx-wrap-text: true;" 
                       text="Short bio goes here. This will wrap if longer." />
                 
-                <HBox alignment="CENTER" spacing="6.0">
+                <!--<HBox alignment="CENTER" spacing="6.0">
                     <Circle fill="green" radius="4.0" />
                     <Label style="-fx-text-fill: green; -fx-font-size: 13px; -fx-font-weight: bold;" 
                           text="Online" />
-                </HBox>
+                </HBox>-->
+
+                <VBox fx:id="groupMembersContainer" spacing="10" style="-fx-padding: 20;">
+                    <Label text="Group Members" style="-fx-font-weight: bold; -fx-font-size: 16;" />
+
+                    <ListView fx:id="membersListView" prefHeight="400.0" prefWidth="300.0" style="-fx-background-color: #f4f4f4;
+                 -fx-border-color: #dcdcdc;
+                 -fx-border-width: 2px;
+                 -fx-border-radius: 10px;
+                 -fx-background-radius: 10px;
+                 -fx-padding: 5px;"/>
+                </VBox>
+
             </VBox>
         </VBox>
     </HBox>
