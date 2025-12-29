@@ -1,5 +1,7 @@
 package genki.controllers;
 
+import com.mongodb.client.model.Updates;
+import genki.utils.AlertConstruct;
 import genki.models.Notification;
 import genki.models.Group;
 
@@ -7,18 +9,24 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.MongoException;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.Scene;
 import javafx.scene.Parent;
+import javafx.scene.shape.Circle;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ScrollPane;
@@ -63,9 +71,31 @@ import genki.utils.ConversationDAO;
 
 public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
+    private static final DBConnection HomeControllerDBConnection = DBConnection.getInstance("genki_testing");
+
+    // Nested class for Group members handling
+    public static class Member {
+         private String memberId;
+         private String username;
+         private String photoUrl;
+
+         public Member(String memberId, String username, String photoUrl) {
+             this.memberId = memberId;
+             this.username = username;
+             this.photoUrl = photoUrl;
+         }
+
+         public String getMemberId() {return this.memberId;}
+    }
+
     @FXML
     private Button btnSettings;
-
+    @FXML
+    private VBox groupMembersContainer;
+    @FXML
+    private ListView<Member> membersListView;
+    @FXML
+    private Button groupSettingsBtn;
     @FXML
     private Button btnAll;
     @FXML
@@ -323,6 +353,49 @@ public class HomeController {
         }, "NotificationCleanupScheduler").start();
     }
 
+    // handle group settings button click
+    private void handleGroupSettingsClick(String groupAdmin)  {
+
+       if (groupAdmin.equals(UserSession.getUsername())) {
+           try {
+
+               logger.log(Level.INFO, "Loading GroupSettings.fxml");
+               FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/GroupSettings.fxml"));
+               Parent root = loader.load();
+
+               Stage groupSettingsStage = new Stage();
+
+               try {
+                   Image logo = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/genki/img/setting.png")), 50, 50, true, true);
+                   groupSettingsStage.getIcons().add(logo);
+               } catch (Exception e) {
+                   logger.log(Level.WARNING, "Failed to load application logo", e);
+               }
+               groupSettingsStage.setTitle("Group Settings");
+               groupSettingsStage.setResizable(false);
+               groupSettingsStage.initModality(Modality.APPLICATION_MODAL);
+               if (groupSettingsBtn != null && groupSettingsBtn.getScene() != null) {
+                   groupSettingsStage.initOwner(groupSettingsBtn.getScene().getWindow());
+               }
+               groupSettingsStage.setScene(new Scene(root));
+               groupSettingsStage.centerOnScreen();
+               groupSettingsStage.showAndWait();
+           } catch (IOException loadingException) {
+               logger.log(Level.WARNING, loadingException.getMessage());
+               Alert failedLoadingAlert = new Alert(Alert.AlertType.ERROR, "Failed to load GroupSettings.fxml file.");
+               failedLoadingAlert.showAndWait();
+           }
+       } else {
+              logger.warning("Unauthorized access to group settings.");
+              AlertConstruct.alertConstructor(
+                      "Access Control Error",
+                      "",
+                      "You're not authorized to edit group settings.",
+                      Alert.AlertType.ERROR
+              );
+       }
+    }
+
     // handle logout of user
     public void handleLogout() {
         UserSession.logout();
@@ -356,9 +429,7 @@ public class HomeController {
     }
 
 
-    @FXML private Button btnCloseConversation;  // Ajouter à côté du profil
-    @FXML private ImageView defaultChatImage;   // Image par défaut
-    @FXML private VBox defaultChatContainer;    // Container de l'image par défaut
+
 
     private Popup addMenuPopup;
 
@@ -394,8 +465,7 @@ public class HomeController {
         setupNotificationBadge();
         
         switchUsers(true);
-        // AFFICHER L'IMAGE PAR DÉFAUT AU DÉMARRAGE
-        showDefaultChatView();
+
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
             // chatHeader.getChildren().clear();
             // messageInputArea.getChildren().clear();
@@ -455,11 +525,6 @@ public class HomeController {
 
         if (profilTrigger != null) {
             profilTrigger.setOnMouseClicked(e -> toggleRightPanel());
-        }
-     // 🔥 AJOUTER LE HANDLER DU BOUTON CLOSE
-        if (btnCloseConversation != null) {
-            btnCloseConversation.setOnMouseClicked(e -> closeCurrentConversation());
-            btnCloseConversation.setVisible(false);  // Caché par défaut
         }
         if (AmisNameStatus != null) {
             AmisNameStatus.setOnMouseClicked(e -> toggleRightPanel());
@@ -800,12 +865,6 @@ public class HomeController {
         System.out.println("Conversation ID: " + conversationId);
         this.currentConversationId = conversationId;
         
-        // AFFICHER LE BOUTON CLOSE QUAND UNE CONVERSATION EST OUVERTE
-        Platform.runLater(() -> {
-            if (btnCloseConversation != null) {
-                btnCloseConversation.setVisible(true);
-            }
-        });
         // Show loading spinner immediately
         Platform.runLater(() -> {
             if (messagesLoadingSpinnerContainer != null) {
@@ -824,7 +883,6 @@ public class HomeController {
             if (messagesContainer != null) {
                 messagesContainer.setPadding(new Insets(10));
                 messagesContainer.setSpacing(10);
-//                messagesContainer.setAlignment(Pos.TOP_LEFT);
             }
             messagesContainer.getChildren().clear();
         });
@@ -846,6 +904,7 @@ public class HomeController {
                     
                     if ("group".equals(conversationType)) {
                         // ========== GROUP CONVERSATION ==========
+                        String groupId = conversationDoc.getString("groupId");
                         String groupName = conversationDoc.getString("groupName");
                         String groupPhotoUrl = conversationDoc.getString("photo_url");
                         System.out.println("Group Name: " + groupName);
@@ -855,14 +914,44 @@ public class HomeController {
                         this.currentRecipientName = null;
                         
                         Platform.runLater(() -> {
+                            MongoCollection<Document> groupsCollection = HomeControllerDBConnection.getCollection("groups");
                             // Update header
                             if (chatContactName != null) {
                                 chatContactName.setText(groupName != null ? groupName : "Group Chat");
+
+                                String groupAdmin = groupsCollection.find(
+                                       Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getString("group_admin");
+
+                                if (groupAdmin != null) {
+
+                                      if (groupAdmin.equals(UserSession.getUsername())) {
+
+                                                  groupSettingsBtn.setAlignment(Pos.CENTER_LEFT);
+                                                  groupSettingsBtn.setVisible(true);
+                                                  groupSettingsBtn.setManaged(true);
+                                                  groupSettingsBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand");
+                                      }
+
+                                    if (groupSettingsBtn.isVisible() && groupSettingsBtn.isManaged()) {
+
+                                        groupSettingsBtn.setOnMouseClicked(e->{
+
+                                            GroupSettingsController.setGroupId(groupId);
+                                            handleGroupSettingsClick(groupAdmin);
+                                        });
+                                    }
+                                }
+
                             }
                             
                             // For groups, don't show online/offline status
                             if (chatContactStatus != null) {
-                                chatContactStatus.setText("Group");
+                                boolean groupPrivacy = groupsCollection.find(
+                                        Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getBoolean("is_public");
+
+                                chatContactStatus.setText(groupPrivacy ? "Public Group" : "Private Group");
                                 chatContactStatus.setStyle("-fx-text-fill: #6b9e9e; -fx-font-size: 12px;");
                             }
                             
@@ -875,15 +964,122 @@ public class HomeController {
                                 rightContactName.setText(groupName != null ? groupName : "Group Chat");
                             }
                             if (rightContactTitle != null) {
-                                rightContactTitle.setText("Group");
+
+                                boolean groupPrivacy = groupsCollection.find(
+                                        Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getBoolean("is_public");
+                                rightContactTitle.setText(groupPrivacy ? "Public Group" : "Private Group");
                             }
+
                             if (rightContactBio != null) {
-                                rightContactBio.setText("");
+                                String groupDescription = groupsCollection.find(
+                                        Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getString("description");
+
+                                rightContactBio.setText(groupDescription);
                             }
-                            
-                            // Update group images
-                            String photoUrl = groupPhotoUrl != null ? groupPhotoUrl : "genki/img/group-default.png";
-                            
+
+                            // Group membres ListView handling
+                            if (groupMembersContainer != null) {
+
+                                membersListView.setCellFactory(param -> new ListCell<Member>(){
+                                    @Override
+                                    protected void updateItem(Member member, boolean empty) {
+                                        super.updateItem(member, empty);
+
+                                        if (empty || member == null) {
+                                            setGraphic(null);
+                                            setText(null);
+                                        } else {
+                                            Button removeBtn = new Button("X");
+
+                                            removeBtn.setStyle(
+                                                    "-fx-background-color: #ff4444; " +
+                                                            "-fx-text-fill: white; " +
+                                                            "-fx-background-radius: 15; " +
+                                                            "-fx-min-width: 25px; " +
+                                                            "-fx-min-height: 25px; " +
+                                                            "-fx-font-size: 10px;"
+                                            );
+
+                                            removeBtn.setOnAction(event -> {
+                                                getListView().getItems().remove(member);
+                                                logger.info("Removed: " + member.username);
+
+                                                groupsCollection.updateOne(
+                                                      Filters.eq("_id", new ObjectId(groupId)),
+                                                      Updates.pull("users", member.getMemberId())
+                                                );
+
+                                                Group thisGroup = UserSession.getGroups().stream().filter(
+                                                        g -> g.getGroupId().equals(groupId)
+                                                ).findFirst().orElse(null);
+
+                                                thisGroup.removeUser(member.getMemberId());
+                                            });
+
+                                            ImageView userImage = new ImageView();
+                                            try {
+                                                String path = (member.photoUrl != null && member.photoUrl.startsWith("http"))
+                                                        ? member.photoUrl
+                                                        : getClass().getResource("/genki/img/default-user.png").toExternalForm();
+                                                Image img = new Image(path, 40, 40, true, true, true);
+                                                userImage.setImage(img);
+                                            } catch (Exception e) {
+                                                logger.warning("Failed to load image: " + member.photoUrl + " " + e.getMessage());
+                                            }
+
+                                            Circle clip = new Circle(20, 20, 20);
+                                            userImage.setClip(clip);
+
+                                            Label nameLabel = new Label(member.username);
+                                            nameLabel.setStyle("-fx-font-size: 14px; -fx-padding: 0 0 0 10;");
+
+                                            HBox hBox = new HBox(15); // 15px spacing
+                                            hBox.setAlignment(Pos.CENTER_LEFT);
+                                            hBox.getChildren().addAll(removeBtn, userImage, nameLabel);
+
+                                            setGraphic(hBox);
+                                        }
+                                    }
+                                });
+
+                                ObservableList<Member> groupMembers = FXCollections.observableArrayList();
+
+                                Group thisGroup = UserSession.getGroups().stream().filter(
+                                      group -> group.getGroupId().equals(groupId))
+                                        .findFirst().orElse(null);
+
+                                MongoCollection<Document> usersCollection = HomeControllerDBConnection.getCollection("users");
+                                String groupAdmin = groupsCollection.find(
+                                        Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getString("group_admin");
+
+                                for (String memberId : thisGroup.getListUsers()) {
+
+                                    Document memberDoc = usersCollection.find(
+                                         Filters.eq("_id", new ObjectId(memberId))
+                                    ).first();
+
+                                    if (!memberDoc.getString("username").equals(groupAdmin)) {
+                                        groupMembers.add(new Member(memberId, memberDoc.getString("username"),
+                                                                    memberDoc.getString("photo_url")));
+                                    }
+                                }
+
+                                membersListView.setItems(groupMembers);
+
+                            }
+
+                            // Group image loading handle
+                            String photoUrl;
+                            if (groupPhotoUrl != null && groupPhotoUrl.startsWith("http")) {
+                                photoUrl = groupPhotoUrl;
+                            } else {
+                                var resource = getClass().getResource("/genki/img/group-default.png");
+                                photoUrl = (resource != null) ? resource.toExternalForm() : null;
+                            }
+
                             if (profilTrigger != null) {
                                 try {
                                     Image groupImg = new Image(photoUrl, 180, 180, false, true);
@@ -2419,71 +2615,5 @@ public class HomeController {
             logger.log(Level.WARNING, "Error checking user online status: " + e.getMessage());
         }
         return false;
-    }
-    
-    //hamza
-    /**
-     * Affiche la vue par défaut (image d'accueil sans conversation active)
-     */
-    private void showDefaultChatView() {
-        Platform.runLater(() -> {
-            // Cacher le chat header et l'input area
-            if (chatHeader != null) {
-                chatHeader.setVisible(false);
-                chatHeader.setManaged(false);
-            }
-            if (messageInputArea != null) {
-                messageInputArea.setVisible(false);
-                messageInputArea.setManaged(false);
-            }
-            if (btnCloseConversation != null) {
-                btnCloseConversation.setVisible(false);
-            }
-            
-            // Afficher l'image par défaut
-            if (messagesContainer != null) {
-                messagesContainer.getChildren().clear();
-                messagesContainer.setAlignment(Pos.CENTER);
-                messagesContainer.setPadding(new Insets(0));
-                messagesContainer.setSpacing(0);
-                
-                // Créer l'image par défaut
-                ImageView defaultImageView = new ImageView(
-                    new Image(HomeController.class.getResourceAsStream("/genki/img/page-par-defaut.jpg"))
-                );
-                defaultImageView.setPreserveRatio(true);
-                defaultImageView.setSmooth(true);
-                defaultImageView.setFitWidth(400);
-                defaultImageView.setFitHeight(400);
-                
-                // Texte d'accueil
-                Label welcomeLabel = new Label("Select a conversation to start chatting");
-                welcomeLabel.setStyle(
-                    "-fx-font-size: 18px; " +
-                    "-fx-text-fill: #6b7280; " +
-                    "-fx-font-weight: bold; " +
-                    "-fx-padding: 20 0 0 0;"
-                );
-                
-                VBox welcomeContainer = new VBox(20);
-                welcomeContainer.setAlignment(Pos.CENTER);
-                welcomeContainer.getChildren().addAll(defaultImageView, welcomeLabel);
-                
-                messagesContainer.getChildren().add(welcomeContainer);
-            }
-            
-            // Réinitialiser la conversation courante
-            currentConversationId = null;
-            currentRecipientId = null;
-            currentRecipientName = null;
-        });
-    }
-
-    /**
-     * Ferme la conversation actuelle et retourne à la vue par défaut
-     */
-    private void closeCurrentConversation() {
-        showDefaultChatView();
-        System.out.println("✓ Conversation closed, showing default view");
     }
 }

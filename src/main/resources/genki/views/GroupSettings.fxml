@@ -60,7 +60,7 @@
             <Button fx:id="btnSaveGroup" text="Save Group" prefWidth="150" prefHeight="40" onAction="#handleSaveGroupSettings"
                     style="-fx-cursor: hand; -fx-background-color: Green; -fx-text-fill: white;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
 
-            <Button fx:id="btnDeleteGroup" text="Delete Group" prefWidth="150" prefHeight="40"
+            <Button fx:id="btnDeleteGroup" text="Delete Group" prefWidth="150" prefHeight="40" onAction="#handleGroupDeletion"
                     style="-fx-cursor: hand; -fx-background-color: #DC2626;-fx-text-fill: #F9FAFB;-fx-background-radius: 8;-fx-font-size: 14;-fx-font-weight: bold;"/>
         </HBox>
 
