@@ -316,6 +316,12 @@ public class NotificationsController {
                         Alert.AlertType.ERROR
                 );
             }
+
+            if (homeController != null) {
+            javafx.application.Platform.runLater(() -> {
+            homeController.updateNotificationBadge();
+            });
+    }
         }
         
         // Remove from UI list
@@ -370,6 +376,11 @@ public class NotificationsController {
                     "An error occurred while rejecting the request: " + e.getMessage(),
                     Alert.AlertType.ERROR
             );
+        }
+        if (homeController != null) {
+            javafx.application.Platform.runLater(() -> {
+            homeController.updateNotificationBadge();
+            });
         }
     }
     

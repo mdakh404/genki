@@ -2335,7 +2335,12 @@ public class HomeController {
                 if (connectedUsers != null) {
                     isFriendOnline = connectedUsers.stream()
                         .anyMatch(u -> u.getId() != null && u.getId().equals(friendId));
+                        
                 }
+                System.out.println("ppppppppppppppppppppp");
+                System.out.println(connectedUsers);
+                System.out.println(friendId);
+                System.out.println(friendUsername + " is online : "+isFriendOnline);
                 
                 // Create UI item for the friend conversation with correct online status
                 HBox newFriendContainer = ConversationItemBuilder.createConversationItem(
@@ -2364,7 +2369,7 @@ public class HomeController {
                 
                 // Cache the conversation item
                 UserSession.addConversationItem(newFriendContainer);
-                
+                System.out.println(UserSession.conversationItems);
                 // Also add to friends list if not already there
                 genki.models.User friendUser = new genki.models.User();
                 friendUser.setId(friendId);
@@ -2405,20 +2410,12 @@ public class HomeController {
         try {
             // Query the users collection to check the last_activity timestamp
             // A user is considered online if their last activity is recent (within last 2 minutes)
-            Document userDoc = this.dbConnection.getCollection("users").find(
-                new Document("_id", new ObjectId(userId))
-            ).first();
-            
-            if (userDoc != null) {
-                Object lastActivityObj = userDoc.get("last_activity");
-                if (lastActivityObj instanceof Long) {
-                    long lastActivity = (Long) lastActivityObj;
-                    long currentTime = System.currentTimeMillis();
-                    long timeDifference = currentTime - lastActivity;
-                    // Consider user online if activity within last 2 minutes (120000 ms)
-                    return timeDifference < 120000;
+            for (User usr : UserSession.getConnectedUsers()){
+                if(usr.getId().equals(userId)){
+                    return true;
                 }
             }
+            return false;
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error checking user online status: " + e.getMessage());
         }

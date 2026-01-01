@@ -16,47 +16,52 @@ public class DBConnection {
     private final String connectionURI = "mongodb+srv://ayman:ayman2020@cluster0.gtnn0nb.mongodb.net/?appName=Cluster0";
 
     private final String dbName;
-    
+
     // Singleton instance - only ONE connection for the entire application
     private static DBConnection instance = null;
     private static final Object lock = new Object();
-
 
     private DBConnection(String dbName) {
         this.dbName = dbName;
         logger.log(Level.INFO, "✓ DBConnection singleton instance created for: " + dbName);
     }
-    
+
     /**
      * Get the singleton instance of DBConnection
      * Thread-safe implementation
+     * 
      * @param dbName The database name
      * @return The singleton DBConnection instance
      */
     public static DBConnection getInstance(String dbName) {
         if (instance == null) {
-            synchronized(lock) {
+            synchronized (lock) {
                 if (instance == null) {
                     instance = new DBConnection(dbName);
                 }
             }
-        } 
+        }
         return instance;
     }
 
-    public MongoDatabase getDatabase() throws MongoException{
+    public MongoDatabase getDatabase() throws MongoException {
 
-       try {
+        try {
+            String caller = StackWalker.getInstance()
+                    .walk(frames -> frames
+                            .skip(1) // Skip the current method
+                            .findFirst()
+                            .map(f -> f.getClassName())
+                            .orElse("Unknown"));
+            logger.log(Level.INFO, "Connecting to MongoDB ... from : "+caller );
+            MongoClient mongoClient = MongoClients.create(connectionURI);
+            logger.log(Level.INFO, "Connecting to " + dbName + " ...");
+            return mongoClient.getDatabase(dbName);
 
-           logger.log(Level.INFO, "Connecting to MongoDB ...");
-           MongoClient mongoClient = MongoClients.create(connectionURI);
-           logger.log(Level.INFO, "Connecting to " + dbName + " ...");
-           return mongoClient.getDatabase(dbName);
-
-       } catch (MongoException mongoEXCP) {
-          logger.log(Level.WARNING, "Error connecting to database " + mongoEXCP.getMessage());
-          throw new MongoException("Mongo Exception", mongoEXCP);
-       }
+        } catch (MongoException mongoEXCP) {
+            logger.log(Level.WARNING, "Error connecting to database " + mongoEXCP.getMessage());
+            throw new MongoException("Mongo Exception", mongoEXCP);
+        }
     }
 
     public MongoCollection<Document> getUsersCollection() throws MongoException {
@@ -68,7 +73,7 @@ public class DBConnection {
             throw new MongoException(mongoException.getMessage());
         }
     }
-    
+
     // hamza add this
     public MongoCollection<Document> getCollection(String collectionName) throws MongoException {
         try {
@@ -78,5 +83,5 @@ public class DBConnection {
             throw new MongoException("Failed to access collection: " + collectionName, mongoException);
         }
     }
-    
+
 }
