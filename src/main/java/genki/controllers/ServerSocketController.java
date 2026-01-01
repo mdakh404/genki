@@ -135,7 +135,7 @@ public class ServerSocketController implements MessageListener {
 		
 		// Skip USERS_LIST broadcasts - they're handled separately
 		if (cleanMessage.startsWith("USERS_LIST:")) {
-			System.out.println("Ignoring USERS_LIST broadcast");
+			//
 			return;
 		}
 		
@@ -236,20 +236,24 @@ public class ServerSocketController implements MessageListener {
 	}
 
 	@Override
-	public void onConnectionClosed(String reason, User user) {
-		// MUST use Platform.runLater because this method is called by the
-		// ClientHandler's background thread
-		Platform.runLater(() -> {
-			// Clean up the list of active handlers (remove the one that closed)
-			// Compare by username since User.equals() is not properly implemented
-			UserSession.getConnectedUsers().removeIf(client -> 
-				client.getUsername() != null && client.getUsername().equals(user.getUsername()));
-			ConnectedUsers.removeIf(handler -> !handler.isAlive());
-			System.out.println("Client had disconnected : " + user.getUsername());
-			System.out.println(UserSession.getConnectedUsers());
-			broadcastConnectedUsers();
-		});
-	}
+public void onConnectionClosed(String reason, User user) {
+    // MUST use Platform.runLater because this is called from ClientHandler thread
+    Platform.runLater(() -> {
+        // 1. Remove from the Session list (Used for UI data)
+        UserSession.getConnectedUsers().removeIf(u -> 
+            u.getUsername() != null && u.getUsername().equals(user.getUsername()));
+
+        // 2. FIX: Remove from the active handlers list
+        // DON'T use handler.isAlive(). Use the username or the object itself.
+        ConnectedUsers.removeIf(handler -> 
+            handler.getUser() != null && handler.getUser().getUsername().equals(user.getUsername()));
+
+        System.out.println("Client has disconnected: " + user.getUsername());
+        
+        // 3. Broadcast the corrected list to everyone else
+        broadcastConnectedUsers();
+    });
+}
     
     
 
