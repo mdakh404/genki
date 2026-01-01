@@ -113,7 +113,7 @@ public class ClientHandler extends Thread {
  /**
   * Closes all resources gracefully and stops the run loop.
   */
- public void closeConnection() {
+public void closeConnection() {
      this.isRunning = false;
      try {
          if (socket != null && !socket.isClosed()) {
@@ -122,7 +122,7 @@ public class ClientHandler extends Thread {
          if (in != null) in.close();
          if (out != null) out.close();
      } catch (IOException ignored) {}
- }
+}
 
  
  

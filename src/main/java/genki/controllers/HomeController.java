@@ -2337,10 +2337,7 @@ public class HomeController {
                         .anyMatch(u -> u.getId() != null && u.getId().equals(friendId));
                         
                 }
-                System.out.println("ppppppppppppppppppppp");
-                System.out.println(connectedUsers);
-                System.out.println(friendId);
-                System.out.println(friendUsername + " is online : "+isFriendOnline);
+               
                 
                 // Create UI item for the friend conversation with correct online status
                 HBox newFriendContainer = ConversationItemBuilder.createConversationItem(
