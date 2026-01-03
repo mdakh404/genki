@@ -59,10 +59,13 @@ import genki.models.MessageData;
 import genki.models.User;
 
 import org.bson.types.ObjectId;
+
+import genki.utils.AlertConstruct;
 import genki.utils.ConversationDAO;
 
 public class HomeController {
     private static final Logger logger = Logger.getLogger(HomeController.class.getName());
+    private static final DBConnection HomeControllerDBConnection = DBConnection.getInstance("genki_testing");
     @FXML
     private Button btnSettings;
 
@@ -72,7 +75,7 @@ public class HomeController {
     private Button btnUnread;
     @FXML
     private Button btnGroups;
-
+    @FXML private Button groupSettingsBtn;
     @FXML
     private Label chatContactStatus;
 
@@ -705,6 +708,50 @@ public class HomeController {
 
     }
 
+
+    private void handleGroupSettingsClick(String groupAdmin)  {
+
+       if (groupAdmin.equals(UserSession.getUsername())) {
+           try {
+
+               logger.log(Level.INFO, "Loading GroupSettings.fxml");
+               FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/GroupSettings.fxml"));
+               Parent root = loader.load();
+
+               Stage groupSettingsStage = new Stage();
+
+               try {
+                   Image logo = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/genki/img/setting.png")), 50, 50, true, true);
+                   groupSettingsStage.getIcons().add(logo);
+               } catch (Exception e) {
+                   logger.log(Level.WARNING, "Failed to load application logo", e);
+               }
+               groupSettingsStage.setTitle("Group Settings");
+               groupSettingsStage.setResizable(false);
+               groupSettingsStage.initModality(Modality.APPLICATION_MODAL);
+               if (groupSettingsBtn != null && groupSettingsBtn.getScene() != null) {
+                   groupSettingsStage.initOwner(groupSettingsBtn.getScene().getWindow());
+               }
+               groupSettingsStage.setScene(new Scene(root));
+               groupSettingsStage.centerOnScreen();
+               groupSettingsStage.showAndWait();
+           } catch (IOException loadingException) {
+               logger.log(Level.WARNING, loadingException.getMessage());
+               Alert failedLoadingAlert = new Alert(Alert.AlertType.ERROR, "Failed to load GroupSettings.fxml file.");
+               failedLoadingAlert.showAndWait();
+           }
+       } else {
+              logger.warning("Unauthorized access to group settings.");
+              AlertConstruct.alertConstructor(
+                      "Access Control Error",
+                      "",
+                      "You're not authorized to edit group settings.",
+                      Alert.AlertType.ERROR
+              );
+       }
+    }
+
+
     /**
      * Update the conversation list with the latest message and timestamp
      * This updates the UI without changing the main messages display area
@@ -876,8 +923,8 @@ public class HomeController {
 
                     if ("group".equals(conversationType)) {
                         // ========== GROUP CONVERSATION ==========
+                    	String groupId = conversationDoc.getString("groupId");
                         String groupName = conversationDoc.getString("groupName");
-                        String groupPhotoUrl = conversationDoc.getString("photo_url");
                         System.out.println("Group Name: " + groupName);
                         System.out.println("Group Conversation Loaded ✓");
 
@@ -885,9 +932,43 @@ public class HomeController {
                         this.currentRecipientName = null;
 
                         Platform.runLater(() -> {
+                            MongoCollection<Document> groupsCollection = HomeControllerDBConnection.getCollection("groups");
+
+                            String groupPhotoUrl = groupsCollection.find(
+                                    Filters.eq("_id", new ObjectId(groupId))
+                            ).first().getString("profile_picture");
+
+
                             // Update header
                             if (chatContactName != null) {
                                 chatContactName.setText(groupName != null ? groupName : "Group Chat");
+
+                                String groupAdmin = groupsCollection.find(
+                                       Filters.eq("_id", new ObjectId(groupId))
+                                ).first().getString("group_admin");
+
+
+
+                                if (groupAdmin != null) {
+
+                                      if (groupAdmin.equals(UserSession.getUsername())) {
+
+                                                  groupSettingsBtn.setAlignment(Pos.CENTER_LEFT);
+                                                  groupSettingsBtn.setVisible(true);
+                                                  groupSettingsBtn.setManaged(true);
+                                                  groupSettingsBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand");
+                                      }
+
+                                    if (groupSettingsBtn.isVisible() && groupSettingsBtn.isManaged()) {
+
+                                        groupSettingsBtn.setOnMouseClicked(e->{
+
+                                            GroupSettingsController.setGroupId(groupId);
+                                            handleGroupSettingsClick(groupAdmin);
+                                        });
+                                    }
+                                }
+
                             }
 
                             // For groups, don't show online/offline status
@@ -1829,8 +1910,8 @@ public class HomeController {
 
                 int unreadCount = 0;
                 boolean isOnline = false;
-
-                String groupPhotoUrl = conversationDoc.getString("photo_url");
+                
+                String groupPhotoUrl = conversationDoc.getString("profile_picture");
                 if (groupPhotoUrl == null) {
                     groupPhotoUrl = "genki/img/group-default.png";
                 }
