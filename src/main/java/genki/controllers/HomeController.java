@@ -906,7 +906,6 @@ public class HomeController {
                         // ========== GROUP CONVERSATION ==========
                         String groupId = conversationDoc.getString("groupId");
                         String groupName = conversationDoc.getString("groupName");
-                        String groupPhotoUrl = conversationDoc.getString("photo_url");
                         System.out.println("Group Name: " + groupName);
                         System.out.println("Group Conversation Loaded ✓");
                         
@@ -915,6 +914,12 @@ public class HomeController {
                         
                         Platform.runLater(() -> {
                             MongoCollection<Document> groupsCollection = HomeControllerDBConnection.getCollection("groups");
+
+                            String groupPhotoUrl = groupsCollection.find(
+                                    Filters.eq("_id", new ObjectId(groupId))
+                            ).first().getString("profile_picture");
+
+
                             // Update header
                             if (chatContactName != null) {
                                 chatContactName.setText(groupName != null ? groupName : "Group Chat");
@@ -922,6 +927,8 @@ public class HomeController {
                                 String groupAdmin = groupsCollection.find(
                                        Filters.eq("_id", new ObjectId(groupId))
                                 ).first().getString("group_admin");
+
+
 
                                 if (groupAdmin != null) {
 
@@ -1979,7 +1986,7 @@ public class HomeController {
                 int unreadCount = 0;
                 boolean isOnline = false;
                 
-                String groupPhotoUrl = conversationDoc.getString("photo_url");
+                String groupPhotoUrl = conversationDoc.getString("profile_picture");
                 if (groupPhotoUrl == null) {
                     groupPhotoUrl = "genki/img/group-default.png";
                 }
