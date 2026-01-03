@@ -33,16 +33,7 @@ public class GroupModel {
                                 "genki/img/group-default.png");
     }
 
-    /**
-     * 🔥 NOUVELLE MÉTHODE : Création de groupe avec photo personnalisée
-     * 
-     * @param groupName Nom du groupe
-     * @param groupDescription Description du groupe
-     * @param isPublic true si public, false si privé
-     * @param groupAdmin Username de l'administrateur
-     * @param photoUrl Chemin de la photo (ex: "uploads/groups/group_uuid.png")
-     * @return AddGroupResult contenant le statut et le groupe créé
-     */
+
     public static AddGroupResult addGroupWithPhoto(String groupName, String groupDescription, 
                                                    boolean isPublic, String groupAdmin, 
                                                    String photoUrl) {

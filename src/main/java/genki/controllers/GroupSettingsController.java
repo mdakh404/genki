@@ -92,26 +92,30 @@ public class GroupSettingsController implements Initializable{
             Image newImage = new Image(selectedFile.toURI().toString());
             groupImageView.setImage(newImage);
 
-            UpdateResult photoUploadResult = groupSettingsModel.updatePhoto(groupId, selectedFile);
+            Thread updateImgThread = new Thread(() -> {
+                UpdateResult photoUploadResult = groupSettingsModel.updatePhoto(groupId, selectedFile);
 
-            if (photoUploadResult.getStatus() == UpdateStatus.PHOTO_UPDATED) {
-                uploadedPhoto = true;
+                if (photoUploadResult.getStatus() == UpdateStatus.PHOTO_UPDATED) {
+                    uploadedPhoto = true;
 
-                String uploadedPhotoURL = groupSettingsModel.getUploadedPhotoURL();
+                    String uploadedPhotoURL = groupSettingsModel.getUploadedPhotoURL();
 
-                Image uploadedPhoto = new Image(uploadedPhotoURL, true);
-                groupImageView.setImage(uploadedPhoto);
-            }
+                    Image uploadedPhoto = new Image(uploadedPhotoURL, true);
+                    groupImageView.setImage(uploadedPhoto);
+                }
 
-            if (photoUploadResult.getStatus() == UpdateStatus.IMG_UPLOAD_ERROR) {
-                logger.log(Level.WARNING, "Error opening file");
-                AlertConstruct.alertConstructor(
-                        "Upload Failed",
-                        "File Upload Error",
-                        "Error while uploading file.",
-                        AlertType.ERROR
-                );
-            }
+                if (photoUploadResult.getStatus() == UpdateStatus.IMG_UPLOAD_ERROR) {
+                    logger.log(Level.WARNING, "Error opening file");
+                    AlertConstruct.alertConstructor(
+                            "Upload Failed",
+                            "File Upload Error",
+                            "Error while uploading file.",
+                            AlertType.ERROR
+                    );
+                }
+            });
+
+            updateImgThread.start();
 
         }
 
@@ -134,66 +138,26 @@ public class GroupSettingsController implements Initializable{
 
 
         else {
-            UpdateResult updateGroupNameResult = groupSettingsModel.updateGroupName(groupId, newGroupNameText);
 
-            switch (updateGroupNameResult.getStatus()) {
+            Thread updateGroupNameThread = new Thread(() -> {
+                UpdateResult updateGroupNameResult = groupSettingsModel.updateGroupName(groupId, newGroupNameText);
 
-                case UpdateStatus.GROUP_NAME_UPDATED:
+                switch (updateGroupNameResult.getStatus()) {
 
-                    AlertConstruct.alertConstructor(
-                            "Saving Group Settings",
-                            "",
-                            "Group name has been updated successfully.",
-                            AlertType.INFORMATION
-                    );
+                    case UpdateStatus.GROUP_NAME_UPDATED:
 
-                    for (Group group : UserSession.getGroups()) {
-                          if (group.getGroupId().equals(groupId)) {
-                              group.setGroupName(newGroupNameText);
-                          }
-                    }
-                    break;
-
-                case UpdateStatus.DB_ERROR:
-                    AlertConstruct.alertConstructor(
-                            "Network Error",
-                            "Database Connection Error",
-                            "Failed to connect to database, please try again in a few minutes.",
-                            AlertType.ERROR
-                    );
-                    break;
-
-                default:
-                    AlertConstruct.alertConstructor(
-                            "Unexpected Error",
-                            "Something went wrong",
-                            "An unexpected error occurred, please ty again in a few minutes.",
-                            AlertType.ERROR
-                    );
-            }
-        }
-
-        if (newDescriptionText.isEmpty()) {
-            logger.log(Level.WARNING, "newDescriptionText field is empty.");
-            newDescription.setStyle("-fx-border-color: #FF6347");
-        }
-
-
-        else {
-
-                UpdateResult updateDescriptionResult = groupSettingsModel.updateGroupDescription(
-                        groupId,
-                        newDescriptionText);
-
-                switch (updateDescriptionResult.getStatus()) {
-
-                    case UpdateStatus. GROUP_DESCRIPTION_UPDATED:
                         AlertConstruct.alertConstructor(
                                 "Saving Group Settings",
                                 "",
-                                "Group description has been updated successfully.",
+                                "Group name has been updated successfully.",
                                 AlertType.INFORMATION
                         );
+
+                        for (Group group : UserSession.getGroups()) {
+                            if (group.getGroupId().equals(groupId)) {
+                                group.setGroupName(newGroupNameText);
+                            }
+                        }
                         break;
 
                     case UpdateStatus.DB_ERROR:
@@ -212,8 +176,57 @@ public class GroupSettingsController implements Initializable{
                                 "An unexpected error occurred, please ty again in a few minutes.",
                                 AlertType.ERROR
                         );
-
                 }
+            });
+
+            updateGroupNameThread.start();
+        }
+
+        if (newDescriptionText.isEmpty()) {
+            logger.log(Level.WARNING, "newDescriptionText field is empty.");
+            newDescription.setStyle("-fx-border-color: #FF6347");
+        }
+
+
+        else {
+
+                Thread updateGroupDescriptionThread = new Thread(() -> {
+                    UpdateResult updateDescriptionResult = groupSettingsModel.updateGroupDescription(
+                            groupId,
+                            newDescriptionText);
+
+                    switch (updateDescriptionResult.getStatus()) {
+
+                        case UpdateStatus. GROUP_DESCRIPTION_UPDATED:
+                            AlertConstruct.alertConstructor(
+                                    "Saving Group Settings",
+                                    "",
+                                    "Group description has been updated successfully.",
+                                    AlertType.INFORMATION
+                            );
+                            break;
+
+                        case UpdateStatus.DB_ERROR:
+                            AlertConstruct.alertConstructor(
+                                    "Network Error",
+                                    "Database Connection Error",
+                                    "Failed to connect to database, please try again in a few minutes.",
+                                    AlertType.ERROR
+                            );
+                            break;
+
+                        default:
+                            AlertConstruct.alertConstructor(
+                                    "Unexpected Error",
+                                    "Something went wrong",
+                                    "An unexpected error occurred, please ty again in a few minutes.",
+                                    AlertType.ERROR
+                            );
+
+                    }
+                });
+
+            updateGroupDescriptionThread.start();
 
         }
 
@@ -224,25 +237,29 @@ public class GroupSettingsController implements Initializable{
             RadioButton selectedPrivacy = (RadioButton) selectedPrivacyToggle;
             String privacy = selectedPrivacy.getText();
 
-            UpdateResult updateVisibilityResult = groupSettingsModel.updateVisibility(groupId, privacy);
+            Thread updatePrivacyThread = new Thread(() -> {
+                UpdateResult updateVisibilityResult = groupSettingsModel.updateVisibility(groupId, privacy);
 
-            if (updateVisibilityResult.getStatus() == UpdateStatus.GROUP_VISIBILITY_UPDATED) {
-                AlertConstruct.alertConstructor(
-                        "Saving Group Settings",
-                        "",
-                        "Your group visibility has been updated successfully to be " + privacy,
-                        AlertType.INFORMATION
-                );
-            }
+                if (updateVisibilityResult.getStatus() == UpdateStatus.GROUP_VISIBILITY_UPDATED) {
+                    AlertConstruct.alertConstructor(
+                            "Saving Group Settings",
+                            "",
+                            "Your group visibility has been updated successfully to be " + privacy,
+                            AlertType.INFORMATION
+                    );
+                }
 
-            else {
-                AlertConstruct.alertConstructor(
-                        "Unexpected Error",
-                        "Something went wrong",
-                        "An unexpected error occurred updating your bio, please ty again in a few minutes.",
-                        AlertType.ERROR
-                );
-            }
+                else {
+                    AlertConstruct.alertConstructor(
+                            "Unexpected Error",
+                            "Something went wrong",
+                            "An unexpected error occurred updating your bio, please ty again in a few minutes.",
+                            AlertType.ERROR
+                    );
+                }
+            });
+
+            updatePrivacyThread.start();
         }
 
         if (newGroupNameText.isEmpty() &&
@@ -274,48 +291,51 @@ public class GroupSettingsController implements Initializable{
 
         if (deleteGroupOption.isPresent() && deleteGroupOption.get() == ButtonType.OK) {
 
-            UpdateResult deleteGroupResult = groupSettingsModel.deleteGroup(groupId);
+            Thread deleteGroupThread = new Thread(() -> {
+                UpdateResult deleteGroupResult = groupSettingsModel.deleteGroup(groupId);
 
-            switch (deleteGroupResult.getStatus()) {
+                switch (deleteGroupResult.getStatus()) {
 
-                // TODO: Update UI after group deletion from the database
-                case UpdateStatus.GROUP_DELETED:
-                    AlertConstruct.alertConstructor(
-                          "Group Settings",
-                          "",
-                          "This group has been deleted.",
-                          AlertType.INFORMATION
-                    );
-                    break;
+                    case UpdateStatus.GROUP_DELETED:
+                        AlertConstruct.alertConstructor(
+                                "Group Settings",
+                                "",
+                                "This group has been deleted.",
+                                AlertType.INFORMATION
+                        );
+                        break;
 
-                case UpdateStatus. GROUP_DELETION_ERROR:
-                    AlertConstruct.alertConstructor(
-                            "Group Settings Error",
-                            "Group deletion error",
-                            "Failed to delete your group, please try again in a few minutes.",
-                            AlertType.ERROR
-                    );
-                    break;
+                    case UpdateStatus. GROUP_DELETION_ERROR:
+                        AlertConstruct.alertConstructor(
+                                "Group Settings Error",
+                                "Group deletion error",
+                                "Failed to delete your group, please try again in a few minutes.",
+                                AlertType.ERROR
+                        );
+                        break;
 
-                case UpdateStatus.DB_ERROR:
-                    AlertConstruct.alertConstructor(
-                            "Network Error",
-                            "Database Connection Error",
-                            "Failed to connect to database, please try again in a few minutes.",
-                            AlertType.ERROR
-                    );
-                    break;
+                    case UpdateStatus.DB_ERROR:
+                        AlertConstruct.alertConstructor(
+                                "Network Error",
+                                "Database Connection Error",
+                                "Failed to connect to database, please try again in a few minutes.",
+                                AlertType.ERROR
+                        );
+                        break;
 
-                default:
-                    AlertConstruct.alertConstructor(
-                            "Unexpected Error",
-                            "Something went wrong",
-                            "An unexpected error occurred, please ty again in a few minutes.",
-                            AlertType.ERROR
-                    );
+                    default:
+                        AlertConstruct.alertConstructor(
+                                "Unexpected Error",
+                                "Something went wrong",
+                                "An unexpected error occurred, please ty again in a few minutes.",
+                                AlertType.ERROR
+                        );
 
 
-            }
+                }
+            });
+
+            deleteGroupThread.start();
         }
     }
 

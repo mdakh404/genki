@@ -78,26 +78,30 @@ public class SettingsController implements Initializable{
                    Image newImage = new Image(selectedFile.toURI().toString());
                    imageProfileView.setImage(newImage);
 
-                   UpdateResult photoUploadResult = settingsModel.updatePhoto(UserSession.getUsername(), selectedFile);
+                   Thread updateImgThread = new Thread(()-> {
+                       UpdateResult photoUploadResult = settingsModel.updatePhoto(UserSession.getUsername(), selectedFile);
 
-                   if (photoUploadResult.getStatus() == UpdateStatus.PHOTO_UPDATED) {
-                            uploadedPhoto = true;
+                       if (photoUploadResult.getStatus() == UpdateStatus.PHOTO_UPDATED) {
+                           uploadedPhoto = true;
 
-                            String uploadedPhotoURL = settingsModel.getUploadedPhotoURL();
+                           String uploadedPhotoURL = settingsModel.getUploadedPhotoURL();
 
-                            Image uploadedPhoto = new Image(uploadedPhotoURL, true);
-                            imageProfileView.setImage(uploadedPhoto);
-                   }
+                           Image uploadedPhoto = new Image(uploadedPhotoURL, true);
+                           imageProfileView.setImage(uploadedPhoto);
+                       }
 
-                   if (photoUploadResult.getStatus() == UpdateStatus.IMG_UPLOAD_ERROR) {
-                       logger.log(Level.WARNING, "Error opening file");
-                       AlertConstruct.alertConstructor(
-                               "Upload Failed",
-                               "File Upload Error",
-                               "Error while uploading file.",
-                               AlertType.ERROR
-                       );
-                   }
+                       if (photoUploadResult.getStatus() == UpdateStatus.IMG_UPLOAD_ERROR) {
+                           logger.log(Level.WARNING, "Error opening file");
+                           AlertConstruct.alertConstructor(
+                                   "Upload Failed",
+                                   "File Upload Error",
+                                   "Error while uploading file.",
+                                   AlertType.ERROR
+                           );
+                       }
+                   });
+
+                   updateImgThread.start();
 
            }
 
@@ -120,40 +124,44 @@ public class SettingsController implements Initializable{
            }
 
            else {
-               UpdateResult updateUsernameResult = settingsModel.updateUsername(UserSession.getUsername(), newUsernameText);
+               Thread updateUsernameThread = new Thread(() -> {
+                   UpdateResult updateUsernameResult = settingsModel.updateUsername(UserSession.getUsername(), newUsernameText);
 
-               switch (updateUsernameResult.getStatus()) {
-                   case UpdateStatus.INVALID_USERNAME:
-                        logger.log(Level.WARNING, "Invalid username supplied " + newUsernameText);
-                        AlertConstruct.alertConstructor(
-                                "Settings error",
-                                "Invalid username",
-                                "Your username must be 5–15 characters long and can only include letters, numbers, and underscores.",
-                                AlertType.ERROR
-                        );
-                        break;
+                   switch (updateUsernameResult.getStatus()) {
+                       case UpdateStatus.INVALID_USERNAME:
+                           logger.log(Level.WARNING, "Invalid username supplied " + newUsernameText);
+                           AlertConstruct.alertConstructor(
+                                   "Settings error",
+                                   "Invalid username",
+                                   "Your username must be 5–15 characters long and can only include letters, numbers, and underscores.",
+                                   AlertType.ERROR
+                           );
+                           break;
 
-                   case UpdateStatus.USERNAME_UPDATED:
-                       UserSession.setUsername(newUsernameText);
-                       break;
+                       case UpdateStatus.USERNAME_UPDATED:
+                           UserSession.setUsername(newUsernameText);
+                           break;
 
-                   case UpdateStatus.DB_ERROR:
-                       AlertConstruct.alertConstructor(
-                               "Network Error",
-                               "Database Connection Error",
-                               "Failed to connect to database, please try again in a few minutes.",
-                               AlertType.ERROR
-                       );
-                       break;
+                       case UpdateStatus.DB_ERROR:
+                           AlertConstruct.alertConstructor(
+                                   "Network Error",
+                                   "Database Connection Error",
+                                   "Failed to connect to database, please try again in a few minutes.",
+                                   AlertType.ERROR
+                           );
+                           break;
 
-                   default:
-                       AlertConstruct.alertConstructor(
-                               "Unexpected Error",
-                               "Something went wrong",
-                               "An unexpected error occurred, please ty again in a few minutes.",
-                               AlertType.ERROR
-                       );
-               }
+                       default:
+                           AlertConstruct.alertConstructor(
+                                   "Unexpected Error",
+                                   "Something went wrong",
+                                   "An unexpected error occurred, please ty again in a few minutes.",
+                                   AlertType.ERROR
+                           );
+                   }
+               });
+
+               updateUsernameThread.start();
            }
 
            if (currentPasswordText.isEmpty()) {
@@ -176,58 +184,62 @@ public class SettingsController implements Initializable{
                    );
                }
                else {
-                   UpdateResult updatePasswordResult = settingsModel.updatePassword(
-                                                             UserSession.getUsername(),
-                                                             currentPasswordText,
-                                                             newPasswordText);
+                   Thread updatePasswordThread = new Thread(() -> {
+                       UpdateResult updatePasswordResult = settingsModel.updatePassword(
+                               UserSession.getUsername(),
+                               currentPasswordText,
+                               newPasswordText);
 
-                   switch (updatePasswordResult.getStatus()) {
+                       switch (updatePasswordResult.getStatus()) {
 
-                       case UpdateStatus.INVALID_CURRENT_PASSWORD:
-                           AlertConstruct.alertConstructor(
-                                   "Settings Error",
-                                   "Incorrect current password",
-                                   "The current password entered is incorrect.",
-                                   AlertType.ERROR
-                           );
-                            break;
+                           case UpdateStatus.INVALID_CURRENT_PASSWORD:
+                               AlertConstruct.alertConstructor(
+                                       "Settings Error",
+                                       "Incorrect current password",
+                                       "The current password entered is incorrect.",
+                                       AlertType.ERROR
+                               );
+                               break;
 
-                       case UpdateStatus.INVALID_NEW_PASSWORD:
-                           AlertConstruct.alertConstructor(
-                                   "Settings Error",
-                                   "Invalid new password",
-                                   "Your new password needs at least 8 characters, with at least one uppercase letter and one symbol.",
-                                   AlertType.ERROR
-                           );
-                           break;
+                           case UpdateStatus.INVALID_NEW_PASSWORD:
+                               AlertConstruct.alertConstructor(
+                                       "Settings Error",
+                                       "Invalid new password",
+                                       "Your new password needs at least 8 characters, with at least one uppercase letter and one symbol.",
+                                       AlertType.ERROR
+                               );
+                               break;
 
-                       case UpdateStatus.PASSWORD_UPDATED:
-                           AlertConstruct.alertConstructor(
-                                   "Saving Settings",
-                                   "Password Updated",
-                                   "Your password has been updated successfully.",
-                                   AlertType.INFORMATION
-                           );
-                           break;
+                           case UpdateStatus.PASSWORD_UPDATED:
+                               AlertConstruct.alertConstructor(
+                                       "Saving Settings",
+                                       "Password Updated",
+                                       "Your password has been updated successfully.",
+                                       AlertType.INFORMATION
+                               );
+                               break;
 
-                       case UpdateStatus.DB_ERROR:
-                           AlertConstruct.alertConstructor(
-                                   "Network Error",
-                                   "Database Connection Error",
-                                   "Failed to connect to database, please try again in a few minutes.",
-                                   AlertType.ERROR
-                           );
-                           break;
+                           case UpdateStatus.DB_ERROR:
+                               AlertConstruct.alertConstructor(
+                                       "Network Error",
+                                       "Database Connection Error",
+                                       "Failed to connect to database, please try again in a few minutes.",
+                                       AlertType.ERROR
+                               );
+                               break;
 
-                       default:
-                           AlertConstruct.alertConstructor(
-                                   "Unexpected Error",
-                                   "Something went wrong",
-                                   "An unexpected error occurred, please ty again in a few minutes.",
-                                   AlertType.ERROR
-                           );
+                           default:
+                               AlertConstruct.alertConstructor(
+                                       "Unexpected Error",
+                                       "Something went wrong",
+                                       "An unexpected error occurred, please ty again in a few minutes.",
+                                       AlertType.ERROR
+                               );
 
-                   }
+                       }
+                   });
+
+                   updatePasswordThread.start();
                }
             }
 
@@ -238,25 +250,30 @@ public class SettingsController implements Initializable{
 
            else {
 
-               UpdateResult updateBioResult = settingsModel.updateBio(UserSession.getUsername(), bioText);
+               Thread updateBioThread = new Thread(() -> {
+                   UpdateResult updateBioResult = settingsModel.updateBio(UserSession.getUsername(), bioText);
 
-               if (updateBioResult.getStatus() == UpdateStatus.BIO_UPDATED) {
-                   AlertConstruct.alertConstructor(
-                           "Saving Settings",
-                           "Bio Updated",
-                           "Your bio has been updated successfully.",
-                           AlertType.INFORMATION
-                   );
-               }
+                   if (updateBioResult.getStatus() == UpdateStatus.BIO_UPDATED) {
+                       AlertConstruct.alertConstructor(
+                               "Saving Settings",
+                               "Bio Updated",
+                               "Your bio has been updated successfully.",
+                               AlertType.INFORMATION
+                       );
+                   }
 
-               else {
-                   AlertConstruct.alertConstructor(
-                           "Unexpected Error",
-                           "Something went wrong",
-                           "An unexpected error occurred updating your bio, please ty again in a few minutes.",
-                           AlertType.ERROR
-                   );
-               }
+                   else {
+                       AlertConstruct.alertConstructor(
+                               "Unexpected Error",
+                               "Something went wrong",
+                               "An unexpected error occurred updating your bio, please ty again in a few minutes.",
+                               AlertType.ERROR
+                       );
+                   }
+               });
+
+               updateBioThread.start();
+
            }
 
            if (newUsernameText.isEmpty() &&
@@ -288,49 +305,53 @@ public class SettingsController implements Initializable{
 
            if (deleteAccAlertResult.isPresent() && deleteAccAlertResult.get() == ButtonType.OK) {
 
-               UpdateResult deleteAccResult = settingsModel.deleteAccount(UserSession.getUsername());
+               Thread deleteAccountThread = new Thread(() -> {
+                   UpdateResult deleteAccResult = settingsModel.deleteAccount(UserSession.getUsername());
 
-               switch (deleteAccResult.getStatus()) {
+                   switch (deleteAccResult.getStatus()) {
 
-                   case UpdateStatus.ACCOUNT_DELETED:
-                       UserSession.logout();
-                       try {
-                           Stage thisStage = (Stage) btnDeleteAccount.getScene().getWindow();
-                           thisStage.close();
-                           ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");
-                       } catch (IOException e) {
-                           logger.log(Level.WARNING, "Failed to switch to Genki - Sign in");
-                       }
-                       break;
+                       case UpdateStatus.ACCOUNT_DELETED:
+                           UserSession.logout();
+                           try {
+                               Stage thisStage = (Stage) btnDeleteAccount.getScene().getWindow();
+                               thisStage.close();
+                               ScenesController.switchToScene("/genki/views/Login.fxml", "Genki - Sign in");
+                           } catch (IOException e) {
+                               logger.log(Level.WARNING, "Failed to switch to Genki - Sign in");
+                           }
+                           break;
 
-                   case UpdateStatus.ACCOUNT_DELETION_ERROR:
-                       AlertConstruct.alertConstructor(
-                               "Settings Error",
-                               "Account deletion error",
-                               "Failed to delete your account, please try again in a few minutes.",
-                               AlertType.ERROR
-                       );
-                       break;
+                       case UpdateStatus.ACCOUNT_DELETION_ERROR:
+                           AlertConstruct.alertConstructor(
+                                   "Settings Error",
+                                   "Account deletion error",
+                                   "Failed to delete your account, please try again in a few minutes.",
+                                   AlertType.ERROR
+                           );
+                           break;
 
-                   case UpdateStatus.DB_ERROR:
-                       AlertConstruct.alertConstructor(
-                               "Network Error",
-                               "Database Connection Error",
-                               "Failed to connect to database, please try again in a few minutes.",
-                               AlertType.ERROR
-                       );
-                       break;
+                       case UpdateStatus.DB_ERROR:
+                           AlertConstruct.alertConstructor(
+                                   "Network Error",
+                                   "Database Connection Error",
+                                   "Failed to connect to database, please try again in a few minutes.",
+                                   AlertType.ERROR
+                           );
+                           break;
 
-                   default:
-                       AlertConstruct.alertConstructor(
-                               "Unexpected Error",
-                               "Something went wrong",
-                               "An unexpected error occurred, please ty again in a few minutes.",
-                               AlertType.ERROR
-                       );
+                       default:
+                           AlertConstruct.alertConstructor(
+                                   "Unexpected Error",
+                                   "Something went wrong",
+                                   "An unexpected error occurred, please ty again in a few minutes.",
+                                   AlertType.ERROR
+                           );
 
 
-               }
+                   }
+               });
+
+               deleteAccountThread.start();
            }
        }
 
