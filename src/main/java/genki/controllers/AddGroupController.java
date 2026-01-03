@@ -32,7 +32,7 @@ import java.util.UUID;
 public class AddGroupController {
 
     private HomeController homeController;
-    private String selectedPhotoPath = null; // Chemin de la photo sélectionnée
+    private String selectedPhotoPath = null;
 
     @FXML
     private TextField txtGroupName;
@@ -63,20 +63,17 @@ public class AddGroupController {
     
     @FXML
     public void initialize() {
-        // Créer un ToggleGroup pour les RadioButtons
+
         ToggleGroup privacyGroup = new ToggleGroup();
         rbPublic.setToggleGroup(privacyGroup);
         rbPrivate.setToggleGroup(privacyGroup);
         
-        // Sélectionner "Public" par défaut
         rbPublic.setSelected(true);
         
-        // Initialiser l'image par défaut
         try {
             Image defaultImage = new Image(getClass().getResourceAsStream("/genki/img/group-default.png"));
             if (imgGroupPhoto != null) {
                 imgGroupPhoto.setImage(defaultImage);
-                // Rendre l'image circulaire
                 javafx.scene.shape.Circle clip = new javafx.scene.shape.Circle(50, 50, 50);
                 imgGroupPhoto.setClip(clip);
             }

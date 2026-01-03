@@ -2298,7 +2298,9 @@ public class HomeController {
                     newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
 
                     // Cache the group conversation item
-                    UserSession.addGroupConversationItem(newGroupContainer);
+                    if(!UserSession.getGroupConversationItems().contains(newGroupContainer)){
+                        UserSession.addGroupConversationItem(newGroupContainer);
+                    }
 
                     // Add to the groups list container in UI
                     groupsListContainer.getChildren().add(0, newGroupContainer);

@@ -20,18 +20,6 @@ public class AuthModel {
     private final DBConnection AuthConnection = DBConnection.getInstance("genki_testing");
 
 
-    /**
-     * authLogin()
-     * Handles the login functionality of the user to the application.
-     * gets username and password, validates it and process to authentication.
-     * it instantiates a DBConnection instance and use it with a connectionURI to connect
-     * to the database on MongoDB Atlas cluster.
-     * @param username is the supplied username during login
-     * @param password is the supplied password during login
-     * @return AuthResult WRONG_PASSWORD_USER when login credentials are invalid or user is not registered
-     * @return AuthResult SUCCESS when the login succeed
-     * @return AuthResult DB_ERROR when the connection to the database fails
-     * */
     public AuthResult authLogin(String username, String password) {
 
         try {
