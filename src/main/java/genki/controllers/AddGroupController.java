@@ -1,5 +1,6 @@
 package genki.controllers;
 
+import genki.models.GroupSettingsModel;
 import genki.utils.UserSession;
 import genki.utils.AddGroupResult;
 import genki.utils.AddGroupStatus;
@@ -21,17 +22,24 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import com.cloudinary.*;
+import com.cloudinary.utils.ObjectUtils;
+import io.github.cdimascio.dotenv.Dotenv;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.UUID;
 
 public class AddGroupController {
 
     private HomeController homeController;
+    private static final Dotenv env = Dotenv.load();
+    private static final Cloudinary cloudinary = new Cloudinary(env.get("CLOUDINARY_URL"));
     private String selectedPhotoPath = null;
 
     @FXML
@@ -71,6 +79,7 @@ public class AddGroupController {
         rbPublic.setSelected(true);
         
         try {
+
             Image defaultImage = new Image(getClass().getResourceAsStream("/genki/img/group-default.png"));
             if (imgGroupPhoto != null) {
                 imgGroupPhoto.setImage(defaultImage);
@@ -101,23 +110,17 @@ public class AddGroupController {
         
         if (selectedFile != null) {
             try {
-                // Créer le dossier uploads/groups s'il n'existe pas
-                Path uploadsDir = Paths.get("uploads", "groups");
-                if (!Files.exists(uploadsDir)) {
-                    Files.createDirectories(uploadsDir);
-                }
-                
-                // Générer un nom unique pour le fichier
-                String extension = getFileExtension(selectedFile.getName());
-                String uniqueFileName = "group_" + UUID.randomUUID().toString() + extension;
-                Path destinationPath = uploadsDir.resolve(uniqueFileName);
-                
-                // Copier le fichier
-                Files.copy(selectedFile.toPath(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
-                
-                // Stocker le chemin relatif
-                selectedPhotoPath = "uploads/groups/" + uniqueFileName;
-                
+
+                Map<?, ?> result = AddGroupController.cloudinary.uploader().upload(
+                        selectedFile,
+                        ObjectUtils.asMap(
+                                "folder", "genki_production/group_images",
+                                "resource_type", "image"
+                        )
+                );
+
+                selectedPhotoPath = result.get("secure_url").toString();
+
                 // Afficher l'image dans l'ImageView
                 Image image = new Image(selectedFile.toURI().toString());
                 imgGroupPhoto.setImage(image);
