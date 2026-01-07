@@ -11,7 +11,7 @@ module genki {
     requires cloudinary.core;
     requires dotenv.java;
 	requires com.google.gson;
-    requires genki;
+    //requires genki;
 
 
     exports genki;
