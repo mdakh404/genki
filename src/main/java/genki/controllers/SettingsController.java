@@ -26,7 +26,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
 
-
 import java.net.URL;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -104,7 +103,6 @@ public class SettingsController implements Initializable{
                    updateImgThread.start();
 
            }
-
 
        }
 
@@ -288,10 +286,7 @@ public class SettingsController implements Initializable{
                   );
            }
 
-
-
        }
-
 
        @FXML
        public void handleDeleteAccount() {
@@ -347,7 +342,6 @@ public class SettingsController implements Initializable{
                                    AlertType.ERROR
                            );
 
-
                    }
                });
 
@@ -355,13 +349,10 @@ public class SettingsController implements Initializable{
            }
        }
 
-
-
-
        @Override
        public void initialize(URL location, ResourceBundle resources) {
 
-             MongoCollection<Document> usersCollection = SettingsController.SettingsControllerDBConnection.getCollection("users");
+             MongoCollection<Document> usersCollection = SettingsControllerDBConnection.getCollection("users");
              Document userDoc = usersCollection.find(Filters.eq("username", UserSession.getUsername())).first();
 
              if (userDoc != null) {
@@ -374,6 +365,5 @@ public class SettingsController implements Initializable{
              }
 
        }
-
 
 }

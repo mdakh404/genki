@@ -103,7 +103,6 @@ public class RegisterController implements Initializable{
                                      Alert.AlertType.INFORMATION
                              );
 
-                             // Switch Scene to Home after successful registration
                              ScenesController.switchToScene("/genki/views/Home.fxml", "Genki - Home");
                          } catch (IOException event) {
                              logger.log(Level.SEVERE, "Error while loading Home.fxml", event);
@@ -215,5 +214,4 @@ public class RegisterController implements Initializable{
             }
         });
     }
-
 }

@@ -42,13 +42,11 @@ public class AddUserController implements Initializable {
     @FXML
     private Button btnCancel;
     
-    // hamza ajoute ca
     private HomeController homeController;
 
     public void setHomeController(HomeController homeController) {
         this.homeController = homeController;
     }
-    //---
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -82,11 +80,9 @@ public class AddUserController implements Initializable {
         }
         
         logger.log(Level.INFO, "Adding user: " + username);
-        //hamza ajoute ca 
         if (homeController != null) {
             homeController.handleAddUserFromDialog(username);
         }
-        //---
 
         for (User user : UserSession.getFriends()) {
 
@@ -133,13 +129,11 @@ public class AddUserController implements Initializable {
             if (sendFriendRequestNotificationId != null) {
                 logger.info("✅ A friend request has been sent (saved to DB)");
                 
-                // 🔔 NEW: Send notification to server to broadcast to recipient via socket
                 try {
                     System.out.println("\n╔══════════════════════════════════════════════════════════╗");
                     System.out.println("║ SENDING NOTIFICATION VIA SOCKET                          ║");
                     System.out.println("╚══════════════════════════════════════════════════════════╝");
                     
-                    // Create notification object
                     genki.models.Notification notification = new genki.models.Notification(
                         sendFriendRequestNotificationId,
                         recipientUserDoc.getObjectId("_id"),
@@ -151,8 +145,6 @@ public class AddUserController implements Initializable {
                     );
                     notification.setStatus("pending");
                     
-                    // Create a wrapper message to send to server
-                    // Server will see messageType="send_notification" and handle broadcasting
                     com.google.gson.JsonObject notificationRequest = new com.google.gson.JsonObject();
                     notificationRequest.addProperty("messageType", "send_notification");
                     notificationRequest.addProperty("recipientId", recipientUserDoc.getObjectId("_id").toString());
@@ -164,7 +156,6 @@ public class AddUserController implements Initializable {
                     System.out.println("📤 Sending notification request to server...");
                     System.out.println("   Message: " + message.substring(0, Math.min(150, message.length())));
                     
-                    // Send via socket to server
                     UserSession.getClientSocket().sendMessages(message);
                     System.out.println("✓ Notification request sent to server");
                     System.out.println("╚══════════════════════════════════════════════════════════╝\n");
@@ -184,8 +175,6 @@ public class AddUserController implements Initializable {
                 closeWindow();
             }
 
-            // TODO Check if a friend request has been sent before to the same user
-
         } catch (MongoException ex) {
              logger.warning(ex.getMessage());
              AlertConstruct.alertConstructor(
@@ -197,12 +186,6 @@ public class AddUserController implements Initializable {
         } catch (NullPointerException ex) {
             logger.warning(ex.getMessage());
         }
-
-
-
-
-
-
     }
     
     @FXML
@@ -221,8 +204,6 @@ public class AddUserController implements Initializable {
         } else {
             closeWindow();
         }
-
-
     }
     
     private void closeWindow() {

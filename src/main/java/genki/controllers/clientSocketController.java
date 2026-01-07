@@ -31,8 +31,8 @@ public class clientSocketController implements t2{
 	private String username;
 	private List<User> connectedUsers = new ArrayList<>();
 	private Consumer<MessageData> onNewMessageCallback;
-	private Consumer<genki.models.Notification> onNewNotificationCallback;  // Callback for new notifications
-	private HomeController homeController;  // Reference to HomeController for updating chat header
+	private Consumer<genki.models.Notification> onNewNotificationCallback;
+	private HomeController homeController;
 
 	
 	
@@ -60,35 +60,18 @@ public class clientSocketController implements t2{
 		this.homeController = homeController;
 	}
 	
-//	public void initialiseClient() {
-//		ClientThread = new ClientsThreads("127.0.0.1", 5001, this);
-//		ClientThread.connect();
-//		
-//	}
-	
 	public void sendMessages(String message) {
 		ClientThread.sendMessage(message);
 		
 		Platform.runLater(() -> {
-			//dddd
 		});
 	}
 	
-	/**
-	 * Send a group join acceptance notification via socket
-	 * This notifies the requester that their group join request was accepted
-	 * @param message JSON message containing GROUP_JOIN_ACCEPTED notification
-	 */
 	public void sendGroupJoinAcceptanceNotification(String message) {
 		ClientThread.sendMessage(message);
 		System.out.println("✓ Sent GROUP_JOIN_ACCEPTED notification via socket");
 	}
 	
-	/**
-	 * Send a friend request acceptance notification via socket
-	 * This notifies the requester that their friend request was accepted
-	 * @param message JSON message containing FRIEND_REQUEST_ACCEPTED notification
-	 */
 	public void sendFriendRequestAcceptanceNotification(String message) {
 		ClientThread.sendMessage(message);
 		System.out.println("✓ Sent FRIEND_REQUEST_ACCEPTED notification via socket");
@@ -99,13 +82,11 @@ public class clientSocketController implements t2{
 		Platform.runLater(() -> {
 			System.out.println("\n📨 Client received from socket: " + message.substring(0, Math.min(100, message.length())));
 			
-			// Skip system messages
 			if (message.startsWith("---") || message.startsWith("Server: ---")) {
 				System.out.println("   → System message (skipped)");
 				return;
 			}
 
-			// Check if this is a users list message
 			if (message.startsWith("Server: USERS_LIST:")) {
 				System.out.println("   → Users list message");
 				String jsonPart = message.substring("Server: USERS_LIST:".length());
@@ -114,16 +95,13 @@ public class clientSocketController implements t2{
 			}
 			
 			try {
-				// Strip "Server: " prefix if present
 				String jsonMessage = message;
 				if (message.startsWith("Server: ")) {
 					jsonMessage = message.substring("Server: ".length());
 				}
 				
-				// Parse as JSON to check message type
 				com.google.gson.JsonObject jsonObj = com.google.gson.JsonParser.parseString(jsonMessage).getAsJsonObject();
 				
-				// CHECK -1: Is this a FRIEND_REQUEST_ACCEPTED notification?
 				if (jsonObj.has("type") && jsonObj.get("type").getAsString().equals("FRIEND_REQUEST_ACCEPTED")) {
 					System.out.println("   → 👥 FRIEND_REQUEST_ACCEPTED MESSAGE DETECTED");
 					
@@ -133,15 +111,12 @@ public class clientSocketController implements t2{
 						String acceptorUsername = jsonObj.get("acceptorUsername").getAsString();
 						String acceptedBy = jsonObj.get("acceptedBy").getAsString();
 						
-						// Only process if this message is for the current user
 						if (recipientId != null && recipientId.equals(UserSession.getUserId())) {
 							System.out.println("✓ Friend Request Accepted:");
 							System.out.println("  - Friend: " + acceptorUsername);
 							System.out.println("  - Accepted by: " + acceptedBy);
 							
-							// Notify HomeController to add the friend conversation to UI immediately
 							if (homeController != null) {
-								//homeController.addFriendConversationFromAcceptance(acceptorUsername);
 								System.out.println("✅ Friend conversation added to UI\n");
 							} else {
 								System.out.println("⚠️ HomeController reference is null!\n");
@@ -149,14 +124,13 @@ public class clientSocketController implements t2{
 						} else {
 							System.out.println("⚠️ FRIEND_REQUEST_ACCEPTED message is for different user (recipient: " + recipientId + ", current: " + UserSession.getUserId() + ")");
 						}
-						return; // Don't try to parse as other message types
+						return;
 					} catch (Exception e) {
 						System.err.println("❌ Error parsing FRIEND_REQUEST_ACCEPTED message: " + e.getMessage());
 						e.printStackTrace();
 					}
 				}
 				
-				// CHECK 0: Is this a GROUP_JOIN_ACCEPTED notification?
 				if (jsonObj.has("type") && jsonObj.get("type").getAsString().equals("GROUP_JOIN_ACCEPTED")) {
 					System.out.println("   → 🎉 GROUP_JOIN_ACCEPTED MESSAGE DETECTED");
 					
@@ -167,14 +141,11 @@ public class clientSocketController implements t2{
 						String groupId = jsonObj.get("groupId").getAsString();
 						String acceptedBy = jsonObj.get("acceptedBy").getAsString();
 						
-						// Only process if this message is for the current user (the requester/new member)
 						if (recipientId != null && recipientId.equals(UserSession.getUserId())) {
 							System.out.println("✓ Group Join Request Accepted:");
 							System.out.println("  - Group: " + groupName + " (ID: " + groupId + ")");
 							System.out.println("  - Accepted by: " + acceptedBy);
 							
-							// The requester (new member) needs the group conversation UI created
-							// The admin doesn't need a new UI since they already have the group
 							if (homeController != null) {
 								homeController.addGroupConversationFromAcceptance(groupId, groupName);
 								System.out.println("✅ Group conversation added to requester's UI\n");
@@ -184,19 +155,17 @@ public class clientSocketController implements t2{
 						} else {
 							System.out.println("⚠️ GROUP_JOIN_ACCEPTED message is for different user (recipient: " + recipientId + ", current: " + UserSession.getUserId() + ")");
 						}
-						return; // Don't try to parse as other message types
+						return;
 					} catch (Exception e) {
 						System.err.println("❌ Error parsing GROUP_JOIN_ACCEPTED message: " + e.getMessage());
 						e.printStackTrace();
 					}
 				}
 				
-				// CHECK 1: Is this a NOTIFICATION?
 				if (jsonObj.has("messageType") && jsonObj.get("messageType").getAsString().equals("notification")) {
 					System.out.println("   → 🔔 NOTIFICATION MESSAGE DETECTED");
 					
 					try {
-						// Extract the notification from the wrapper
 						com.google.gson.JsonObject notificationObj = jsonObj.getAsJsonObject("notification");
 						genki.models.Notification notification = GsonUtility.getGson().fromJson(notificationObj, genki.models.Notification.class);
 						
@@ -212,14 +181,13 @@ public class clientSocketController implements t2{
 						} else {
 							System.out.println("⚠️ Notification callback is null!\n");
 						}
-						return; // Don't try to parse as regular message
+						return;
 					} catch (Exception e) {
-						System.err.println("❌ Error parsing notification: " + e.getMessage());
+						System.err.println(" Error parsing notification: " + e.getMessage());
 						e.printStackTrace();
 					}
 				}
 				
-				// CHECK 2: Is this a REGULAR MESSAGE?
 				if (jsonObj.has("messageText")) {
 					System.out.println("   → 💬 REGULAR MESSAGE DETECTED");
 					
@@ -244,7 +212,6 @@ public class clientSocketController implements t2{
 					return;
 				}
 				
-				// Unknown message type
 				System.out.println("   → ⚠️ Unknown message type (not notification or message)\n");
 				
 			} catch (Exception e) {
@@ -259,15 +226,12 @@ public class clientSocketController implements t2{
 			User[] users = GsonUtility.getGson().fromJson(jsonUsers, User[].class);
 			connectedUsers = Arrays.asList(users);
 			
-			// Update the session with the connected users
 			UserSession.setConnectedUsers(new ArrayList<>(connectedUsers));
 			
 			System.out.println("✓ Updated connected users list with " + connectedUsers.size() + " users");
 			System.out.println("  Connected users: " + UserSession.ConnectedUsers);
 			
-			// Update online status for ALL conversation items on JavaFX thread
 			Platform.runLater(() -> {
-				// Update user conversation items
 				ArrayList<HBox> conversationItems = UserSession.getConversationItems();
 				if (conversationItems == null || conversationItems.isEmpty()) {
 					System.out.println("⚠ No conversation items loaded yet (will be refreshed after load)");
@@ -276,7 +240,6 @@ public class clientSocketController implements t2{
 					for(HBox conversationItem : conversationItems) {
 						Object userData = conversationItem.getUserData();
 						if (userData instanceof java.util.Map) {
-							// New structure: Map with "user" and "conversationId"
 							java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) userData;
 							User friend = (User) dataMap.get("user");
 							
@@ -285,7 +248,6 @@ public class clientSocketController implements t2{
 									.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
 								updateConversationItemOnlineStatus(conversationItem, isOnline);
 								
-								// Also update chat header if this is the currently open conversation
 								if (homeController != null && friend.getId() != null) {
 									String friendId = friend.getId().toString();
 									homeController.updateChatHeaderStatusForUser(friendId, friend.getUsername(), isOnline);
@@ -294,13 +256,11 @@ public class clientSocketController implements t2{
 								System.out.println("  - " + friend.getUsername() + ": " + (isOnline ? "ONLINE" : "OFFLINE"));
 							}
 						} else if (userData instanceof User) {
-							// Fallback for old structure (direct User object)
 							User friend = (User) userData;
 							boolean isOnline = connectedUsers.stream()
 								.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
 							updateConversationItemOnlineStatus(conversationItem, isOnline);
 							
-							// Also update chat header if this is the currently open conversation
 							if (homeController != null && friend.getId() != null) {
 								String friendId = friend.getId().toString();
 								homeController.updateChatHeaderStatusForUser(friendId, friend.getUsername(), isOnline);
@@ -311,7 +271,6 @@ public class clientSocketController implements t2{
 					}
 				}
 				
-				// Also update group conversation items (they should show "Group" status, not online)
 				ArrayList<HBox> groupItems = UserSession.getGroupConversationItems();
 				if (groupItems != null && !groupItems.isEmpty()) {
 					System.out.println("✓ " + groupItems.size() + " group items present");
@@ -325,11 +284,7 @@ public class clientSocketController implements t2{
 		}
 	}
 	
-	/**
-	 * Update the online status indicator for a conversation item
-	 */
 	private void updateConversationItemOnlineStatus(HBox conversationItem, boolean isOnline) {
-		// Find the status circle (second child in the profile container StackPane)
 		javafx.scene.layout.StackPane profileContainer = (javafx.scene.layout.StackPane) conversationItem.getChildren().get(0);
 		if (profileContainer.getChildren().size() > 1) {
 			javafx.scene.shape.Circle statusCircle = (javafx.scene.shape.Circle) profileContainer.getChildren().get(1);
@@ -337,11 +292,6 @@ public class clientSocketController implements t2{
 		}
 	}
 	
-	/**
-	 * Public method to refresh online status for all loaded conversation items
-	 * Called by HomeController after loading conversations
-	 * Uses the same comparison logic as parseAndUpdateUsersList()
-	 */
 	public void refreshConversationOnlineStatus() {
 		Platform.runLater(() -> {
 			ArrayList<HBox> conversationItems = UserSession.getConversationItems();
@@ -358,12 +308,10 @@ public class clientSocketController implements t2{
 					Object userData = conversationItem.getUserData();
 					if (userData instanceof User) {
 						User friend = (User) userData;
-						// Use same comparison logic as parseAndUpdateUsersList()
 						boolean isOnline = currentConnectedUsers != null && currentConnectedUsers.stream()
 							.anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friend.getUsername()));
 						updateConversationItemOnlineStatus(conversationItem, isOnline);
 						
-						// Also update chat header if this is the currently open conversation
 						if (homeController != null && friend.getId() != null) {
 							String friendId = friend.getId().toString();
 							homeController.updateChatHeaderStatusForUser(friendId, friend.getUsername(), isOnline);
@@ -385,15 +333,10 @@ public class clientSocketController implements t2{
 
 	@Override
 	public void onConnectionClosed(String reason) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void onClientConnected(ClientHandler handler) {
-		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("Unimplemented method 'onClientConnected'");
 	}
-	
-	
 }

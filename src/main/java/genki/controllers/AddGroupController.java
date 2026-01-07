@@ -100,7 +100,6 @@ public class AddGroupController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select Group Photo");
         
-        // Filtres pour les images
         fileChooser.getExtensionFilters().addAll(
             new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
         );
@@ -121,11 +120,9 @@ public class AddGroupController {
 
                 selectedPhotoPath = result.get("secure_url").toString();
 
-                // Afficher l'image dans l'ImageView
                 Image image = new Image(selectedFile.toURI().toString());
                 imgGroupPhoto.setImage(image);
                 
-                // Mettre à jour le label de statut
                 if (lblPhotoStatus != null) {
                     lblPhotoStatus.setText("✓ Photo uploaded");
                     lblPhotoStatus.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 11px;");
@@ -151,13 +148,10 @@ public class AddGroupController {
         }
     }
     
-    /**
-     * Récupère l'extension d'un fichier
-     */
     private String getFileExtension(String fileName) {
         int lastIndexOf = fileName.lastIndexOf(".");
         if (lastIndexOf == -1) {
-            return ""; // Pas d'extension
+            return "";
         }
         return fileName.substring(lastIndexOf);
     }
@@ -169,7 +163,6 @@ public class AddGroupController {
         String privacy = rbPublic.isSelected() ? "Public" : "Private";
         boolean groupPrivacyPublic = privacy.equals("Public");
 
-        // Validation du nom de groupe
         if (groupName.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Validation Error");
@@ -179,10 +172,8 @@ public class AddGroupController {
             return;
         }
 
-        // Si aucune photo n'a été uploadée, utiliser l'image par défaut
         String photoPath = selectedPhotoPath != null ? selectedPhotoPath : "genki/img/group-default.png";
 
-        // Appeler la méthode modifiée avec le chemin de la photo
         AddGroupResult addGroupResult = GroupModel.addGroupWithPhoto(
             groupName, 
             groupDescription, 
@@ -200,7 +191,6 @@ public class AddGroupController {
                     AlertType.INFORMATION
                 );
                 
-                // Get the newly created group from UserSession and notify HomeController
                 Group newGroup = UserSession.getGroups().get(UserSession.getGroups().size() - 1);
                 if (homeController != null) {
                     homeController.handleAddGroupFromDialog(newGroup);

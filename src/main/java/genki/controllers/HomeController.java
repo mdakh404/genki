@@ -127,11 +127,9 @@ public class HomeController {
     private Label rightContactBio;
 
     private Boolean rightSideVisibilite = false;
-    // Track the currently open conversation
-    private String currentRecipientId = null; // Track recipient for message sending
-    private String currentRecipientName = null; // Track recipient name for fallback matching
+    private String currentRecipientId = null;
+    private String currentRecipientName = null;
 
-    // Track conversation loading progress
     private int totalConversations = 0;
     private int loadedConversations = 0;
     private Object loadingLock = new Object();
@@ -151,16 +149,14 @@ public class HomeController {
     private Label CurrentUsername;
     @FXML
     private Button btnNotifications;
-    private Label notificationBadge; // Badge to show unread notification count
+    private Label notificationBadge;
 
-    // load notifications for this UserSession
     public void loadNotifications() {
 
         try {
 
             MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
 
-            // Load only pending notifications (not accepted or rejected)
             long notificationsCount = notificationsCollection.countDocuments(
                     Filters.and(
                             Filters.eq("recipientUserId", new ObjectId(UserSession.getUserId())),
@@ -195,14 +191,9 @@ public class HomeController {
             logger.warning("Failed to load notifications " + ex.getMessage());
         }
 
-        // Update the notification badge with the count
         updateNotificationBadge();
     }
 
-    /**
-     * Create and setup the notification badge label
-     * Red circle badge overlay positioned on top-right of the notification icon
-     */
     private void setupNotificationBadge() {
         if (btnNotifications == null)
             return;
@@ -221,27 +212,21 @@ public class HomeController {
         notificationBadge.setVisible(false);
         notificationBadge.setManaged(false);
 
-        // Add badge to the parent HBox after the button
         javafx.scene.Parent btnParent = btnNotifications.getParent();
         if (btnParent instanceof javafx.scene.layout.HBox) {
             javafx.scene.layout.HBox parentHBox = (javafx.scene.layout.HBox) btnParent;
             int btnIndex = parentHBox.getChildren().indexOf(btnNotifications);
             if (btnIndex >= 0) {
-                // Add badge right after button
                 parentHBox.getChildren().add(btnIndex + 1, notificationBadge);
 
-                // Position badge on top of button using translate
                 notificationBadge.setTranslateX(-20);
                 notificationBadge.setTranslateY(-8);
 
-                logger.info("✓ Notification badge overlay positioned on icon");
+                logger.info(" Notification badge overlay positioned on icon");
             }
         }
     }
 
-    /**
-     * Update the notification badge count
-     */
     public void updateNotificationBadge() {
         Platform.runLater(() -> {
             int notificationCount = UserSession.getNotifications().size();
@@ -261,31 +246,23 @@ public class HomeController {
         });
     }
 
-    /**
-     * Setup real-time notification listener via WebSocket
-     * This registers a callback to receive new notifications in real-time
-     */
     public void setupNotificationListener() {
         if (UserSession.getClientSocket() == null) {
             logger.warning("Client socket is not initialized yet");
             return;
         }
 
-        // Set callback for incoming notifications
         UserSession.getClientSocket().setOnNewNotificationCallback(notification -> {
             logger.info(
-                    "📬 New notification received: " + notification.getSenderName() + " - " + notification.getType());
+                    " New notification received: " + notification.getSenderName() + " - " + notification.getType());
 
             Platform.runLater(() -> {
                 try {
-                    // Add notification to UserSession
                     UserSession.addNotification(notification);
 
-                    // Update badge to show new count
                     updateNotificationBadge();
 
-                    // Optional: Show a toast or system notification
-                    logger.info("✅ Notification badge updated - New count: " + UserSession.getNotifications().size());
+                    logger.info("Notification badge updated - New count: " + UserSession.getNotifications().size());
 
                 } catch (Exception e) {
                     logger.warning("Error processing incoming notification: " + e.getMessage());
@@ -293,25 +270,18 @@ public class HomeController {
             });
         });
 
-        logger.info("✓ Real-time notification listener registered successfully");
+        logger.info("Real-time notification listener registered successfully");
     }
 
-    /**
-     * Cleanup old notifications from the database
-     * Deletes notifications older than 30 days that have been accepted or rejected
-     * This prevents database bloat and keeps notification history manageable
-     */
     private void cleanupOldNotifications() {
         Thread t1 = new Thread(() -> {
             try {
                 MongoCollection<Document> notificationsCollection = dbConnection.getCollection("notifications");
 
-                // Calculate date 30 days ago
                 java.time.LocalDateTime thirtyDaysAgo = java.time.LocalDateTime.now().minusDays(30);
                 java.time.ZonedDateTime zdt = thirtyDaysAgo.atZone(java.time.ZoneId.systemDefault());
                 java.util.Date cutoffDate = java.util.Date.from(zdt.toInstant());
 
-                // Delete notifications older than 30 days that are not pending
                 long deletedCount = notificationsCollection.deleteMany(
                         Filters.and(
                                 Filters.lt("createdAt", cutoffDate),
@@ -319,7 +289,7 @@ public class HomeController {
                         .getDeletedCount();
 
                 if (deletedCount > 0) {
-                    logger.info("🧹 Cleaned up " + deletedCount + " old notifications");
+                    logger.info(" Cleaned up " + deletedCount + " old notifications");
                 }
             } catch (MongoException e) {
                 logger.warning("Error during notification cleanup: " + e.getMessage());
@@ -329,15 +299,10 @@ public class HomeController {
         t1.start();
     }
 
-    /**
-     * Start periodic notification cleanup task
-     * Runs every 12 hours to clean up old notifications
-     */
     private void startNotificationCleanupScheduler() {
         Thread t2 = new Thread(() -> {
             while (true) {
                 try {
-                    // Run cleanup every 12 hours (43200000 ms)
                     Thread.sleep(43200000);
                     cleanupOldNotifications();
                 } catch (InterruptedException e) {
@@ -352,7 +317,6 @@ public class HomeController {
         t2.start();
     }
 
-    // handle logout of user
     public void handleLogout() {
         UserSession.logout();
         try {
@@ -362,7 +326,6 @@ public class HomeController {
         }
     }
 
-    // handle toggling between users and groups panes
     private void switchUsers(boolean switchToUsers) {
         usersPane.setVisible(switchToUsers);
         usersPane.setManaged(switchToUsers);
@@ -370,16 +333,13 @@ public class HomeController {
         groupsPane.setVisible(!switchToUsers);
         groupsPane.setManaged(!switchToUsers);
 
-        // Update button styles to show which view is active
         Platform.runLater(() -> {
             if (switchToUsers) {
-                // Users button active (cyan)
                 btnAll.setStyle(
                         "-fx-background-color: #2bfbfb; -fx-text-fill: #232e2e; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 16;");
                 btnGroups.setStyle(
                         "-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;");
             } else {
-                // Groups button active (cyan)
                 btnAll.setStyle(
                         "-fx-background-color: transparent; -fx-text-fill: #a0a0a0; -fx-background-radius: 20; -fx-padding: 8 16;");
                 btnGroups.setStyle(
@@ -390,7 +350,6 @@ public class HomeController {
 
     private Popup addMenuPopup;
 
-    // CSS Style Constants - centralized styles to avoid hardcoding
     private static final String MENU_BUTTON_STYLE_DEFAULT = "-fx-background-color: transparent; " +
             "-fx-text-fill: black; " +
             "-fx-cursor: hand; " +
@@ -405,26 +364,17 @@ public class HomeController {
 
     private static final String FILTER_BUTTON_INACTIVE_STYLE = "-fx-background-color: transparent; -fx-text-fill: #9ca3af; -fx-background-radius: 20; -fx-padding: 8 16;";
 
-    /**
-     * Holds the single DBConnection instance for this controller
-     */
     private DBConnection dbConnection;
 
     @FXML
     public void initialize() {
-        // Initialize the DB connection ONCE for this controller using Singleton pattern
         dbConnection = DBConnection.getInstance("genki_testing");
 
-        // Setup notification badge after UI is loaded
         Platform.runLater(() -> setupNotificationBadge());
 
         switchUsers(true);
 
         if (UserSession.getGroups().isEmpty() && UserSession.getConversations().isEmpty()) {
-            // chatHeader.getChildren().clear();
-            // messageInputArea.getChildren().clear();
-            // messagesContainer.getChildren().clear();
-
             ImageView startConversationImageView = new ImageView(
                     new Image(HomeController.class.getResourceAsStream("/genki/img/start_conversation.jpg")));
             startConversationImageView.setPreserveRatio(true);
@@ -490,7 +440,6 @@ public class HomeController {
             rightSideContainer.setManaged(rightSideVisibilite);
         }
         try {
-            // Load at 160x160 for better clarity when displaying at 40x40
             Image image = new Image(UserSession.getImageUrl(), 160, 160, false, true);
             UserProfil.setImage(image);
             UserProfil.setFitWidth(40);
@@ -518,12 +467,8 @@ public class HomeController {
                             formatTimestamp(System.currentTimeMillis())));
             messageInput.clear();
 
-            // UserSession.getClientSocket().sendMessages(messageText);
-
-            // Auto-scroll to bottom
             scrollToBottom();
 
-            // Create structured message data with all required info
             MessageData msgData = new MessageData(
                     currentConversationId.toString(),
                     senderId,
@@ -531,35 +476,23 @@ public class HomeController {
                     messageText,
                     senderImageUrl,
                     System.currentTimeMillis(),
-                    currentRecipientId, // Include recipient ID
-                    currentRecipientName // Include recipient name for fallback
+                    currentRecipientId,
+                    currentRecipientName
             );
 
-            // Send message as JSON via socket
             String jsonMessage = genki.utils.GsonUtility.getGson().toJson(msgData);
             UserSession.getClientSocket().sendMessages(jsonMessage);
 
-            // Update conversation list with the sent message (for both direct and group
-            // conversations)
             updateConversationListWithMessage(msgData);
 
-            // IMPROVEMENT 2: Thread Safety and UI Updates
-            // Save to DB in background thread and update UI safely if needed
             Thread t3 = new Thread(() -> {
                 MessageDAO messageDAO = new MessageDAO();
                 messageDAO.sendMessage(currentConversationId, senderId, senderName, senderImageUrl, messageText);
-
-                // If you need to update UI after save (e.g., show success icon), use
-                // Platform.runLater()
-                // Platform.runLater(() -> {
-                // // Update UI elements here
-                // });
             });
             t3.setDaemon(true);
             t3.start();
         });
 
-        // Load conversations in background thread for fast UI response
         Thread t4 = new Thread(() -> {
             try {
                 loadConversations();
@@ -570,7 +503,6 @@ public class HomeController {
         t4.setDaemon(true);
         t4.start();
 
-        // Load group conversations in background thread with caching
         Thread t5 = new Thread(() -> {
             try {
                 loadGroupConversations();
@@ -581,7 +513,6 @@ public class HomeController {
         t5.setDaemon(true);
         t5.start();
 
-        // Load notifications in background thread to avoid blocking UI
         Thread t6 = new Thread(() -> {
             try {
                 loadNotifications();
@@ -593,27 +524,6 @@ public class HomeController {
         t6.start();
 
         if (messagesContainer != null) {
-            // Show some example messages dynamically
-            /*
-             * if (messagesContainer != null) {
-             * messagesContainer.getChildren().clear();
-             * messagesContainer.getChildren().add(
-             * MessageItemBuilder.createReceivedMessage(
-             * "genki/img/user-default.png",
-             * "Aimane Aboufadle",
-             * "Long message text goes here, demonstrating a message received from another user."
-             * ));
-             * messagesContainer.getChildren().add(
-             * MessageItemBuilder.createSentMessage(
-             * "genki/img/user-default.png",
-             * "You",
-             * "hhhhhhhhhhhhhh salam"));
-             * }
-             * 
-             * }
-             */
-            // Configuration des filtres - Switch between users and groups with proper
-            // button styling
             if (btnAll != null) {
                 btnAll.setOnMouseClicked(e -> {
                     switchUsers(true);
@@ -623,74 +533,47 @@ public class HomeController {
             if (btnGroups != null) {
                 btnGroups.setOnMouseClicked(e -> {
                     switchUsers(false);
-                    showGroupConversations(); // Show cached group conversations
+                    showGroupConversations(); 
                 });
             }
 
-            // Add notification button click handler
             if (btnNotifications != null) {
                 btnNotifications.setOnMouseClicked(e -> openNotifications());
             }
 
-            // Register callback for incoming messages
             UserSession.getClientSocket().setOnNewMessageCallback(msgData -> {
-                System.out.println("╔════════════════════════════════════════════════════╗");
-                System.out.println("║ MESSAGE CALLBACK TRIGGERED                          ║");
-                System.out.println("╚════════════════════════════════════════════════════╝");
-                System.out.println("📨 Message details:");
-                System.out.println("  - conversationId: " + msgData.conversationId);
-                System.out.println("  - senderName: " + msgData.senderName);
-                System.out.println("  - messageText: " + msgData.messageText);
-                System.out.println("  - senderId: " + msgData.senderId);
-                System.out.println("  - senderProfileImage: " + msgData.senderProfileImage);
-                System.out.println("  - timestamp: " + msgData.timestamp);
-                System.out.println("  - recipientId: " + msgData.recipientId);
-                System.out.println("  - recipientName: " + msgData.recipientName);
+                
 
-                System.out.println("🎯 Current conversation context:");
-                System.out.println("  - currentConversationId: " + currentConversationId);
-                System.out.println("  - currentRecipientId: " + currentRecipientId);
-                System.out.println("  - currentRecipientName: " + currentRecipientName);
-
-                // Update conversation list with last message and time (always, regardless of
-                // current view)
                 if (msgData.conversationId != null) {
                     updateConversationListWithMessage(msgData);
                 }
 
-                // Only add message to chat area if it's for the current conversation
-                if (msgData.conversationId != null && currentConversationId != null) {
-                    System.out.println("✓ Conversation ID and msgData both present, comparing...");
+                 if (msgData.conversationId != null && currentConversationId != null) {
+                  
                     String msgConvId = msgData.conversationId;
                     String currentConvId = currentConversationId.toString();
-                    System.out.println("  Comparing: '" + msgConvId + "' == '" + currentConvId + "'");
+                 
 
                     if (msgConvId.equals(currentConvId)) {
-                        System.out.println("✅ MATCH! Adding message to conversation");
+                       
                         Platform.runLater(() -> {
                             messagesContainer.getChildren().add(
                                     MessageItemBuilder.createReceivedMessage(
                                             msgData.senderProfileImage,
                                             msgData.senderName,
                                             msgData.messageText));
-                            // Auto-scroll to bottom
                             scrollToBottom();
                         });
                     } else {
-                        System.out.println("❌ NO MATCH: Message is for different conversation");
+                        
                     }
                 } else {
-                    System.out.println("⚠️  Cannot compare: msgData.conversationId=" + msgData.conversationId
-                            + ", currentConversationId=" + currentConversationId);
+                    
                 }
             });
 
-            // Set reference to this HomeController in clientSocketController so it can
-            // update chat header status
             UserSession.getClientSocket().setHomeController(this);
 
-            // Setup real-time notification listener for incoming notifications in
-            // background thread
             Thread t7 = new Thread(() -> {
                 try {
                     setupNotificationListener();
@@ -701,65 +584,60 @@ public class HomeController {
             t7.setDaemon(true);
             t7.start();
 
-            // Start periodic cleanup of old notifications
             startNotificationCleanupScheduler();
-
         }
-
     }
 
-
-    private void handleGroupSettingsClick(String groupAdmin)  {
+    private void handleGroupSettingsClick(String groupAdmin) {
 
        if (groupAdmin.equals(UserSession.getUsername())) {
-           try {
-
-               logger.log(Level.INFO, "Loading GroupSettings.fxml");
-               FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/GroupSettings.fxml"));
-               Parent root = loader.load();
-
-               Stage groupSettingsStage = new Stage();
-
+           Platform.runLater(() -> {
                try {
-                   Image logo = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/genki/img/setting.png")), 50, 50, true, true);
-                   groupSettingsStage.getIcons().add(logo);
-               } catch (Exception e) {
-                   logger.log(Level.WARNING, "Failed to load application logo", e);
+
+                   logger.log(Level.INFO, "Loading GroupSettings.fxml");
+                   FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/GroupSettings.fxml"));
+                   Parent root = loader.load();
+
+                   Stage groupSettingsStage = new Stage();
+
+                   try {
+                       Image logo = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/genki/img/setting.png")), 50, 50, true, true);
+                       groupSettingsStage.getIcons().add(logo);
+                   } catch (Exception e) {
+                       logger.log(Level.WARNING, "Failed to load application logo", e);
+                   }
+                   groupSettingsStage.setTitle("Group Settings");
+                   groupSettingsStage.setResizable(false);
+                   groupSettingsStage.initModality(Modality.APPLICATION_MODAL);
+                   if (groupSettingsBtn != null && groupSettingsBtn.getScene() != null) {
+                       groupSettingsStage.initOwner(groupSettingsBtn.getScene().getWindow());
+                   }
+                   groupSettingsStage.setScene(new Scene(root));
+                   groupSettingsStage.centerOnScreen();
+                   groupSettingsStage.showAndWait();
+               } catch (IOException loadingException) {
+                   logger.log(Level.WARNING, loadingException.getMessage());
+                   Alert failedLoadingAlert = new Alert(Alert.AlertType.ERROR, "Failed to load GroupSettings.fxml file.");
+                   failedLoadingAlert.showAndWait();
                }
-               groupSettingsStage.setTitle("Group Settings");
-               groupSettingsStage.setResizable(false);
-               groupSettingsStage.initModality(Modality.APPLICATION_MODAL);
-               if (groupSettingsBtn != null && groupSettingsBtn.getScene() != null) {
-                   groupSettingsStage.initOwner(groupSettingsBtn.getScene().getWindow());
-               }
-               groupSettingsStage.setScene(new Scene(root));
-               groupSettingsStage.centerOnScreen();
-               groupSettingsStage.showAndWait();
-           } catch (IOException loadingException) {
-               logger.log(Level.WARNING, loadingException.getMessage());
-               Alert failedLoadingAlert = new Alert(Alert.AlertType.ERROR, "Failed to load GroupSettings.fxml file.");
-               failedLoadingAlert.showAndWait();
-           }
+           });
        } else {
-              logger.warning("Unauthorized access to group settings.");
-              AlertConstruct.alertConstructor(
-                      "Access Control Error",
-                      "",
-                      "You're not authorized to edit group settings.",
-                      Alert.AlertType.ERROR
-              );
+              Platform.runLater(() -> {
+                  logger.warning("Unauthorized access to group settings.");
+                  AlertConstruct.alertConstructor(
+                          "Access Control Error",
+                          "",
+                          "You're not authorized to edit group settings.",
+                          Alert.AlertType.ERROR
+                  );
+              });
        }
     }
 
 
-    /**
-     * Update the conversation list with the latest message and timestamp
-     * This updates the UI without changing the main messages display area
-     */
     private void updateConversationListWithMessage(MessageData msgData) {
         Platform.runLater(() -> {
             try {
-                // Check direct conversations first
                 java.util.List<javafx.scene.Node> conversationItems = conversationListContainer.getChildren();
 
                 for (javafx.scene.Node item : conversationItems) {
@@ -767,22 +645,19 @@ public class HomeController {
                         HBox convItem = (HBox) item;
                         Object userData = convItem.getUserData();
 
-                        // Check if userData is a map containing conversation ID
                         if (userData instanceof java.util.Map) {
                             java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) userData;
                             Object convId = dataMap.get("conversationId");
 
                             if (convId != null && convId.toString().equals(msgData.conversationId)) {
-                                // Found the conversation item - update it with new message and time
                                 updateConversationItemUI(convItem, msgData);
-                                System.out.println("✅ Updated direct conversation: " + msgData.conversationId);
+                                
                                 return;
                             }
                         }
                     }
                 }
 
-                // Check group conversations if not found in direct conversations
                 java.util.List<javafx.scene.Node> groupItems = groupsListContainer.getChildren();
 
                 for (javafx.scene.Node item : groupItems) {
@@ -790,60 +665,46 @@ public class HomeController {
                         HBox groupItem = (HBox) item;
                         Object userData = groupItem.getUserData();
 
-                        // Check if userData is a map containing conversation ID
                         if (userData instanceof java.util.Map) {
                             java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) userData;
                             Object convId = dataMap.get("conversationId");
 
                             if (convId != null && convId.toString().equals(msgData.conversationId)) {
-                                // Found the group item - update it with new message and time
                                 updateConversationItemUI(groupItem, msgData);
-                                System.out.println("✅ Updated group conversation: " + msgData.conversationId);
+                               
                                 return;
                             }
                         }
                     }
                 }
 
-                System.out.println("⚠️  Conversation not found in list: " + msgData.conversationId);
+                
             } catch (Exception e) {
-                System.err.println("Error updating conversation list: " + e.getMessage());
+                
                 e.printStackTrace();
             }
         });
     }
 
-    /**
-     * Update a specific conversation item UI with the latest message and timestamp
-     */
     private void updateConversationItemUI(HBox conversationItem, MessageData msgData) {
         try {
-            // The conversation item structure is typically:
-            // HBox [ImageView (avatar)] [VBox [Label (name)], [Label (message)], [Label
-            // (time)]]
-
             Label messageLabel = null;
             Label timeLabel = null;
 
-            // Iterate through the children of the HBox to find the VBox with text labels
             for (javafx.scene.Node node : conversationItem.getChildren()) {
                 if (node instanceof VBox) {
                     VBox vbox = (VBox) node;
                     java.util.List<javafx.scene.Node> vboxChildren = vbox.getChildren();
 
-                    // Usually: label[0] = name, label[1] = message, label[2] = time
                     if (vboxChildren.size() >= 2) {
                         for (int i = 0; i < vboxChildren.size(); i++) {
                             javafx.scene.Node vnode = vboxChildren.get(i);
                             if (vnode instanceof Label) {
                                 Label label = (Label) vnode;
 
-                                // Try to identify which label is which
                                 if (messageLabel == null && i == 1) {
-                                    // Second label is usually the message
                                     messageLabel = label;
                                 } else if (timeLabel == null && i == 2) {
-                                    // Third label is usually the time
                                     timeLabel = label;
                                 }
                             }
@@ -852,21 +713,19 @@ public class HomeController {
                 }
             }
 
-            // Update message label if found
             if (messageLabel != null) {
                 String messagePreview = msgData.messageText;
                 if (messagePreview.length() > 40) {
                     messagePreview = messagePreview.substring(0, 40) + "...";
                 }
                 messageLabel.setText(messagePreview);
-                System.out.println("✅ Updated message preview: " + messagePreview);
+               
             }
 
-            // Update time label if found
             if (timeLabel != null) {
                 String formattedTime = formatMessageTime(msgData.timestamp);
                 timeLabel.setText(formattedTime);
-                System.out.println("✅ Updated timestamp: " + formattedTime);
+              
             }
         } catch (Exception e) {
             System.err.println("Error updating conversation item UI: " + e.getMessage());
@@ -874,17 +733,10 @@ public class HomeController {
         }
     }
 
-    /**
-     * Set the current conversation and show its messages
-     */
     public void setCurrentConversation(ObjectId conversationId, Boolean isOnligne) {
-        System.out.println("╔═══════════════════════════════════════════════════╗");
-        System.out.println("║ CONVERSATION OPENED - DEBUG INFO                  ║");
-        System.out.println("╚═══════════════════════════════════════════════════╝");
-        System.out.println("Conversation ID: " + conversationId);
+      
         this.currentConversationId = conversationId;
 
-        // Show loading spinner immediately
         Platform.runLater(() -> {
             if (messagesLoadingSpinnerContainer != null) {
                 messagesLoadingSpinnerContainer.setVisible(true);
@@ -898,7 +750,7 @@ public class HomeController {
                 messageInputArea.setVisible(true);
                 messageInputArea.setManaged(true);
             }
-            // Réinitialisez le padding/spacing
+         
             if (messagesContainer != null) {
                 messagesContainer.setPadding(new Insets(10));
                 messagesContainer.setSpacing(10);
@@ -906,7 +758,7 @@ public class HomeController {
             messagesContainer.getChildren().clear();
         });
 
-        // Thread 1: Update chat header with friend's or group info in background
+      
        Thread t8 = new Thread(() -> {
             try {
                 String currentUserId = UserSession.getUserId();
@@ -922,16 +774,25 @@ public class HomeController {
                     System.out.println("Conversation Type: " + conversationType);
 
                     if ("group".equals(conversationType)) {
-                        // ========== GROUP CONVERSATION ==========
+                      
                     	String groupId = conversationDoc.getString("groupId");
                         String groupName = conversationDoc.getString("groupName");
                         System.out.println("Group Name: " + groupName);
                         System.out.println("Group Conversation Loaded ✓");
 
-                        this.currentRecipientId = null; // No single recipient for groups
+                        this.currentRecipientId = null;
                         this.currentRecipientName = null;
 
                         Platform.runLater(() -> {
+                            if (rightSideContainer != null) {
+                                rightSideVisibilite = false;
+                                rightSideContainer.setPrefWidth(0.0);
+                                rightSideContainer.setMinWidth(0.0);
+                                rightSideContainer.setMaxWidth(0.0);
+                                rightSideContainer.setManaged(false);
+                                rightSideContainer.setVisible(false);
+                            }
+
                             MongoCollection<Document> groupsCollection = HomeControllerDBConnection.getCollection("groups");
 
                             String groupPhotoUrl = groupsCollection.find(
@@ -939,7 +800,7 @@ public class HomeController {
                             ).first().getString("profile_picture");
 
 
-                            // Update header
+                           
                             if (chatContactName != null) {
                                 chatContactName.setText(groupName != null ? groupName : "Group Chat");
 
@@ -971,7 +832,6 @@ public class HomeController {
 
                             }
 
-                            // For groups, don't show online/offline status
                             if (chatContactStatus != null) {
                                 chatContactStatus.setText("Group");
                                 chatContactStatus.setStyle("-fx-text-fill: #6b9e9e; -fx-font-size: 12px;");
@@ -981,7 +841,6 @@ public class HomeController {
                                 chatContactStatusCircle.setFill(javafx.scene.paint.Color.web("#6b9e9e"));
                             }
 
-                            // Update right panel
                             if (rightContactName != null) {
                                 rightContactName.setText(groupName != null ? groupName : "Group Chat");
                             }
@@ -992,7 +851,6 @@ public class HomeController {
                                 rightContactBio.setText("");
                             }
 
-                            // Update group images
                             String photoUrl = groupPhotoUrl != null ? groupPhotoUrl : "genki/img/group-default.png";
 
                             if (profilTrigger != null) {
@@ -1030,11 +888,11 @@ public class HomeController {
                                 }
                             }
 
-                            System.out.println("Group conversation set for: " + groupName);
+                            
                         });
 
                     } else {
-                        // ========== DIRECT USER CONVERSATION ==========
+                       
                         java.util.List<?> participants = conversationDoc.getList("participantIds", Object.class);
                         String friendIdStr = null;
                         for (Object pid : participants) {
@@ -1065,7 +923,9 @@ public class HomeController {
                                     String role = friendDoc.getString("role");
 
                                     Platform.runLater(() -> {
-                                        // Update text labels
+                                        groupSettingsBtn.setVisible(false);
+                                        groupSettingsBtn.setManaged(false);
+                                        
                                         if (chatContactName != null) {
                                             chatContactName.setText(friendName != null ? friendName : "");
                                         }
@@ -1079,7 +939,7 @@ public class HomeController {
                                             rightContactTitle.setText(role != null ? role : "");
                                         }
 
-                                        // Update status and color
+                                
                                         if (chatContactStatus != null) {
                                             chatContactStatus.setText(isOnligne ? "Online" : "Offline");
                                             String statusTextColor = isOnligne ? "-fx-text-fill: #4ade80"
@@ -1094,7 +954,7 @@ public class HomeController {
                                             chatContactStatusCircle.setFill(statusColor);
                                         }
 
-                                        // Update profile images
+                                  
                                         if (profilTrigger != null && photoUrl != null) {
                                             try {
                                                 Image friendImg = new Image(photoUrl, 180, 180, false, true);
@@ -1113,7 +973,7 @@ public class HomeController {
                                             }
                                         }
 
-                                        // Update right panel profile image
+                                     
                                         if (rightProfileImage != null && photoUrl != null) {
                                             try {
                                                 Image rightImg = new Image(photoUrl, 400, 400, false, true);
@@ -1134,8 +994,7 @@ public class HomeController {
                                         }
                                     });
 
-                                    System.out.println(
-                                            "User conversation set for: " + friendName + ", Online: " + isOnligne);
+                                    
                                 }
                             }
                         }
@@ -1148,31 +1007,28 @@ public class HomeController {
         t8.setDaemon(true);
         t8.start();
 
-        // Thread 2: Load messages in parallel - runs at the same time as header update
+        
         loadMessagesInBackground(conversationId);
     }
 
-    /**
-     * Load messages in a separate background thread (parallel to header update)
-     */
     private void loadMessagesInBackground(ObjectId conversationId) {
         Thread t9 = new Thread(() -> {
             try {
                 MessageDAO messageDAO = new MessageDAO();
                 String currentUserId = genki.utils.UserSession.getUserId();
 
-                // Fetch only the latest 50 messages for better performance
+                
                 List<org.bson.Document> messagesList = new ArrayList<>();
                 messageDAO.getDatabase().getCollection("Message")
                         .find(new org.bson.Document("conversationId", conversationId))
-                        .sort(new org.bson.Document("timestamp", -1)) // Latest first
-                        .limit(50) // Only get last 50 messages
+                        .sort(new org.bson.Document("timestamp", -1)) 
+                        .limit(50) 
                         .forEach((java.util.function.Consumer<org.bson.Document>) messagesList::add);
 
-                // Reverse to get chronological order (oldest to newest)
+                
                 java.util.Collections.reverse(messagesList);
 
-                // Update UI on JavaFX thread
+              
                 Platform.runLater(() -> {
                     messagesContainer.getChildren().clear();
 
@@ -1182,7 +1038,7 @@ public class HomeController {
                         String content = doc.getString("content");
                         String senderImageUrl = doc.getString("senderImageUrl");
                         if (senderImageUrl == null) {
-                            senderImageUrl = doc.getString("photo_url"); // Fallback for legacy data
+                            senderImageUrl = doc.getString("photo_url");
                         }
 
                         Object timestamp = doc.get("timestamp");
@@ -1199,18 +1055,18 @@ public class HomeController {
                         }
                     }
 
-                    // Hide loading spinner
+                   
                     if (messagesLoadingSpinnerContainer != null) {
                         messagesLoadingSpinnerContainer.setVisible(false);
                         messagesLoadingSpinnerContainer.setManaged(false);
                     }
 
-                    // Auto-scroll to bottom after loading messages
+                    
                     scrollToBottom();
                 });
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error loading messages for conversation", e);
-                // Hide spinner on error too
+                
                 Platform.runLater(() -> {
                     if (messagesLoadingSpinnerContainer != null) {
                         messagesLoadingSpinnerContainer.setVisible(false);
@@ -1223,32 +1079,16 @@ public class HomeController {
         t9.start();
     }
 
-    // Sending Messages
+    
 
-    /**
-     * Fetch all messages for a conversation and display them in the UI
-     * 
-     * @param conversationId The ObjectId of the conversation
-     */
-
-    /**
-     * Scroll the messages container to the bottom to show the latest messages
-     */
     private void scrollToBottom() {
         if (messagesScrollPane != null) {
-            // Use runLater to ensure the scroll happens after layout updates
             Platform.runLater(() -> {
-                messagesScrollPane.setVvalue(1.0); // 1.0 = bottom of scroll pane
+                messagesScrollPane.setVvalue(1.0);
             });
         }
     }
 
-    /**
-     * Format a timestamp to a readable time string
-     * 
-     * @param timestamp The timestamp in milliseconds or as a Date object
-     * @return A formatted time string (HH:mm)
-     */
     private String formatTimestamp(Object timestamp) {
         try {
             long timestampMs = 0;
@@ -1258,13 +1098,11 @@ public class HomeController {
             } else if (timestamp instanceof java.util.Date) {
                 timestampMs = ((java.util.Date) timestamp).getTime();
             } else if (timestamp != null) {
-                // Try to parse as string
                 timestampMs = Long.parseLong(timestamp.toString());
             } else {
                 return "";
             }
 
-            // If timestamp is in seconds, convert to milliseconds
             if (timestampMs < 10000000000L) {
                 timestampMs *= 1000;
             }
@@ -1273,7 +1111,6 @@ public class HomeController {
                     java.time.Instant.ofEpochMilli(timestampMs),
                     java.time.ZoneId.systemDefault());
 
-            // Show time only format (HH:mm)
             java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
             return msgTime.format(timeFormatter);
         } catch (Exception e) {
@@ -1313,14 +1150,12 @@ public class HomeController {
 
     @FXML
     public void AddUserOrGroup() {
-        // Si le popup est déjà affiché, le fermer
         if (addMenuPopup != null && addMenuPopup.isShowing()) {
             addMenuPopup.hide();
             addMenuPopup = null;
             return;
         }
 
-        // Créer le conteneur du menu
         VBox menuContainer = new VBox(5);
         menuContainer.setPadding(new Insets(10));
         menuContainer.setMaxWidth(100);
@@ -1329,18 +1164,14 @@ public class HomeController {
                 new CornerRadii(8),
                 Insets.EMPTY)));
 
-        // Ajouter une ombre
         DropShadow dropShadow = new DropShadow();
         dropShadow.setColor(Color.rgb(0, 0, 0, 0.5));
         dropShadow.setRadius(10);
         dropShadow.setOffsetY(3);
         menuContainer.setEffect(dropShadow);
 
-        // Créer le bouton "Add User"
         Button addUserBtn = new Button("Add Friend");
         addUserBtn.setPrefWidth(150);
-        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded
-        // strings
         addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
         addUserBtn.setOnMouseEntered(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
         addUserBtn.setOnMouseExited(e -> addUserBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
@@ -1361,11 +1192,8 @@ public class HomeController {
             openAddUserDialog();
         });
 
-        // Créer le bouton "Add Group"
         Button addGroupBtn = new Button("Add Group");
         addGroupBtn.setPrefWidth(150);
-        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded
-        // strings
         addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
         addGroupBtn.setOnMouseEntered(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
         addGroupBtn.setOnMouseExited(e -> addGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
@@ -1386,12 +1214,8 @@ public class HomeController {
             openAddGroupDialog();
         });
 
-        // ajouter ca
-        // Créer le bouton "Join Group"
         Button joinGroupBtn = new Button("Join Group");
         joinGroupBtn.setPrefWidth(150);
-        // IMPROVEMENT 4: String Constants - Using style constants instead of hardcoded
-        // strings
         joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT);
         joinGroupBtn.setOnMouseEntered(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_HOVER));
         joinGroupBtn.setOnMouseExited(e -> joinGroupBtn.setStyle(MENU_BUTTON_STYLE_DEFAULT));
@@ -1412,15 +1236,12 @@ public class HomeController {
             openJoinGroupDialog();
         });
 
-        // Ajouter les boutons au conteneur
         menuContainer.getChildren().addAll(addUserBtn, addGroupBtn, joinGroupBtn);
 
-        // Créer le popup
         addMenuPopup = new Popup();
         addMenuPopup.setAutoHide(true);
         addMenuPopup.getContent().add(menuContainer);
 
-        // Calculer la position (sous le bouton btnAdd)
         Bounds bounds = btnAdd.localToScreen(btnAdd.getBoundsInLocal());
         addMenuPopup.show(btnAdd, bounds.getMinX(), bounds.getMaxY());
     }
@@ -1430,10 +1251,8 @@ public class HomeController {
             logger.log(Level.INFO, "Loading AddUser.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddUser.fxml"));
             Parent root = loader.load();
-            // hamza ajoute ca
             AddUserController controller = loader.getController();
             controller.setHomeController(this);
-            // ---------------
             Stage dialogStage = new Stage();
             try {
                 Image logo = new Image(getClass().getResourceAsStream("/genki/img/icone_add_user.jpg"), 128, 128, true,
@@ -1462,7 +1281,6 @@ public class HomeController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/AddGroup.fxml"));
             Parent root = loader.load();
 
-            // Get the AddGroupController and set the HomeController reference
             AddGroupController controller = loader.getController();
             controller.setHomeController(this);
 
@@ -1488,14 +1306,12 @@ public class HomeController {
         }
     }
 
-    // ajouter ca :
     private void openJoinGroupDialog() {
         try {
             logger.log(Level.INFO, "Loading JoinGroup.fxml");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/JoinGroup.fxml"));
             Parent root = loader.load();
 
-            // Get the JoinGroupController and set the HomeController reference
             JoinGroupController controller = loader.getController();
             controller.setHomeController(this);
 
@@ -1521,7 +1337,6 @@ public class HomeController {
         }
     }
 
-    // ajouter ca :
     @FXML
     public void openNotifications() {
         try {
@@ -1529,7 +1344,7 @@ public class HomeController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/genki/views/Notifications.fxml"));
             Parent root = loader.load();
 
-            // Set HomeController reference in NotificationsController
+            
             NotificationsController notificationsController = loader.getController();
             notificationsController.setHomeController(this);
 
@@ -1584,38 +1399,26 @@ public class HomeController {
 
     public void addGroupConversation() {
         HBox conversationItem = ConversationItemBuilder.createConversationItem(
-                "url/to/image.png", // profileImageUrl
-                "Sarah Wilson", // contactName
-                "Sent a photo", // lastMessage
-                "12:45 PM", // time
-                2, // unreadCount
-                true // isOnline
+                "url/to/image.png", 
+                "Sarah Wilson", 
+                "Sent a photo",
+                "12:45 PM", 
+                2, 
+                true 
         );
 
         conversationListContainer.getChildren().add(conversationItem);
     }
 
-    /**
-     * Load conversations for the current user from the database
-     * 
-     * IMPROVEMENT 3: Data Access Objects (DAO)
-     * This method orchestrates the loading of conversations by delegating
-     * data transformation to DAO classes where appropriate.
-     * 
-     * IMPROVEMENT 5: Background Threading & Parallel Processing
-     * - Each friend's conversation loads on a separate thread
-     * - All conversions load in parallel for faster performance
-     * - UI updates wrapped with Platform.runLater() for thread safety
-     */
     private void loadConversations() {
         try {
             UserDAO userDAO = new UserDAO();
             String currentUsername = UserSession.getUsername();
 
-            // Get all friends for the current user
+            
             List<Document> friends = userDAO.getFriendsForUser(currentUsername);
 
-            // Show loading spinner
+            
             Platform.runLater(() -> {
                 if (loadingSpinnerContainer != null) {
                     loadingSpinnerContainer.setVisible(true);
@@ -1623,7 +1426,7 @@ public class HomeController {
                 }
             });
 
-            // Convert Document friends to List<User>
+           
             ArrayList<genki.models.User> userFriends = new ArrayList<>();
             if (friends != null) {
                 for (Document friendDoc : friends) {
@@ -1637,7 +1440,7 @@ public class HomeController {
                 }
             }
 
-            // Build conversations list from friends
+            
             ArrayList<genki.models.Conversation> conversations = new ArrayList<>();
             if (friends != null) {
                 String currentUserId = UserSession.getUserId();
@@ -1645,18 +1448,18 @@ public class HomeController {
                     genki.models.Conversation conversation = new genki.models.Conversation();
                     conversation.setType("direct");
 
-                    // Set participant IDs
+                    
                     String friendId = friendDoc.getObjectId("_id").toHexString();
                     List<String> participantIds = new ArrayList<>();
                     participantIds.add(currentUserId);
                     participantIds.add(friendId);
                     conversation.setParticipantIds(participantIds);
 
-                    // Set last message info
+                    
                     conversation.setLastMessageContent(friendDoc.getString("lastMessageContent"));
                     conversation.setLastMessageSenderId(friendDoc.getString("lastMessageSenderId"));
 
-                    // Parse last message time
+                    
                     Object lastMsgTimeObj = friendDoc.get("lastMessageTime");
                     if (lastMsgTimeObj instanceof java.time.LocalDateTime) {
                         conversation.setLastMessageTime((java.time.LocalDateTime) lastMsgTimeObj);
@@ -1666,7 +1469,7 @@ public class HomeController {
                                 java.time.ZoneId.systemDefault()));
                     }
 
-                    // 🔥 Check if friend is currently online
+                    
                     boolean isOnline = false;
                     ArrayList<User> connectedUsers = UserSession.getConnectedUsers();
                     if (connectedUsers != null) {
@@ -1684,14 +1487,13 @@ public class HomeController {
                 }
             }
 
-            // Initialize UserSession static lists
+           
             UserSession.loadConversations(userFriends, conversations);
-            System.out.println("Conversations : " + UserSession.getConversations());
-            System.out.println("Friends : " + UserSession.getFriends());
+            
 
             if (UserSession.getFriends() == null || UserSession.getFriends().isEmpty()) {
                 logger.log(Level.INFO, "No friends found for user: " + currentUsername);
-                // Hide spinner if no conversations
+              
                 Platform.runLater(() -> {
                     if (loadingSpinnerContainer != null) {
                         loadingSpinnerContainer.setVisible(false);
@@ -1701,13 +1503,13 @@ public class HomeController {
                 return;
             }
 
-            // Set total conversations count for progress tracking
+            
             synchronized (loadingLock) {
                 totalConversations = friends.size();
                 loadedConversations = 0;
             }
 
-            // Load each friend's conversation on a separate thread for parallel processing
+            
             if (friends != null) {
                 String currentUserId = UserSession.getUserId();
                 for (Document friendDoc : friends) {
@@ -1726,7 +1528,7 @@ public class HomeController {
                             ConversationDAO conversationDAO = new ConversationDAO();
                             ObjectId conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
 
-                            // Fetch last message from Conversation collection
+                            
                             String lastMessage = "";
                             String time = "";
                             try {
@@ -1774,14 +1576,14 @@ public class HomeController {
                             int unreadCount = 0;
                             boolean isOnlineStatus = false;
 
-                            // Check if friend is currently online by checking connected users list
+                            
                             ArrayList<User> connectedUsers = UserSession.getConnectedUsers();
                             if (connectedUsers != null && friendName != null) {
                                 isOnlineStatus = connectedUsers.stream()
                                         .anyMatch(u -> u.getUsername() != null && u.getUsername().equals(friendName));
                             }
 
-                            // Create final variable for use in lambda
+                            
                             final boolean isOnline = isOnlineStatus;
                             HBox conversationItem = ConversationItemBuilder.createConversationItem(
                                     photoUrl != null ? photoUrl : "genki/img/user-default.png",
@@ -1791,51 +1593,49 @@ public class HomeController {
                                     unreadCount,
                                     isOnline);
 
-                            // Store the friend User object in the HBox for later reference
+                            
                             genki.models.User friendUser = new genki.models.User();
                             friendUser.setId(friendId);
                             friendUser.setUsername(friendName);
                             friendUser.setPhotoUrl(photoUrl);
 
-                            // Create a map to store both user and conversation ID
+                           
                             java.util.Map<String, Object> userData = new java.util.HashMap<>();
                             userData.put("user", friendUser);
                             userData.put("conversationId", conversationId.toString());
                             conversationItem.setUserData(userData);
 
-                            // Add click handler that dynamically checks current online status instead of
-                            // using captured value
+                           
                             conversationItem.setOnMouseClicked(e -> {
-                                // Dynamically check if user is currently online at click time
+                                
                                 ArrayList<User> currentConnectedUsers = UserSession.getConnectedUsers();
                                 boolean isCurrentlyOnline = currentConnectedUsers != null && friendName != null &&
                                         currentConnectedUsers.stream()
                                                 .anyMatch(u -> u.getUsername() != null
                                                         && u.getUsername().equals(friendName));
 
-                                // Set conversation with the current online status, not the captured one
+                                
                                 setCurrentConversation(conversationId, isCurrentlyOnline);
                             });
 
-                            // Store in UserSession for easy access from other files
+                            
                             UserSession.addConversationItem(conversationItem);
 
-                            // Update UI on JavaFX thread - Thread Safe!
+                            
                             Platform.runLater(() -> {
                                 conversationListContainer.getChildren().add(conversationItem);
 
-                                // Update loading progress
+                                
                                 synchronized (loadingLock) {
                                     loadedConversations++;
-                                    System.out.println("Loaded " + loadedConversations + "/" + totalConversations
-                                            + " conversations");
+                                    
 
-                                    // Hide spinner when all conversations are loaded
+                                    
                                     if (loadedConversations >= totalConversations && loadingSpinnerContainer != null) {
                                         loadingSpinnerContainer.setVisible(false);
                                         loadingSpinnerContainer.setManaged(false);
 
-                                        // Refresh online status NOW that all conversations are actually loaded
+                                        
                                         System.out.println("✓ All " + UserSession.getConversationItems().size()
                                                 + " conversation items loaded, refreshing online status...");
                                         UserSession.getClientSocket().refreshConversationOnlineStatus();
@@ -1844,7 +1644,7 @@ public class HomeController {
                             });
                         } catch (Exception e) {
                             logger.log(Level.SEVERE, "Error loading conversation for friend", e);
-                            // Update counter even on error
+                            
                             synchronized (loadingLock) {
                                 loadedConversations++;
                                 if (loadedConversations >= totalConversations && loadingSpinnerContainer != null) {
@@ -1861,7 +1661,7 @@ public class HomeController {
 
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error loading conversations", e);
-            // Hide spinner on error
+            
             Platform.runLater(() -> {
                 if (loadingSpinnerContainer != null) {
                     loadingSpinnerContainer.setVisible(false);
@@ -1871,17 +1671,10 @@ public class HomeController {
         }
     }
 
-    /**
-     * Load group conversations and cache HBox items for fast switching
-     */
     private void loadGroupConversations() {
         try {
             String currentUserId = UserSession.getUserId();
 
-            System.out.println("Loading group conversations for user: " + currentUserId);
-
-            // Récupérer toutes les conversations de type "group" où l'utilisateur est
-            // participant
             var groupConversations = this.dbConnection
                     .getDatabase()
                     .getCollection("Conversation")
@@ -1916,7 +1709,7 @@ public class HomeController {
                     groupPhotoUrl = "genki/img/group-default.png";
                 }
 
-                // Extract group information from conversation document
+                
                 String groupDescription = conversationDoc.getString("description");
                 if (groupDescription == null) {
                     groupDescription = "";
@@ -1924,7 +1717,7 @@ public class HomeController {
 
                 String groupId = conversationDoc.getString("groupId");
                 if (groupId == null) {
-                    groupId = conversationId.toString(); // Fallback to conversation ID if groupId not set
+                    groupId = conversationId.toString(); 
                 }
 
                 Boolean isPublic = conversationDoc.getBoolean("isPublic", false);
@@ -1933,16 +1726,16 @@ public class HomeController {
                     groupAdmin = "";
                 }
 
-                // Create Group object and add to UserSession
+                
                 Group group = new Group(
-                        groupId, // Use the actual groupId instead of conversationId
+                        groupId,
                         groupName,
                         groupDescription,
                         isPublic,
                         groupPhotoUrl,
                         groupAdmin);
 
-                // Extract participant IDs if available
+                
                 java.util.List<?> participantIds = conversationDoc.getList("participantIds", Object.class);
                 if (participantIds != null) {
                     for (Object participantId : participantIds) {
@@ -1951,10 +1744,10 @@ public class HomeController {
                 }
 
                 UserSession.addGroup(group);
-                logger.log(Level.INFO, "✓ Group added to UserSession: " + groupName + " (ConversationID: "
+                logger.log(Level.INFO, " Group added to UserSession: " + groupName + " (ConversationID: "
                         + conversationId + ", GroupID: " + groupId + ")");
 
-                // Store conversation ID, group name, and groupId in userData map
+                
                 java.util.Map<String, Object> userData = new java.util.HashMap<>();
                 userData.put("conversationId", conversationId.toString());
                 userData.put("groupName", groupName);
@@ -1968,17 +1761,17 @@ public class HomeController {
                         unreadCount,
                         isOnline);
 
-                // userData map already created above - no need to recreate it
+                
                 conversationItem.setUserData(userData);
-                System.out.println("lllllllllllllllllllllll " + groupId);
+               
                 conversationItem.setOnMouseClicked(e -> setCurrentConversation(conversationId, isOnline));
 
-                // Cache the group conversation item
+                
                 UserSession.addGroupConversationItem(conversationItem);
                 System.out.println("Cached group: " + groupName);
             }
 
-            System.out.println("Total groups loaded: " + groupCount);
+            
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error loading group conversations", e);
@@ -1986,58 +1779,44 @@ public class HomeController {
         }
     }
 
-    // hamza ajoute ca
     public void handleAddUserFromDialog(String username) {
 
         UserDAO userDAO = new UserDAO();
 
-        // 1️⃣ Vérifier si l'utilisateur existe
         Document userDoc = userDAO.getUserByUsername(username);
 
         if (userDoc == null) {
             showAlert("User not found", "This user does not exist.");
-            // return;
+            return;
         }
 
         String friendId = userDoc.getObjectId("_id").toHexString();
         String currentUserId = UserSession.getUserId();
 
-        // 2️⃣ Vérifier s'il existe déjà une conversation
         ConversationDAO conversationDAO = new ConversationDAO();
-
         ObjectId conversationId = conversationDAO.findDirectConversation(currentUserId, friendId);
 
-        // 3️⃣ Si pas de conversation → créer
         if (conversationId == null) {
             conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
         }
-
-        // 4️⃣ Afficher / ouvrir la conversation
-        // openConversation(conversationId);
     }
-    // hamza ajoute ca :
 
     private void showAlert(String string, String string2) {
-        // TODO Auto-generated method stub
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(string);
-        alert.setContentText(string2);
-        alert.showAndWait();
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText(string);
+            alert.setContentText(string2);
+            alert.showAndWait();
+        });
     }
 
-    // aussi ca par hamza
-    /**
-     * Affiche uniquement les conversations directes (users) - from cached
-     * UserSession data
-     */
     private void showUserConversations() {
         try {
             updateFilterButtonStyles(true);
             conversationListContainer.getChildren().clear();
 
-            // Simply re-display the items that were already loaded in loadConversations()
-            // UserSession stores the HBox conversation items directly
+            
             List<HBox> conversationItems = UserSession.getConversationItems();
 
             if (conversationItems == null || conversationItems.isEmpty()) {
@@ -2051,7 +1830,7 @@ public class HomeController {
                 return;
             }
 
-            // Add all cached conversation items back to the container
+            
             for (HBox item : conversationItems) {
                 conversationListContainer.getChildren().add(item);
             }
@@ -2061,18 +1840,15 @@ public class HomeController {
         }
     }
 
-    /**
-     * Affiche uniquement les conversations de groupe
-     */
     private void showGroupConversations() {
         try {
-            // Mettre à jour les styles des boutons
+         
             updateFilterButtonStyles(false);
 
-            // Effacer la liste actuelle
+            
             groupsListContainer.getChildren().clear();
 
-            // Simply re-display the cached group conversation items
+            
             List<HBox> groupItems = UserSession.getGroupConversationItems();
 
             if (groupItems == null || groupItems.isEmpty()) {
@@ -2085,7 +1861,7 @@ public class HomeController {
                 return;
             }
 
-            // Add all cached group conversation items back to the container
+            
             for (HBox item : groupItems) {
                 groupsListContainer.getChildren().add(item);
             }
@@ -2095,12 +1871,6 @@ public class HomeController {
         }
     }
 
-    // aussi ca par hamza
-    /**
-     * Met à jour les styles des boutons de filtre
-     * 
-     * @param showingUsers true si on affiche les users, false pour les groupes
-     */
     private void updateFilterButtonStyles(boolean showingUsers) {
         if (btnAll != null && btnGroups != null) {
             if (showingUsers) {
@@ -2131,12 +1901,6 @@ public class HomeController {
         }
     }
 
-    /**
-     * Formate l'heure du dernier message
-     * 
-     * @param lastMsgTimeObj L'objet temps à formatter
-     * @return Une chaîne formatée (HH:mm ou DD/MM/YY)
-     */
     private String formatMessageTime(Object lastMsgTimeObj) {
         try {
             java.time.LocalDateTime msgTime = null;
@@ -2173,22 +1937,18 @@ public class HomeController {
     }
 
     public void loadGroups() {
-        // This method is no longer needed since we use group conversations instead
-        // Kept for backward compatibility
+        
     }
 
-    /**
-     * Called when user joins a group to immediately display it
-     */
     public void addNewGroupToUI(HBox groupItem) {
         Platform.runLater(() -> {
-            // Remove "No groups found" label if exists
+           
             groupsListContainer.getChildren()
                     .removeIf(node -> node instanceof Label && ((Label) node).getText().equals("No groups found"));
 
-            // Add new group to top of list
+            
             groupsListContainer.getChildren().add(0, groupItem);
-            System.out.println("✅ New group displayed in UI");
+            
         });
     }
 
@@ -2196,24 +1956,24 @@ public class HomeController {
         Platform.runLater(() -> {
             String currentUserId = UserSession.getUserId();
 
-            // Get the group's user list and add current user if not already there
+           
             ArrayList<String> participantIds = new ArrayList<>(
                     newGroup.getListUsers() != null ? newGroup.getListUsers() : new ArrayList<>());
             if (!participantIds.contains(currentUserId)) {
                 participantIds.add(currentUserId);
             }
 
-            // Create Conversation object for this group in the database
+            
             ConversationDAO conversationDAO = new ConversationDAO();
             ObjectId conversationId = conversationDAO.createGroupConversation(
                     participantIds,
                     newGroup.getGroupName(),
                     newGroup.getGroupProfilePicture(),
-                    newGroup.getGroupId() // Pass the group ID
+                    newGroup.getGroupId() 
             );
 
             if (conversationId != null) {
-                // Clear "No groups found" message if exists
+                
                 if (groupsListContainer.getChildren().isEmpty()) {
                     groupsListContainer.getChildren().clear();
                 } else {
@@ -2221,7 +1981,7 @@ public class HomeController {
                             node -> node instanceof Label && ((Label) node).getText().equals("No groups found"));
                 }
 
-                // Create UI item using standard conversation builder
+                
                 HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
                         newGroup.getGroupProfilePicture(),
                         newGroup.getGroupName(),
@@ -2230,70 +1990,51 @@ public class HomeController {
                         0,
                         false);
 
-                // Add click handler to open group conversation
+                
                 newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
 
-                // 🔥 CRITICAL: Add to cache so it persists when switching views
+               
                 UserSession.addGroupConversationItem(newGroupContainer);
 
-                // Display immediately in UI
+                
                 groupsListContainer.getChildren().add(0, newGroupContainer);
 
                 if (!usersPane.isVisible()) {
-                    switchUsers(false); // Switch to groups view if not already there
+                    switchUsers(false); 
                 }
 
-                System.out.println("✅ New group added and cached: " + newGroup.getGroupName());
+               
             }
         });
     }
 
-    /**
-     * Update the chat header status circle and text when a user's online status
-     * changes
-     * Only updates if the changed user is the currently open conversation
-     * 
-     * @param userId   The ID of the user whose status changed
-     * @param userName The username of the user whose status changed
-     * @param isOnline true if the user is online, false if offline
-     */
     public void updateChatHeaderStatusForUser(String userId, String userName, boolean isOnline) {
         Platform.runLater(() -> {
-            // Check if this is the currently open conversation
+            
             if ((currentRecipientId != null && currentRecipientId.equals(userId)) ||
                     (currentRecipientName != null && currentRecipientName.equals(userName))) {
 
-                // Update the status circle color
+               
                 if (chatContactStatusCircle != null) {
                     chatContactStatusCircle.setFill(
                             isOnline ? Color.web("#4ade80") : Color.web("#9ca3af"));
                 }
 
-                // Update the status label text
+                
                 if (chatContactStatus != null) {
                     chatContactStatus.setText(isOnline ? "Online" : "Offline");
                 }
 
-                System.out.println("✓ Updated chat header status for " + userName +
-                        " to " + (isOnline ? "ONLINE" : "OFFLINE"));
+               
             }
         });
     }
 
-    /**
-     * Add a group conversation to the UI immediately when a group join request is
-     * accepted
-     * This is called when receiving GROUP_JOIN_ACCEPTED socket message
-     * 
-     * @param groupId   The ID of the group
-     * @param groupName The name of the group
-     */
     public void addGroupConversationFromAcceptance(String groupId, String groupName) {
         Platform.runLater(() -> {
             try {
                 String currentUserId = UserSession.getUserId();
 
-                // First, try to find by groupId (preferred)
                 var groupConversations = this.dbConnection
                         .getDatabase()
                         .getCollection("Conversation")
@@ -2302,7 +2043,6 @@ public class HomeController {
 
                 org.bson.Document conversationDoc = groupConversations.first();
 
-                // If not found by groupId, try by groupName (fallback for older conversations)
                 if (conversationDoc == null) {
                     logger.log(Level.INFO, "GroupId not found, searching by groupName: " + groupName);
                     groupConversations = dbConnection
@@ -2316,22 +2056,19 @@ public class HomeController {
                 if (conversationDoc != null) {
                     ObjectId conversationId = conversationDoc.getObjectId("_id");
 
-                    // Update the conversation document to include groupId if it doesn't have it
                     if (conversationDoc.getString("groupId") == null) {
                         this.dbConnection.getDatabase()
                                 .getCollection("Conversation")
                                 .updateOne(
                                         new org.bson.Document("_id", conversationId),
                                         new org.bson.Document("$set", new org.bson.Document("groupId", groupId)));
-                        logger.log(Level.INFO, "✓ Updated conversation with groupId: " + groupId);
+                        logger.log(Level.INFO, " Updated conversation with groupId: " + groupId);
                     }
 
-                    // Check if current user is already a participant
                     java.util.List<?> participantIds = conversationDoc.getList("participantIds", Object.class);
                     boolean isParticipant = participantIds != null && participantIds.stream()
                             .anyMatch(id -> id.toString().equals(currentUserId));
 
-                    // If not a participant, add them
                     if (!isParticipant) {
                         this.dbConnection.getDatabase()
                                 .getCollection("Conversation")
@@ -2358,39 +2095,32 @@ public class HomeController {
                         groupPhotoUrl = "genki/img/group-default.png";
                     }
 
-                    // Create UI item for the group conversation
                     HBox newGroupContainer = ConversationItemBuilder.createConversationItem(
                             groupPhotoUrl,
                             groupName,
                             lastMessage,
                             time,
-                            0, // unread count
-                            false // is online
+                            0,
+                            false
                     );
 
-                    // Store conversation ID and group ID in userData map
                     java.util.Map<String, Object> userData = new java.util.HashMap<>();
                     userData.put("conversationId", conversationId.toString());
                     userData.put("groupName", groupName);
                     userData.put("groupId", groupId);
                     newGroupContainer.setUserData(userData);
 
-                    // Add click handler to open group conversation
                     newGroupContainer.setOnMouseClicked(e -> setCurrentConversation(conversationId, false));
 
-                    // Cache the group conversation item
                     if(!UserSession.getGroupConversationItems().contains(newGroupContainer)){
                         UserSession.addGroupConversationItem(newGroupContainer);
                     }
 
-                    // Add to the groups list container in UI
                     groupsListContainer.getChildren().add(0, newGroupContainer);
 
-                    // Remove "No groups found" label if present
                     groupsListContainer.getChildren().removeIf(
                             node -> node instanceof Label && ((Label) node).getText().equals("No groups found"));
 
-                    // Switch to groups view if not already there
                     if (!groupsPane.isVisible()) {
                         switchUsers(false);
                     }
@@ -2408,51 +2138,44 @@ public class HomeController {
         });
     }
 
-    /**
-     * Add a friend conversation to the UI immediately when a friend request is
-     * accepted
-     * This is called when receiving FRIEND_REQUEST_ACCEPTED socket message
-     * 
-     * @param friendUsername The username of the new friend
-     */
     public void addFriendConversationFromAcceptance(String friendUsername) {
         Platform.runLater(() -> {
             try {
-                // Fetch the friend's information from database
+                
                 UserDAO userDAO = new UserDAO();
                 Document friendDoc = userDAO.getUserByUsername(friendUsername);
 
                 if (friendDoc == null) {
-                    logger.log(Level.WARNING, "⚠️ Could not find friend in database: " + friendUsername);
+                    logger.log(Level.WARNING, " Could not find friend in database: " + friendUsername);
                     return;
                 }
 
                 String friendId = friendDoc.getObjectId("_id").toHexString();
                 String currentUserId = UserSession.getUserId();
 
-                // Find or create the direct conversation with this friend
+                
                 ConversationDAO conversationDAO = new ConversationDAO();
                 ObjectId conversationId = conversationDAO.findDirectConversation(currentUserId, friendId);
 
-                // If conversation doesn't exist, create it
+                
                 if (conversationId == null) {
                     conversationId = conversationDAO.createDirectConversation(currentUserId, friendId);
-                    logger.log(Level.INFO, "✓ Created new direct conversation with friend: " + friendUsername);
+                    logger.log(Level.INFO, " Created new direct conversation with friend: " + friendUsername);
                 }
 
                 if (conversationId == null) {
                     logger.log(Level.WARNING,
-                            "⚠️ Could not create or find conversation with friend: " + friendUsername);
+                            "Could not create or find conversation with friend: " + friendUsername);
                     return;
                 }
 
-                // Get friend's profile picture
+               
                 String friendPhotoUrl = friendDoc.getString("photo_url");
                 if (friendPhotoUrl == null) {
                     friendPhotoUrl = "genki/img/user-default.png";
                 }
 
-                // Check if friend is currently online
+                
                 boolean isFriendOnline = false;
                 ArrayList<genki.models.User> connectedUsers = UserSession.getConnectedUsers();
                 if (connectedUsers != null) {
@@ -2461,36 +2184,35 @@ public class HomeController {
 
                 }
 
-                // Create UI item for the friend conversation with correct online status
+                
                 HBox newFriendContainer = ConversationItemBuilder.createConversationItem(
                         friendPhotoUrl,
                         friendUsername,
                         "No messages yet",
                         "",
-                        0, // unread count
-                        isFriendOnline // Use actual online status
+                        0, 
+                        isFriendOnline 
                 );
 
-                // Store conversation ID and friend info in userData map
+                
                 java.util.Map<String, Object> userData = new java.util.HashMap<>();
                 userData.put("conversationId", conversationId.toString());
                 userData.put("friendName", friendUsername);
                 userData.put("friendId", friendId);
                 newFriendContainer.setUserData(userData);
 
-                // Add click handler to open friend conversation - check online status
-                // dynamically
+                
                 final ObjectId finalConversationId = conversationId;
                 newFriendContainer.setOnMouseClicked(e -> {
-                    // Determine if friend is actually online by checking server's connected clients
+                    
                     boolean isCurrentlyOnline = checkIfUserIsOnline(friendId);
                     setCurrentConversation(finalConversationId, isCurrentlyOnline);
                 });
 
-                // Cache the conversation item
+                
                 UserSession.addConversationItem(newFriendContainer);
-                System.out.println(UserSession.conversationItems);
-                // Also add to friends list if not already there
+                
+               
                 genki.models.User friendUser = new genki.models.User();
                 friendUser.setId(friendId);
                 friendUser.setUsername(friendUsername);
@@ -2500,38 +2222,30 @@ public class HomeController {
                     friends.add(friendUser);
                 }
 
-                // Add to the users conversation list container in UI
+                
                 conversationListContainer.getChildren().add(0, newFriendContainer);
 
-                // Remove "No conversations found" label if present
                 conversationListContainer.getChildren().removeIf(
                         node -> node instanceof Label && ((Label) node).getText().equals("No conversations found"));
 
-                // Switch to users view if not already there
+              
+               
+
                 if (!usersPane.isVisible()) {
                     switchUsers(true);
                 }
 
-                logger.log(Level.INFO, "✅ Friend conversation added to UI from acceptance: " + friendUsername
+                logger.log(Level.INFO, "Friend conversation added to UI from acceptance: " + friendUsername
                         + " (FriendID: " + friendId + ")");
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "❌ Error adding friend conversation from acceptance", e);
+                logger.log(Level.SEVERE, "Error adding friend conversation from acceptance", e );
                 e.printStackTrace();
             }
         });
     }
 
-    /**
-     * Check if a user is currently online by querying the server
-     * 
-     * @param userId The user ID to check
-     * @return true if the user is connected to the server, false otherwise
-     */
     private boolean checkIfUserIsOnline(String userId) {
         try {
-            // Query the users collection to check the last_activity timestamp
-            // A user is considered online if their last activity is recent (within last 2
-            // minutes)
             for (User usr : UserSession.getConnectedUsers()) {
                 if (usr.getId().equals(userId)) {
                     return true;

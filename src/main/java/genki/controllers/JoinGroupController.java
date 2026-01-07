@@ -61,7 +61,6 @@ public class JoinGroupController {
     @FXML
     private VBox rootContainer;
     
-    // Liste de tous les groupes disponibles
     private ObservableList<String> allGroups = FXCollections.observableArrayList();
     private HomeController homeController;
     
@@ -77,19 +76,14 @@ public class JoinGroupController {
     }
     
     private void configureCompactLayout() {
-        // Masquer initialement la liste
         listSuggestions.setVisible(false);
-        listSuggestions.setManaged(false); // 🔥 CRITIQUE
+        listSuggestions.setManaged(false);
     }
     
-    /**
-     * Configure le système d'auto-complétion pour le TextField
-     */
     private void setupAutoComplete() {
         FilteredList<String> filteredGroups = new FilteredList<>(allGroups, s -> true);
         listSuggestions.setItems(filteredGroups);
         
-        // 🔥 Filtrage en temps réel
         nameJoinGroup.textProperty().addListener((obs, oldText, newText) -> {
             if (newText == null || newText.trim().isEmpty()) {
                 listSuggestions.setVisible(false);
@@ -106,7 +100,6 @@ public class JoinGroupController {
             listSuggestions.setManaged(hasResults);
         });
         
-        // 🔥 Cliquer sur une suggestion
         listSuggestions.setOnMouseClicked(e -> {
             String selected = listSuggestions.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -115,10 +108,8 @@ public class JoinGroupController {
             }
         });
         
-        // 🔥 Masquer les suggestions si le champ perd le focus
         nameJoinGroup.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
             if (!isNowFocused) {
-                // Délai pour permettre le clic sur la suggestion
                 new Thread(() -> {
                     try {
                         Thread.sleep(200);
@@ -169,7 +160,6 @@ public class JoinGroupController {
                     Filters.eq("group_name", nameGroup)
             ).first();
             
-            // Check if group was found
             if (groupDoc == null) {
                 AlertConstruct.alertConstructor(
                         "Group Not Found",
@@ -205,7 +195,6 @@ public class JoinGroupController {
                        groupDoc.getString("group_admin")
                 );
                 
-                // 🔥 CRITICAL: Populate group members from the original group document
                 if (groupDoc.getList("users", String.class) != null) {
                     for (String userId : groupDoc.getList("users", String.class)) {
                         nvGroup.addUser(userId);
@@ -214,7 +203,6 @@ public class JoinGroupController {
 
                 UserSession.addGroup(nvGroup);
                 
-                // 🔥 Fetch the UPDATED group document to get the latest participant list
                 Document updatedGroupDoc = groupsCollection.find(
                         Filters.eq("_id", groupDoc.getObjectId("_id"))
                 ).first();
@@ -222,14 +210,11 @@ public class JoinGroupController {
                 ConversationDAO conversationDAO = new ConversationDAO();
                 ObjectId conversationId;
                 
-                // 🔥 Check if conversation already exists for this group
                 ObjectId existingConversationId = conversationDAO.findGroupConversation(groupDoc.getString("group_name"));
                 
                 if (existingConversationId != null) {
-                    // Conversation exists - add the new user to participants if not already there
                     conversationId = existingConversationId;
                     
-                    // Get the conversation and update its participants
                     MongoCollection<Document> conversationCollection = JoinGroupDBConnection.getCollection("Conversation");
                     Document conversationQuery = new Document("_id", existingConversationId);
                     Document conversationDoc = conversationCollection.find(conversationQuery).first();
@@ -240,11 +225,9 @@ public class JoinGroupController {
                             currentParticipants = new java.util.ArrayList<>();
                         }
                         
-                        // Add current user if not already in the list
                         if (!currentParticipants.contains(UserSession.getUserId())) {
                             currentParticipants.add(UserSession.getUserId());
                             
-                            // Update the conversation in database
                             conversationCollection.updateOne(
                                 conversationQuery,
                                 new Document("$set", new Document("participantIds", currentParticipants))
@@ -254,15 +237,12 @@ public class JoinGroupController {
                         }
                     }
                 } else {
-                    // Conversation doesn't exist - create new one with all group members
                     java.util.ArrayList<String> participantIds = new java.util.ArrayList<>();
                     
-                    // Add all group members to participants (including the new user)
                     if (updatedGroupDoc != null && updatedGroupDoc.getList("users", String.class) != null) {
                         participantIds.addAll(updatedGroupDoc.getList("users", String.class));
                     }
                     
-                    // Ensure current user is in the list
                     if (!participantIds.contains(UserSession.getUserId())) {
                         participantIds.add(UserSession.getUserId());
                     }
@@ -271,13 +251,12 @@ public class JoinGroupController {
                         participantIds,
                         groupDoc.getString("group_name"),
                         groupDoc.getString("profile_picture"),
-                        groupDoc.getObjectId("_id").toString() // Pass the group ID
+                        groupDoc.getObjectId("_id").toString()
                     );
                     
                     System.out.println("✅ Created new group conversation: " + conversationId);
                 }
                 
-                // Create UI item and cache it
                 if (conversationId != null && homeController != null) {
                     javafx.scene.layout.HBox newGroupItem = ConversationItemBuilder.createConversationItem(
                         groupDoc.getString("profile_picture") != null ? groupDoc.getString("profile_picture") : "genki/img/group-default.png",
@@ -288,7 +267,6 @@ public class JoinGroupController {
                         false
                     );
                     
-                    // Store conversation ID and group name in userData map
                     java.util.Map<String, Object> userData = new java.util.HashMap<>();
                     userData.put("conversationId", conversationId.toString());
                     userData.put("groupName", groupDoc.getString("group_name"));
@@ -296,10 +274,8 @@ public class JoinGroupController {
                     
                     newGroupItem.setOnMouseClicked(e -> homeController.setCurrentConversation(conversationId, false));
                     
-                    // 🔥 Cache the new group conversation
                     UserSession.addGroupConversationItem(newGroupItem);
                     
-                    // 🔥 Display immediately in UI
                     homeController.addNewGroupToUI(newGroupItem);
                     
                     System.out.println("✅ Joined group cached and displayed: " + nameGroup);
@@ -312,7 +288,6 @@ public class JoinGroupController {
                         Alert.AlertType.INFORMATION
                 );
                 
-                // Close dialog
                 Stage stage = (Stage) btnJoinGroup.getScene().getWindow();
                 stage.close();
 
@@ -332,7 +307,6 @@ public class JoinGroupController {
                             nameGroup
                    );
                    
-                   // 🔔 NEW: Send notification via socket to group admin (if online)
                    if (joinGroupNotificationId != null) {
                        try {
                            genki.models.Notification notification = new genki.models.Notification(
@@ -346,7 +320,6 @@ public class JoinGroupController {
                            );
                            notification.setStatus("pending");
                            
-                           // Send notification request to server via socket instead of calling server method directly
                            JsonObject wrapper = new JsonObject();
                            wrapper.addProperty("messageType", "send_notification");
                            wrapper.addProperty("recipientId", groupAdminDoc.getObjectId("_id").toString());
@@ -383,9 +356,6 @@ public class JoinGroupController {
             logger.warning(ex.getMessage());
         }
         
-        /* showAlert(Alert.AlertType.INFORMATION, "Success",
-                 "Group '" + codeGroup + "' joined successfully!");*/
-        
         closeWindow();
     }
     
@@ -394,9 +364,6 @@ public class JoinGroupController {
         closeWindow();
     }
     
-    /**
-     * Affiche une alerte
-     */
     private void showAlert(Alert.AlertType type, String title, String content) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
@@ -405,9 +372,6 @@ public class JoinGroupController {
         alert.showAndWait();
     }
     
-    /**
-     * Ferme la fenêtre actuelle
-     */
     private void closeWindow() {
         Stage stage = (Stage) btnJoinGroup.getScene().getWindow();
         if (stage != null) {
@@ -415,13 +379,7 @@ public class JoinGroupController {
         }
     }
     
-    /**
-     * Méthode pour mettre à jour la liste des groupes disponibles
-     * (à appeler depuis l'extérieur si nécessaire)
-     */
     public void setAvailableGroups(ObservableList<String> groups) {
         this.allGroups.setAll(groups);
     }
-
-
 }

@@ -197,7 +197,7 @@ public class GroupSettingsController implements Initializable{
 
                     switch (updateDescriptionResult.getStatus()) {
 
-                        case UpdateStatus. GROUP_DESCRIPTION_UPDATED:
+                        case UpdateStatus.GROUP_DESCRIPTION_UPDATED:
                             AlertConstruct.alertConstructor(
                                     "Saving Group Settings",
                                     "",
@@ -305,7 +305,7 @@ public class GroupSettingsController implements Initializable{
                         );
                         break;
 
-                    case UpdateStatus. GROUP_DELETION_ERROR:
+                    case UpdateStatus.GROUP_DELETION_ERROR:
                         AlertConstruct.alertConstructor(
                                 "Group Settings Error",
                                 "Group deletion error",

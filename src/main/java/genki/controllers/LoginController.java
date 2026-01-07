@@ -21,10 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
 
-/**
- * LoginController is the controller responsible for handling the login functionality exposed on the Login scene
- * Implements Initializable interface to use the init method after fully loading the Login.fxml file components
- */
 public class LoginController implements Initializable {
 	
 	private clientSocketController client;
@@ -46,7 +42,6 @@ public class LoginController implements Initializable {
      public void redirectToRegister() {
          logger.log(Level.INFO, "Redirecting user to register");
 
-         // calling ScenesController.switchToScene() to switch to Register view
          try {
              ScenesController.switchToScene("/genki/views/Register.fxml", "Genki - Sign Up");
          } catch (IOException e) {
@@ -102,7 +97,6 @@ public class LoginController implements Initializable {
                          logger.info("groups are: " + UserSession.getGroups());
 
 
-                         //Creating Client Socket
                          client = new clientSocketController(loginResult.getUsername());
 
                          UserSession.startSession(
@@ -110,7 +104,7 @@ public class LoginController implements Initializable {
                                loginResult.getUserId(),
                                loginResult.getUserRole(),
                                loginResult.getImageUrl(),
-                               client  // Pass the existing clientSocketController instance
+                               client
                          );
 
 
@@ -170,7 +164,6 @@ public class LoginController implements Initializable {
 
      @Override
      public void initialize(URL location, ResourceBundle resources) {
-         // Listeners pour les styles des champs
          userName.focusedProperty().addListener((obs, oldVal, newVal) -> {
                if (newVal) {
                    userName.setStyle("-fx-border-color: #374151");
@@ -179,12 +172,7 @@ public class LoginController implements Initializable {
                    userName.setStyle("-fx-border-color: #F2F2F2");
                }
          });
-         // TODO: hamza logging
-         userName.setText("ayman");
-         password.setText("Ayman@2020");
 
-
-         
          password.focusedProperty().addListener((obs, oldVal, newVal) -> {
              if (newVal) {
                  password.setStyle("-fx-border-color: #374151");
@@ -194,19 +182,16 @@ public class LoginController implements Initializable {
              }
          });
          
-         // Ajouter le listener pour la touche Entrée sur le champ username
          userName.setOnKeyPressed(event -> {
              if (event.getCode() == KeyCode.ENTER) {
                  onLogin();
              }
          });
          
-         // Ajouter le listener pour la touche Entrée sur le champ password
          password.setOnKeyPressed(event -> {
              if (event.getCode() == KeyCode.ENTER) {
                  onLogin();
              }
          });
      }
-
 }
