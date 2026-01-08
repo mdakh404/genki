@@ -17,7 +17,6 @@ public class DBConnection {
 
     private final String dbName;
 
-    // Singleton instance - only ONE connection for the entire application
     private static DBConnection instance = null;
     private static final Object lock = new Object();
 
@@ -26,13 +25,6 @@ public class DBConnection {
         logger.log(Level.INFO, "✓ DBConnection singleton instance created for: " + dbName);
     }
 
-    /**
-     * Get the singleton instance of DBConnection
-     * Thread-safe implementation
-     * 
-     * @param dbName The database name
-     * @return The singleton DBConnection instance
-     */
     public static DBConnection getInstance(String dbName) {
         if (instance == null) {
             synchronized (lock) {
@@ -49,7 +41,7 @@ public class DBConnection {
         try {
             String caller = StackWalker.getInstance()
                     .walk(frames -> frames
-                            .skip(1) // Skip the current method
+                            .skip(1)
                             .findFirst()
                             .map(f -> f.getClassName())
                             .orElse("Unknown"));
@@ -74,7 +66,6 @@ public class DBConnection {
         }
     }
 
-    // hamza add this
     public MongoCollection<Document> getCollection(String collectionName) throws MongoException {
         try {
             logger.log(Level.INFO, "Accessing collection: " + collectionName);

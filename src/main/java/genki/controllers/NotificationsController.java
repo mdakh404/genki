@@ -57,22 +57,14 @@ public class NotificationsController {
     @FXML
     private Label lblNoNotifications;
     
-    // Liste observable des notifications
     private ObservableList<NotificationRequest> notifications = FXCollections.observableArrayList();
     
-    // Reference to HomeController to update badge
     private HomeController homeController;
     
     public void setHomeController(HomeController homeController) {
         this.homeController = homeController;
     }
     
-    /**
-     * Update notification status in database instead of deleting
-     * @param notificationId The ID of the notification to update
-     * @param newStatus The new status ("accepted", "rejected", etc.)
-     * @return true if update was successful
-     */
     private boolean updateNotificationStatus(ObjectId notificationId, String newStatus) {
         try {
             UpdateResult result = notificationsCollection.updateOne(
@@ -93,18 +85,10 @@ public class NotificationsController {
         updateEmptyState();
     }
     
-    /**
-     * Configure la ListView avec un rendu personnalisé
-     */
     private void setupListView() {
         notificationsList.setCellFactory(param -> new NotificationCell());
         notificationsList.setItems(notifications);
     }
-    
-    /**
-     * Charge les notifications (simulées pour l'instant)
-     * TODO: Remplacer par un appel à votre base de données
-     */
 
     private String getSenderImageUrl(String senderId) {
 
@@ -131,9 +115,8 @@ public class NotificationsController {
 
          for (Notification notification : UserSession.getNotifications()) {
              
-             // Skip notifications with null type (shouldn't happen but safe check)
              if (notification == null || notification.getType() == null) {
-                 logger.warning("⚠️ Skipping notification with null type or notification object");
+                 logger.warning("Skipping notification with null type or notification object");
                  continue;
              }
 
@@ -154,9 +137,6 @@ public class NotificationsController {
 
     }
     
-    /**
-     * Met à jour l'affichage si aucune notification n'existe
-     */
     private void updateEmptyState() {
         boolean isEmpty = notifications.isEmpty();
         notificationsList.setVisible(!isEmpty);
@@ -165,15 +145,11 @@ public class NotificationsController {
         lblNoNotifications.setManaged(isEmpty);
     }
     
-    /**
-     * Accepte une demande
-     */
     private void handleAccept(NotificationRequest request) {
 
         if (request.getType() == NotificationType.FRIEND_REQUEST) {
             logger.info(UserSession.getUsername() + " accepted " + request.getUsername() + "'s friend request");
 
-            // Update notification status to "accepted" instead of deleting
             boolean statusUpdated = updateNotificationStatus(request.getNotificationId(), "accepted");
 
             if (statusUpdated) {
@@ -198,7 +174,6 @@ public class NotificationsController {
                             + " and " + request.getUsername()
                     );
                     
-                    // Show success message
                     AlertConstruct.alertConstructor(
                             "Friend Request Accepted",
                             "Success",
@@ -206,19 +181,16 @@ public class NotificationsController {
                             Alert.AlertType.INFORMATION
                     );
                     
-                    // Remove from UI and UserSession
                     notifications.remove(request);
                     removeNotificationFromUserSession(request.getNotificationId());
                     updateEmptyState();
                     
-                    // Send socket message to notify the requester that their friend request was accepted
                     sendFriendRequestAcceptanceNotification(
                         request.getUsername(),
-                        senderUserDoc.getObjectId("_id").toHexString(),  // Pass the requester's userId
+                        senderUserDoc.getObjectId("_id").toHexString(),
                         UserSession.getUsername()
                     );
                     
-                    // ✅ Also add the requester to the acceptor's conversation list immediately
                     if (homeController != null) {
                         homeController.addFriendConversationFromAcceptance(request.getUsername());
                         homeController.updateNotificationBadge();
@@ -254,7 +226,6 @@ public class NotificationsController {
                     Filters.eq("username", request.getUsername())
             ).first();
 
-            // Update notification status to "accepted" instead of deleting
             boolean statusUpdated = updateNotificationStatus(request.getNotificationId(), "accepted");
 
             if (statusUpdated) {
@@ -275,7 +246,6 @@ public class NotificationsController {
                             + " and users array field for " + groupDoc.getString("group_name")
                     );
                     
-                    // Show success message
                     AlertConstruct.alertConstructor(
                             "Group Join Request Accepted",
                             "Success",
@@ -283,21 +253,17 @@ public class NotificationsController {
                             Alert.AlertType.INFORMATION
                     );
                     
-                    // Remove from UI and UserSession
                     notifications.remove(request);
                     removeNotificationFromUserSession(request.getNotificationId());
                     updateEmptyState();
                     
-                    // Send socket message to notify the requester that their group join request was accepted
-                    // The requester will create the conversation UI when they receive this message
                     sendGroupJoinAcceptanceNotification(
                         request.getUsername(), 
-                        senderUserDoc.getObjectId("_id").toHexString(),  // Pass the requester's userId
+                        senderUserDoc.getObjectId("_id").toHexString(),
                         groupDoc.getString("group_name"), 
                         groupDoc.getObjectId("_id").toString()
                     );
                     
-                    // NOTE: We don't create UI here for the admin because they already have the group
                 } else {
                     logger.warning("Failed to update group membership");
                     AlertConstruct.alertConstructor(
@@ -324,25 +290,19 @@ public class NotificationsController {
     }
         }
         
-        // Remove from UI list
         notifications.remove(request);
         updateEmptyState();
     }
     
-    /**
-     * Refuse une demande
-     */
     private void handleReject(NotificationRequest request) {
         logger.info(UserSession.getUsername() + " rejected " + request.getUsername() + "'s request");
         
         try {
-            // Update notification status to "rejected" instead of deleting
             boolean statusUpdated = updateNotificationStatus(request.getNotificationId(), "rejected");
             
             if (statusUpdated) {
                 logger.info("Updated notification " + request.getNotificationId().toHexString() + " status to 'rejected'");
                 
-                // Show success message
                 AlertConstruct.alertConstructor(
                         "Request Rejected",
                         "Success",
@@ -350,12 +310,10 @@ public class NotificationsController {
                         Alert.AlertType.INFORMATION
                 );
                 
-                // Remove from UI and UserSession
                 notifications.remove(request);
                 removeNotificationFromUserSession(request.getNotificationId());
                 updateEmptyState();
                 
-                // Update badge in HomeController
                 if (homeController != null) {
                     homeController.updateNotificationBadge();
                 }
@@ -384,9 +342,6 @@ public class NotificationsController {
         }
     }
     
-    /**
-     * Ferme la fenêtre des notifications
-     */
     @FXML
     private void handleClose() {
         Stage stage = (Stage) btnClose.getScene().getWindow();
@@ -395,9 +350,6 @@ public class NotificationsController {
         }
     }
     
-    /**
-     * Classe interne pour personnaliser le rendu de chaque notification
-     */
     private class NotificationCell extends ListCell<NotificationRequest> {
         
         @Override
@@ -410,7 +362,6 @@ public class NotificationsController {
                 return;
             }
             
-            // Conteneur principal
             HBox container = new HBox(12);
             container.setAlignment(Pos.CENTER_LEFT);
             container.setPadding(new Insets(12));
@@ -422,7 +373,6 @@ public class NotificationsController {
                 "-fx-border-width: 1;"
             );
             
-            // Image de profil
             ImageView avatar = new ImageView();
             avatar.setFitWidth(48);
             avatar.setFitHeight(48);
@@ -436,7 +386,6 @@ public class NotificationsController {
                 System.out.println("Failed to load image: " + e.getMessage() + request.getImageUrl());
             }
             
-            // VBox pour le nom et le message
             VBox textContainer = new VBox(4);
             textContainer.setAlignment(Pos.CENTER_LEFT);
             HBox.setHgrow(textContainer, Priority.ALWAYS);
@@ -456,11 +405,9 @@ public class NotificationsController {
             
             textContainer.getChildren().addAll(nameLabel, messageLabel);
             
-            // Espaceur pour pousser les boutons à droite
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
             
-            // Bouton Accepter
             Button acceptBtn = new Button("✓");
             acceptBtn.setStyle(
                 "-fx-background-color: #10b981; " +
@@ -479,7 +426,6 @@ public class NotificationsController {
             );
             acceptBtn.setOnAction(e -> handleAccept(request));
             
-            // Bouton Refuser
             Button rejectBtn = new Button("✗");
             rejectBtn.setStyle(
                 "-fx-background-color: #ef4444; " +
@@ -498,48 +444,32 @@ public class NotificationsController {
             );
             rejectBtn.setOnAction(e -> handleReject(request));
             
-            // HBox pour les boutons
             HBox buttonBox = new HBox(8);
             buttonBox.setAlignment(Pos.CENTER_RIGHT);
             buttonBox.getChildren().addAll(acceptBtn, rejectBtn);
             
-            // Assembler tous les éléments
             container.getChildren().addAll(avatar, textContainer, spacer, buttonBox);
             
             setGraphic(container);
         }
     }
     
-    /**
-     * Remove a notification from UserSession by its ID
-     * This ensures notifications don't reappear on restart
-     * @param notificationId The ID of the notification to remove
-     */
     private void removeNotificationFromUserSession(ObjectId notificationId) {
         try {
             UserSession.getNotifications().removeIf(notification -> 
                 notification.getNotificationId().equals(notificationId)
             );
-            logger.info("✓ Notification " + notificationId.toHexString() + " removed from UserSession");
+            logger.info("Notification " + notificationId.toHexString() + " removed from UserSession");
         } catch (Exception e) {
             logger.warning("Failed to remove notification from UserSession: " + e.getMessage());
         }
     }
     
-    /**
-     * Send a socket message to notify the requester that their group join request was accepted
-     * This allows them to immediately add the group conversation to their UI
-     * @param requesterUsername The username of the person who requested to join
-     * @param requesterUserId The userId of the requester (for message routing)
-     * @param groupName The name of the group
-     * @param groupId The ID of the group
-     */
     private void sendGroupJoinAcceptanceNotification(String requesterUsername, String requesterUserId, String groupName, String groupId) {
         try {
-            // Create a notification message to send via socket with recipientId for proper routing
             Document notificationMessage = new Document()
                     .append("type", "GROUP_JOIN_ACCEPTED")
-                    .append("recipientId", requesterUserId)  // Add recipientId so server can route to the right client
+                    .append("recipientId", requesterUserId)
                     .append("requesterUsername", requesterUsername)
                     .append("groupName", groupName)
                     .append("groupId", groupId)
@@ -550,7 +480,7 @@ public class NotificationsController {
             
             if (UserSession.getClientSocket() != null) {
                 UserSession.getClientSocket().sendGroupJoinAcceptanceNotification(jsonMessage);
-                logger.info("✓ Sent GROUP_JOIN_ACCEPTED notification for group: " + groupName + " to user: " + requesterUsername + " (ID: " + requesterUserId + ")");
+                logger.info("Sent GROUP_JOIN_ACCEPTED notification for group: " + groupName + " to user: " + requesterUsername + " (ID: " + requesterUserId + ")");
             } else {
                 logger.warning("Client socket is not initialized, cannot send group join acceptance notification");
             }
@@ -559,19 +489,11 @@ public class NotificationsController {
         }
     }
     
-    /**
-     * Send a socket message to notify the requester that their friend request was accepted
-     * This allows them to immediately add the friend conversation to their UI
-     * @param requesterUsername The username of the person who requested friendship
-     * @param requesterUserId The userId of the requester (for message routing)
-     * @param acceptorUsername The username of the person who accepted the request
-     */
     private void sendFriendRequestAcceptanceNotification(String requesterUsername, String requesterUserId, String acceptorUsername) {
         try {
-            // Create a notification message to send via socket with recipientId for proper routing
             Document notificationMessage = new Document()
                     .append("type", "FRIEND_REQUEST_ACCEPTED")
-                    .append("recipientId", requesterUserId)  // Add recipientId so server can route to the right client
+                    .append("recipientId", requesterUserId)
                     .append("requesterUsername", requesterUsername)
                     .append("acceptorUsername", acceptorUsername)
                     .append("acceptedBy", UserSession.getUsername())
@@ -581,7 +503,7 @@ public class NotificationsController {
             
             if (UserSession.getClientSocket() != null) {
                 UserSession.getClientSocket().sendFriendRequestAcceptanceNotification(jsonMessage);
-                logger.info("✓ Sent FRIEND_REQUEST_ACCEPTED notification to user: " + requesterUsername + " (ID: " + requesterUserId + ")");
+                logger.info("Sent FRIEND_REQUEST_ACCEPTED notification to user: " + requesterUsername + " (ID: " + requesterUserId + ")");
             } else {
                 logger.warning("Client socket is not initialized, cannot send friend request acceptance notification");
             }
