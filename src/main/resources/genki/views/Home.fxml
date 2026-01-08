@@ -118,15 +118,13 @@
             </ScrollPane>
         </VBox>
 
-        <!-- ═══════════════════════════════════════════════════════════════ -->
-        <!-- MAIN CHAT AREA - Zone de conversation principale               -->
-        <!-- ═══════════════════════════════════════════════════════════════ -->
+
         <VBox fx:id="mainChatArea" 
               style="-fx-background-color: #f8fefe;" 
               HBox.hgrow="ALWAYS" 
               VBox.vgrow="ALWAYS">
 
-            <!-- Chat header avec bouton close à gauche -->
+
             <HBox fx:id="chatHeader" 
                   alignment="CENTER_LEFT" 
                   spacing="12.0" 
@@ -134,7 +132,7 @@
                   managed="false"
                   style="-fx-background-color: transparent; -fx-padding: 16; -fx-border-color: #e0f7fa; -fx-border-width: 0 0 1 0;">
                 
-                <!-- 🔥 BOUTON CLOSE CONVERSATION (À GAUCHE) -->
+   
                 <Button fx:id="btnCloseConversation"
                        text="✕"
                        visible="false"
@@ -148,8 +146,7 @@
                         <Tooltip text="Close conversation"/>
                     </tooltip>
                 </Button>
-                
-                <!-- Profile image -->
+          
                 <ImageView fx:id="profilTrigger" 
                           fitHeight="43.0" 
                           fitWidth="43.0" 
@@ -164,7 +161,7 @@
                     </image>
                 </ImageView>
                 
-                <!-- Name and status -->
+             
                 <VBox fx:id="AmisNameStatus" 
                      spacing="2.0" 
                      style="-fx-cursor: hand;" 
@@ -182,10 +179,10 @@
                     </HBox>
                 </VBox>
                 
-                <!-- Spacer -->
+             
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <!-- Group Settings Btn -->
+             
                 <Button id="groupSettingsBtn"
                         fx:id="groupSettingsBtn"
                         visible="false"
@@ -216,7 +213,7 @@
                 </Button>
             </HBox>
 
-            <!-- Messages area with loading spinner -->
+           
             <StackPane VBox.vgrow="ALWAYS">
                 <ScrollPane fx:id="messagesScrollPane" 
                            fitToWidth="true" 
@@ -226,7 +223,7 @@
                     <VBox fx:id="messagesContainer" 
                          spacing="10" 
                          style="-fx-padding: 10;">
-                        <!-- Messages will be added dynamically -->
+                     
                     </VBox>
                 </ScrollPane>
                 

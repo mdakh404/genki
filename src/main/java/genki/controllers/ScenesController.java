@@ -20,8 +20,7 @@ public class ScenesController {
         FXMLLoader loader = new FXMLLoader(ScenesController.class.getResource(scene));
         Parent root = (Parent) loader.load();
 
-        stage.setScene(new Scene(root));
-
+        stage.setScene(new Scene(root, 1200, 600));
         stage.centerOnScreen();
         stage.setTitle(title);
     }

@@ -117,6 +117,7 @@ public class clientSocketController implements t2{
 							System.out.println("  - Accepted by: " + acceptedBy);
 							
 							if (homeController != null) {
+								homeController.addFriendConversationFromAcceptance(acceptorUsername);
 								System.out.println("✅ Friend conversation added to UI\n");
 							} else {
 								System.out.println("⚠️ HomeController reference is null!\n");
@@ -207,7 +208,7 @@ public class clientSocketController implements t2{
 						}
 					} catch (Exception e) {
 						System.err.println("❌ Error parsing message: " + e.getMessage());
-						e.printStackTrace();
+					 e.printStackTrace();
 					}
 					return;
 				}
