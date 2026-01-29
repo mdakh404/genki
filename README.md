@@ -9,13 +9,9 @@ Genki is a desktop messaging application for real-time communication. Built with
 
 ## Genki Demo
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Here's a blank template to get started. To avoid retyping too much info, do a search and replace with your text editor for the following:
+https://github.com/user-attachments/assets/bd5d9a86-38b9-41ab-b0a9-d71e5b35ce0e
 
-`github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`, `project_license`
-
-[Back to top](#project_title)
 
 ---
 
