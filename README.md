@@ -1,4 +1,4 @@
-![Genki Logo](https://raw.githubusercontent.com/mdakh404/genki/refs/heads/main/src/main/resources/genki/img/genki_logo.png)
+<img width="500" height="500" alt="Image" src="https://github.com/user-attachments/assets/b34807d6-c652-4ff9-835c-a9ab8ccf6bb7" />
 
 # Genki - Desktop messaging app
 
