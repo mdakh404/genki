@@ -34,7 +34,6 @@ https://github.com/user-attachments/assets/bd5d9a86-38b9-41ab-b0a9-d71e5b35ce0e
 
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
 
 ### Prerequisites
 
